@@ -39,7 +39,7 @@ Il collante è **un'unica macchina a stati per pratica**, fatta avanzare da **we
 
 - **La macchina a stati vive in `clients.stato`** (enum, §4 della spec). Ogni transizione è idealmente conseguenza di un webhook. Un **trigger** su cambio di `clients.stato` scrive automaticamente una riga in `activity_log` (`actor_id = auth.uid()`, `da_stato`, `a_stato`): lo storico della board non si scrive a mano nel codice.
 
-- **RLS su tutte le tabelle**, costruita su due helper SQL **security-definer**: `is_staff()` e `is_admin()`. Policy:
+- **RLS su tutte le tabelle**, costruita su helper SQL **security-definer** nello schema **`private`** (non esposto da PostgREST, per non triggerare gli advisor): `private.is_staff()`, `private.is_admin()`, `private.owns_client(uuid)`, `private.is_client_member(uuid)`. Devono restare eseguibili da `authenticated` (le usa la valutazione RLS): revocare l'EXECUTE le rompe. Policy:
   - `admin`: accesso completo.
   - `commerciale`: **default team-read** — legge tutti i clienti, modifica solo i propri (`owner_id = auth.uid()`). Se serve più stretto ("vede solo i propri"), si cambia la condizione di SELECT. (Punto ancora da confermare, §9 spec.)
   - `cliente`: solo le righe dove `auth_user_id = auth.uid()`; per le tabelle figlie, `client_id in (select id from clients where auth_user_id = auth.uid())`. **Mai** accesso alle tabelle interne di pipeline.
