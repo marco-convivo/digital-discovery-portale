@@ -6,11 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stato del repo
 
-Greenfield. Al momento esistono solo:
-- `digital-discovery-build-spec.md` — **specifica autorevole**. Leggila per prima: definisce modello dati, macchina a stati, integrazioni e ordine di build.
-- 7 mockup HTML autoconclusivi (`portale-home.html`, `piano-pagamenti.html`, `pipeline-board.html`, `preventivo-pubblico.html`, `firma.html`, `pagamento-setup.html`, `onboarding.html`) — riferimento visivo/design system. I token CSS sono nel `:root` di ciascuno.
+FASE 1 in corso. Stack: **Next.js 16 (App Router, TS, `src/`) + Tailwind v4 + Supabase (SSR) + Vercel**. La specifica autorevole è `docs/digital-discovery-build-spec.md` (leggila per prima); i 7 mockup HTML in `docs/` sono il riferimento visivo (token CSS nel `:root`).
 
-Non c'è ancora scaffold Next.js, `package.json`, né migration. Lo stack **deciso** (non ancora installato) è **Next.js (App Router, TS, Tailwind) + Supabase + Vercel**. Finché non si esegue `create-next-app`, i comandi build/lint/test non esistono — vanno aggiunti qui quando lo scaffold è in piedi (attesi: `npm run dev`, `next build`, `next lint`).
+Comandi:
+- `npm run dev` — dev server (Turbopack, :3000)
+- `npm run build` / `npm run start` — build ed esecuzione di produzione
+- `npm run lint` — ESLint
+- `npx tsc --noEmit` — typecheck (non c'è ancora una suite di test)
+
+Struttura: `src/app/(app)/…` = area interna protetta (shell + board); `src/app/login`, `src/app/auth/callback` = auth pubblica; `src/lib/supabase/` = client browser/server + `middleware.ts` (usato da `src/proxy.ts`); `src/lib/stati.ts` = mappatura stato→UI e colonne board; `src/components/ui` = design system, `src/components/internal` = CRM. **Next 16**: la convenzione è `proxy.ts` (non più `middleware.ts`).
+
+**Prima di far girare / testare davvero servono azioni manuali di Marco:**
+1. **Connessione MCP** puntata sull'org/progetto Supabase "Digital Discovery" (NON RevnaConsulting).
+2. **Applicare le migration** `supabase/migrations/*` (via MCP `apply_migration` o `supabase db push`). Non ancora applicate né validate su un DB.
+3. **`.env.local`** con URL + anon key reali (ora ci sono dei placeholder) e configurare **Google OAuth** in Supabase (redirect `…/auth/callback`).
+4. **Bootstrap admin**: chi non ha una riga in `profiles` vede "Accesso non abilitato". Dopo il primo login di Marco, inserire il suo profilo admin da SQL editor (bypassa la RLS):
+   `insert into public.profiles (id, full_name, email, role) select id, 'Marco', email, 'admin' from auth.users where email = '…';`
 
 ## Che cosa si costruisce
 
