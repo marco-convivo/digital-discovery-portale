@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Discovery — Attiva il pagamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fustat:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#222222; --on-ink:#ffffff;
+  --text:#1e1e22; --text-2:#55555e; --text-3:#8a8a93;
+  --bg:#e9ece6; --card:#ffffff; --card-2:#f4f6f2; --line:#e1e4dd;
+  --violet:#a28ef9; --violet-soft:#ece8fe; --on-violet:#2c1d63;
+  --mint:#a4f5a6; --mint-soft:#dcf7dd; --on-mint:#14532d;
+  --r-card:24px; --r-md:16px; --r-sm:12px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(30,30,34,.04), 0 12px 32px -14px rgba(30,30,34,.12);
+  --f:'Fustat',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;padding:0 20px 60px}
+.tnum{font-variant-numeric:tabular-nums}
+
+.topbar{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:24px 4px;flex-wrap:wrap;gap:16px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .logo{width:40px;height:40px;border-radius:12px;background:var(--ink);color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+.brand .bt{font-weight:700;font-size:17px;letter-spacing:-.01em}
+
+.steps{display:flex;align-items:center;gap:8px}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-3)}
+.step .n{width:24px;height:24px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px}
+.step.done{color:var(--text-2)}
+.step.done .n{background:var(--mint-soft);border-color:transparent;color:var(--on-mint)}
+.step.now{color:var(--text)}
+.step.now .n{background:var(--ink);border-color:var(--ink);color:#fff}
+.step-sep{width:22px;height:1px;background:var(--line)}
+@media(max-width:720px){.steps .lbl{display:none}.step-sep{width:14px}}
+
+.wrap{max-width:1000px;margin:8px auto 0;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:820px){.wrap{grid-template-columns:1fr}}
+
+.panel{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);padding:26px 28px}
+.panel h1{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.panel .lead{font-size:14px;color:var(--text-2);margin:6px 0 22px;line-height:1.5}
+
+/* method tabs */
+.methods{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.method{flex:1;min-width:180px;display:flex;align-items:center;gap:12px;padding:15px 16px;border-radius:var(--r-md);border:2px solid var(--line);cursor:pointer;background:var(--card)}
+.method.sel{border-color:var(--ink);background:var(--card-2)}
+.method .mi{width:40px;height:40px;border-radius:11px;background:var(--violet-soft);color:var(--on-violet);display:flex;align-items:center;justify-content:center;flex:none}
+.method .mt{font-weight:700;font-size:14.5px}
+.method .ms{font-size:12px;color:var(--text-3);font-weight:600;margin-top:2px}
+.method .rec{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--mint-soft);color:var(--on-mint);padding:4px 8px;border-radius:var(--r-pill);align-self:flex-start}
+
+.fld-lab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:4px 2px 12px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--text-2);margin-bottom:6px}
+.input{width:100%;font-family:var(--f);font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;outline:none}
+.input:focus{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.input-wrap{position:relative}
+.input-wrap .lock{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--text-3)}
+
+/* mandate block */
+.mandate{margin-top:8px;background:var(--card-2);border-radius:var(--r-md);padding:16px 18px}
+.mandate .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mandate .mh .t{font-weight:700;font-size:13px}
+.mandate .cid{font-size:11px;color:var(--text-3);font-weight:600}
+.mandate p{font-size:12px;color:var(--text-2);line-height:1.55}
+.consent{display:flex;gap:11px;align-items:flex-start;margin-top:14px;font-size:12.5px;color:var(--text);line-height:1.5}
+.consent .box{width:20px;height:20px;border-radius:6px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+
+/* aside */
+.aside{position:sticky;top:20px;display:flex;flex-direction:column;gap:16px}
+.sum{background:var(--card);border-radius:var(--r-card);padding:22px;box-shadow:var(--shadow)}
+.sum h3{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);margin-bottom:16px}
+.sum .r{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px}
+.sum .r:first-of-type{border-top:0}
+.sum .r .k{color:var(--text-2);font-weight:600}
+.sum .r .v{font-weight:700}
+.sum .hl{background:var(--violet-soft);border-radius:var(--r-sm);padding:12px 14px;margin-top:14px}
+.sum .hl .k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--on-violet);opacity:.8}
+.sum .hl .v{font-size:15px;font-weight:800;color:var(--on-violet);margin-top:3px}
+.btn{width:100%;font-family:var(--f);font-weight:700;font-size:15px;border:none;border-radius:var(--r-pill);padding:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--ink);color:#fff;margin-top:18px}
+.btn:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+.trust{background:var(--mint-soft);border-radius:var(--r-md);padding:15px 17px;font-size:12px;color:var(--on-mint);line-height:1.55;display:flex;gap:10px}
+.trust svg{flex:none;margin-top:1px}
+.trust b{font-weight:800}
+.securedby{text-align:center;font-size:11.5px;color:var(--text-3);font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><div class="logo">D</div><div class="bt">Digital Discovery</div></div>
+    <div class="steps">
+      <div class="step done"><span class="n"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span class="lbl">Accettato</span></div>
+      <span class="step-sep"></span>
+      <div class="step done"><span class="n"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span class="lbl">Firma</span></div>
+      <span class="step-sep"></span>
+      <div class="step now"><span class="n">3</span><span class="lbl">Pagamento</span></div>
+      <span class="step-sep"></span>
+      <div class="step"><span class="n">4</span><span class="lbl">Fatto</span></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- Form -->
+    <div class="panel">
+      <h1>Attiva il pagamento</h1>
+      <p class="lead">Ultimo passo: imposta il metodo per le tue rate mensili. Puoi modificarlo in ogni momento dal portale.</p>
+
+      <div class="methods">
+        <div class="method sel">
+          <div class="mi"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+          <div><div class="mt">Addebito SDD</div><div class="ms">SEPA · conto corrente</div></div>
+          <span class="rec">Consigliato</span>
+        </div>
+        <div class="method">
+          <div class="mi"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+          <div><div class="mt">Carta</div><div class="ms">credito o debito</div></div>
+        </div>
+      </div>
+
+      <div class="fld-lab">Coordinate bancarie</div>
+      <div class="field"><label>Intestatario del conto</label><input class="input" placeholder="Rossi Impianti S.r.l."></div>
+      <div class="field">
+        <label>IBAN</label>
+        <div class="input-wrap">
+          <input class="input tnum" placeholder="IT00 X000 0000 0000 0000 0000 000">
+          <span class="lock"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        </div>
+      </div>
+
+      <div class="mandate">
+        <div class="mh"><span class="t">Mandato SEPA Direct Debit</span><span class="cid tnum">ID creditore: IT98ZZZ0000012345678900</span></div>
+        <p>Autorizzo Digital Discovery S.r.l. a richiedere alla mia banca l'addebito del conto, e la mia banca a eseguirlo, secondo le disposizioni dello schema <b>SEPA CORE</b>. Ho diritto al rimborso secondo le condizioni della mia banca; il rimborso va richiesto entro 8 settimane dalla data di addebito.</p>
+        <div class="consent">
+          <span class="box"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+          <span>Autorizzo l'addebito ricorrente di € 349,00/mese per 12 mesi e accetto le condizioni del mandato.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Riepilogo -->
+    <aside class="aside">
+      <div class="sum">
+        <h3>Stai attivando</h3>
+        <div class="r"><span class="k">Servizio</span><span class="v">SEO + Social</span></div>
+        <div class="r"><span class="k">Rata</span><span class="v tnum">€ 349/mese</span></div>
+        <div class="r"><span class="k">Durata</span><span class="v">12 mesi</span></div>
+        <div class="hl"><div class="k">Primo addebito</div><div class="v">alla conferma del mandato</div></div>
+        <button class="btn"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Conferma e attiva</button>
+      </div>
+      <div class="trust">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span><b>I tuoi dati sono al sicuro.</b> L'IBAN è gestito direttamente da Stripe: Digital Discovery non lo vede né lo conserva. Il mandato è revocabile in ogni momento.</span>
+      </div>
+      <div class="securedby"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Pagamenti protetti · Stripe</div>
+    </aside>
+
+  </div>
+</body>
+</html>

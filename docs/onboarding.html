@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Discovery — Benvenuto nel portale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fustat:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#222222; --on-ink:#ffffff;
+  --text:#1e1e22; --text-2:#55555e; --text-3:#8a8a93;
+  --bg:#e9ece6; --card:#ffffff; --card-2:#f4f6f2; --line:#e1e4dd;
+  --violet:#a28ef9; --violet-soft:#ece8fe; --on-violet:#2c1d63;
+  --mint:#a4f5a6; --mint-soft:#dcf7dd; --on-mint:#14532d;
+  --r-card:24px; --r-md:16px; --r-sm:12px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(30,30,34,.04), 0 18px 44px -18px rgba(30,30,34,.22);
+  --f:'Fustat',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.tnum{font-variant-numeric:tabular-nums}
+
+.shell{width:100%;max-width:940px;background:var(--card);border-radius:28px;box-shadow:var(--shadow);
+  overflow:hidden;display:grid;grid-template-columns:1fr 1fr}
+@media(max-width:800px){.shell{grid-template-columns:1fr;max-width:460px}}
+
+/* welcome (charcoal) */
+.welcome{background:var(--ink);color:var(--on-ink);padding:38px 36px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.welcome::after{content:"";position:absolute;inset:auto auto -60px -40px;width:280px;height:280px;
+  background:radial-gradient(circle,rgba(162,142,249,.35),transparent 70%);pointer-events:none}
+.wlogo{display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.wlogo .l{width:38px;height:38px;border-radius:11px;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+.wlogo .n{font-weight:700;font-size:16px}
+.welcome h1{font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1.12;margin:26px 0 8px;position:relative;z-index:1}
+.welcome .sub{font-size:14px;opacity:.72;line-height:1.5;position:relative;z-index:1;max-width:34ch}
+.done{margin-top:26px;display:flex;flex-direction:column;gap:11px;position:relative;z-index:1}
+.done .d{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:600}
+.done .ck{width:24px;height:24px;border-radius:50%;background:var(--mint);color:var(--on-mint);display:flex;align-items:center;justify-content:center;flex:none}
+.wdiv{height:1px;background:#ffffff1f;margin:26px 0 20px;position:relative;z-index:1}
+.next-lab{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.5;margin-bottom:14px;position:relative;z-index:1}
+.feat{display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;margin-top:auto}
+.feat .f{display:flex;align-items:center;gap:12px;font-size:13.5px;opacity:.9}
+.feat .fi{width:34px;height:34px;border-radius:10px;background:#ffffff14;display:flex;align-items:center;justify-content:center;flex:none;color:var(--mint)}
+
+/* form */
+.form{padding:38px 36px;display:flex;flex-direction:column;justify-content:center}
+.form h2{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.form .fl{font-size:13.5px;color:var(--text-2);margin:6px 0 22px}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--text-2);margin-bottom:6px}
+.input{width:100%;font-family:var(--f);font-size:15px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;outline:none}
+.input.pref{background:var(--card-2);color:var(--text-2)}
+.input:focus{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.hint{font-size:11.5px;color:var(--text-3);margin-top:6px}
+.btn{width:100%;font-family:var(--f);font-weight:700;font-size:15px;border:none;border-radius:var(--r-pill);
+  padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;background:var(--ink);color:#fff;margin-top:8px}
+.btn:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+.or{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text-3);font-size:12px;font-weight:600}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{width:100%;font-family:var(--f);font-weight:700;font-size:14.5px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-pill);padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text)}
+.gbtn:hover{background:var(--card-2)}
+.terms{font-size:11.5px;color:var(--text-3);text-align:center;margin-top:20px;line-height:1.5}
+.terms a{color:var(--text-2);font-weight:600;text-decoration:underline}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+  <div class="shell">
+
+    <!-- Welcome -->
+    <div class="welcome">
+      <div class="wlogo"><div class="l">D</div><div class="n">Digital Discovery</div></div>
+
+      <h1>Benvenuto,<br>Rossi Impianti</h1>
+      <p class="sub">Il tuo spazio è pronto. Da qui segui tutto in un posto solo, in totale trasparenza.</p>
+
+      <div class="done">
+        <div class="d"><span class="ck"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Contratto firmato</div>
+        <div class="d"><span class="ck"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Pagamento attivo</div>
+      </div>
+
+      <div class="wdiv"></div>
+      <div class="next-lab">Nel tuo portale</div>
+      <div class="feat">
+        <div class="f"><span class="fi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Piano pagamenti sempre aggiornato</div>
+        <div class="f"><span class="fi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></span>Fatture pronte da scaricare</div>
+        <div class="f"><span class="fi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Servizi attivi sott'occhio</div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="form">
+      <h2>Crea il tuo accesso</h2>
+      <p class="fl">Imposta una password per entrare quando vuoi.</p>
+
+      <div class="field">
+        <label>Email</label>
+        <input class="input pref" value="mario.rossi@rossimpianti.it" readonly>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="input" type="password" placeholder="Almeno 8 caratteri">
+        <div class="hint">Usa almeno 8 caratteri, con una lettera e un numero.</div>
+      </div>
+      <div class="field">
+        <label>Conferma password</label>
+        <input class="input" type="password" placeholder="Ripeti la password">
+      </div>
+
+      <button class="btn">Entra nel portale</button>
+
+      <div class="or">oppure</div>
+
+      <button class="gbtn">
+        <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.9 6.1C12.3 13.2 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.4c-.3 2.1-1.6 5.2-4.6 7.3l7.1 5.5c4.2-3.9 6.7-9.6 6.7-16.5z"/><path fill="#FBBC05" d="M10.4 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.1-5.5c-2 1.3-4.6 2.3-8.1 2.3-6.4 0-11.7-3.7-13.6-9.9l-7.9 6.1C6.4 42.6 14.6 48 24 48z"/></svg>
+        Continua con Google
+      </button>
+
+      <p class="terms">Creando l'accesso accetti i <a href="#">Termini</a> e la <a href="#">Privacy policy</a> di Digital Discovery.</p>
+    </div>
+
+  </div>
+</body>
+</html>

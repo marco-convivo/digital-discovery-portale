@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Discovery · Portale — Piano pagamenti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fustat:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#222222; --on-ink:#ffffff;
+  --text:#1e1e22; --text-2:#55555e; --text-3:#8a8a93;
+  --bg:#e9ece6; --card:#ffffff; --card-2:#f4f6f2; --line:#e1e4dd;
+  --violet:#a28ef9; --violet-soft:#ece8fe; --on-violet:#2c1d63;
+  --mint:#a4f5a6; --mint-soft:#dcf7dd; --on-mint:#14532d;
+  --paid-bg:#d3f3d4; --paid-tx:#14532d; --paid-dot:#22c55e;
+  --info-bg:#ece8fe; --info-tx:#4326a6; --info-dot:#a28ef9;
+  --wait-bg:#fbebc9; --wait-tx:#7c4a03; --wait-dot:#eab308;
+  --fail-bg:#fbe0de; --fail-tx:#8f1d1a; --fail-dot:#ef4444;
+  --draft-bg:#e8e8ec; --draft-tx:#55555e; --draft-dot:#a0a0a8;
+  --r-card:24px; --r-md:16px; --r-sm:12px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(30,30,34,.04), 0 10px 28px -14px rgba(30,30,34,.10);
+  --f:'Fustat',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.tnum{font-variant-numeric:tabular-nums}
+.app{display:flex;min-height:100vh}
+
+/* sidebar (uguale alla home) */
+.side{width:250px;flex:none;padding:22px 16px;display:flex;flex-direction:column;gap:26px}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px}
+.brand .logo{width:38px;height:38px;border-radius:11px;background:var(--ink);color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+.brand .bt{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand .bt small{display:block;font-weight:500;font-size:11px;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav a{display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:14px;color:var(--text-2);font-weight:600;font-size:14.5px;text-decoration:none;transition:background .15s,color .15s}
+.nav a svg{width:19px;height:19px;flex:none}
+.nav a:hover{background:#ffffff90;color:var(--text)}
+.nav a.on{background:var(--ink);color:var(--on-ink)}
+.nav .sep{height:1px;background:var(--line);margin:12px 6px}
+.side .foot{margin-top:auto;display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:14px}
+.side .foot .av{width:34px;height:34px;border-radius:10px;background:var(--violet);color:var(--on-violet);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.side .foot .nm{font-size:13.5px;font-weight:600;line-height:1.2}
+.side .foot .nm small{display:block;font-weight:500;color:var(--text-3);font-size:11.5px}
+
+/* main */
+.main{flex:1;min-width:0;padding:22px clamp(16px,3vw,32px) 40px}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.hello h1{font-size:clamp(22px,3.4vw,28px);font-weight:700;letter-spacing:-.02em}
+.hello p{color:var(--text-2);font-size:14.5px;margin-top:3px}
+.chip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:7px 14px 7px 8px}
+.chip .av{width:30px;height:30px;border-radius:9px;background:var(--ink);color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.chip .nm{font-size:13px;font-weight:700;line-height:1.15}
+.chip .nm small{display:block;font-weight:500;color:var(--text-3);font-size:11px}
+
+/* status pill */
+.st{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;padding:6px 11px 6px 9px;border-radius:var(--r-pill);white-space:nowrap}
+.st .d{width:7px;height:7px;border-radius:50%}
+.st.paid{background:var(--paid-bg);color:var(--paid-tx)} .st.paid .d{background:var(--paid-dot)}
+.st.info{background:var(--info-bg);color:var(--info-tx)} .st.info .d{background:var(--info-dot)}
+.st.wait{background:var(--wait-bg);color:var(--wait-tx)} .st.wait .d{background:var(--wait-dot)}
+.st.fail{background:var(--fail-bg);color:var(--fail-tx)} .st.fail .d{background:var(--fail-dot)}
+.st.prog{background:var(--draft-bg);color:var(--draft-tx)} .st.prog .d{background:var(--draft-dot)}
+
+.btn{font-family:var(--f);font-weight:700;font-size:13.5px;border:none;border-radius:var(--r-pill);padding:10px 18px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1}
+.btn.dark{background:var(--ink);color:var(--on-ink)}
+.btn.ghost{background:var(--card-2);color:var(--text)}
+.btn.sm{padding:7px 13px;font-size:12.5px}
+.btn:focus-visible{outline:3px solid var(--violet);outline-offset:2px}
+
+/* pending sign banner */
+.pending{display:flex;align-items:center;gap:16px;background:var(--violet-soft);border-radius:var(--r-card);padding:18px 22px;margin-bottom:20px;flex-wrap:wrap}
+.pending .ic{width:44px;height:44px;border-radius:13px;background:#ffffffc0;color:var(--on-violet);display:flex;align-items:center;justify-content:center;flex:none}
+.pending .tx{flex:1;min-width:200px}
+.pending .t{font-weight:700;font-size:14.5px}
+.pending .s{font-size:13px;color:var(--text-2);margin-top:2px}
+
+/* section label */
+.slabel{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin:6px 2px 12px}
+
+/* contract selector */
+.contracts{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;margin-bottom:26px}
+.ct{flex:0 0 260px;background:var(--card);border-radius:var(--r-card);padding:18px;box-shadow:var(--shadow);border:2px solid transparent;cursor:pointer;transition:border-color .15s}
+.ct:hover{border-color:var(--line)}
+.ct.sel{border-color:var(--ink)}
+.ct .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ct .type{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);background:var(--card-2);padding:4px 9px;border-radius:var(--r-pill)}
+.ct .nm{font-weight:700;font-size:16px;letter-spacing:-.01em}
+.ct .meta{font-size:12.5px;color:var(--text-2);margin-top:4px;font-weight:500}
+.ct .foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.ct .prog-min{font-size:12px;color:var(--text-3);font-weight:600}
+.ct .price{font-weight:800;font-size:16px}
+.ct .price small{font-weight:600;font-size:11px;color:var(--text-3)}
+
+/* plan detail */
+.plan{background:var(--card);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden}
+.plan-head{padding:22px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.plan-head .ttl{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.plan-head .sub{font-size:13px;color:var(--text-2);margin-top:3px;font-weight:500}
+.stats{display:flex;gap:26px;flex-wrap:wrap}
+.stat .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.stat .v{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:3px}
+
+/* table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+thead th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);padding:13px 24px;border-bottom:1px solid var(--line)}
+thead th.right,tbody td.right{text-align:right}
+tbody td{padding:15px 24px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--card-2)}
+.rata-n{font-weight:700}
+.rata-sub{font-size:12px;color:var(--text-3);font-weight:500;margin-top:1px}
+.method{font-size:12.5px;color:var(--text-2);font-weight:500}
+.amt{font-weight:700}
+.act{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.iconlink{width:32px;height:32px;border-radius:9px;background:var(--card-2);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex:none}
+.iconlink:hover{background:var(--line)}
+
+@media(max-width:860px){ .side{display:none} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand"><div class="logo">D</div><div class="bt">Digital Discovery<small>Portale</small></div></div>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Home</a>
+      <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Piano pagamenti</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Fatture</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Servizi</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>Contratti</a>
+      <div class="sep"></div>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Supporto</a>
+    </nav>
+    <div class="foot"><div class="av">RI</div><div class="nm">Rossi Impianti S.r.l.<small>Mario Rossi</small></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="hello"><h1>Piano pagamenti</h1><p>Tutti i tuoi contratti e le relative rate, in un colpo d'occhio.</p></div>
+      <div class="chip"><div class="av">RI</div><div class="nm">Rossi Impianti<small>Mario Rossi</small></div></div>
+    </div>
+
+    <!-- Nuovo contratto da firmare -->
+    <div class="pending">
+      <div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
+      <div class="tx">
+        <div class="t">Hai un nuovo contratto pronto da firmare</div>
+        <div class="s">Gestione social avanzata · ricorrente 12 mesi · € 150,00/mese — firmalo per attivare il servizio.</div>
+      </div>
+      <button class="btn dark">Firma ora</button>
+    </div>
+
+    <!-- Selettore contratti -->
+    <div class="slabel">I tuoi contratti</div>
+    <div class="contracts">
+      <div class="ct sel">
+        <div class="ch"><span class="type">Ricorrente</span><span class="st info"><span class="d"></span>In corso</span></div>
+        <div class="nm">SEO + Social</div>
+        <div class="meta">Attivo dal 05/01/2026 · 12 mesi</div>
+        <div class="foot"><span class="prog-min">Rata 3 di 12</span><span class="price tnum">€ 349<small>/mese</small></span></div>
+      </div>
+      <div class="ct">
+        <div class="ch"><span class="type">Ricorrente</span><span class="st info"><span class="d"></span>In corso</span></div>
+        <div class="nm">Google Ads</div>
+        <div class="meta">Attivo dal 10/02/2026 · 12 mesi</div>
+        <div class="foot"><span class="prog-min">Rata 1 di 12</span><span class="price tnum">€ 200<small>/mese</small></span></div>
+      </div>
+      <div class="ct">
+        <div class="ch"><span class="type">Una tantum</span><span class="st paid"><span class="d"></span>Saldato</span></div>
+        <div class="nm">Restyling sito</div>
+        <div class="meta">Pagato il 20/12/2025 · bonifico</div>
+        <div class="foot"><span class="prog-min">Pagamento unico</span><span class="price tnum">€ 1.500</span></div>
+      </div>
+    </div>
+
+    <!-- Dettaglio piano del contratto selezionato -->
+    <section class="plan">
+      <div class="plan-head">
+        <div>
+          <div class="ttl">SEO + Social</div>
+          <div class="sub">Ricorrente · 12 rate mensili · SDD su IBAN ••••4211</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="k">Totale piano</div><div class="v tnum">€ 4.188</div></div>
+          <div class="stat"><div class="k">Pagato</div><div class="v tnum">€ 349</div></div>
+          <div class="stat"><div class="k">Residuo</div><div class="v tnum">€ 3.839</div></div>
+          <div class="stat"><div class="k">Prossima</div><div class="v">5 mar</div></div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rata</th><th>Scadenza</th><th>Metodo</th><th class="right">Importo</th><th>Stato</th><th class="right">Azione</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="rata-n">01 · Gennaio</div></td>
+              <td class="method">05/01/2026</td><td class="method">SDD ••4211</td>
+              <td class="right amt tnum">€ 349,00</td>
+              <td><span class="st paid"><span class="d"></span>Pagata</span></td>
+              <td class="right"><div class="act"><span class="iconlink" title="Scarica fattura"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div></td>
+            </tr>
+            <tr>
+              <td><div class="rata-n">02 · Febbraio</div><div class="rata-sub">Nuovo tentativo il 10/02</div></td>
+              <td class="method">05/02/2026</td><td class="method">SDD ••4211</td>
+              <td class="right amt tnum">€ 349,00</td>
+              <td><span class="st fail"><span class="d"></span>Fallita</span></td>
+              <td class="right"><div class="act"><button class="btn ghost sm">Riprova</button><span class="iconlink" title="Scarica fattura"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div></td>
+            </tr>
+            <tr>
+              <td><div class="rata-n">03 · Marzo</div></td>
+              <td class="method">05/03/2026</td><td class="method">SDD ••4211</td>
+              <td class="right amt tnum">€ 349,00</td>
+              <td><span class="st info"><span class="d"></span>In addebito</span></td>
+              <td class="right"><div class="act"><span style="color:var(--text-3);font-size:12.5px">—</span></div></td>
+            </tr>
+            <tr><td><div class="rata-n">04 · Aprile</div></td><td class="method">05/04/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">05 · Maggio</div></td><td class="method">05/05/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">06 · Giugno</div></td><td class="method">05/06/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">07 · Luglio</div></td><td class="method">05/07/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">08 · Agosto</div></td><td class="method">05/08/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">09 · Settembre</div></td><td class="method">05/09/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">10 · Ottobre</div></td><td class="method">05/10/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">11 · Novembre</div></td><td class="method">05/11/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+            <tr><td><div class="rata-n">12 · Dicembre</div></td><td class="method">05/12/2026</td><td class="method">SDD ••4211</td><td class="right amt tnum">€ 349,00</td><td><span class="st prog"><span class="d"></span>Programmata</span></td><td class="right"><span style="color:var(--text-3)">—</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

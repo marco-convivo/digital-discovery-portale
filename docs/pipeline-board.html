@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Discovery · Vendite — Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fustat:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#222222; --on-ink:#ffffff;
+  --text:#1e1e22; --text-2:#55555e; --text-3:#8a8a93;
+  --bg:#e9ece6; --card:#ffffff; --card-2:#f4f6f2; --line:#e1e4dd;
+  --violet:#a28ef9; --violet-soft:#ece8fe; --on-violet:#2c1d63;
+  --mint:#a4f5a6; --mint-soft:#dcf7dd; --on-mint:#14532d;
+  --paid-bg:#d3f3d4; --paid-tx:#14532d; --paid-dot:#22c55e;
+  --info-bg:#ece8fe; --info-tx:#4326a6; --info-dot:#a28ef9;
+  --wait-bg:#fbebc9; --wait-tx:#7c4a03; --wait-dot:#eab308;
+  --fail-bg:#fbe0de; --fail-tx:#8f1d1a; --fail-dot:#ef4444;
+  --draft-bg:#e8e8ec; --draft-tx:#55555e; --draft-dot:#a0a0a8;
+  --r-card:24px; --r-md:16px; --r-sm:12px; --r-pill:999px;
+  --shadow:0 2px 6px rgba(30,30,34,.04), 0 10px 28px -14px rgba(30,30,34,.10);
+  --f:'Fustat',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.tnum{font-variant-numeric:tabular-nums}
+.app{display:flex;min-height:100vh}
+
+/* sidebar (interno) */
+.side{width:250px;flex:none;padding:22px 16px;display:flex;flex-direction:column;gap:26px}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px}
+.brand .logo{width:38px;height:38px;border-radius:11px;background:var(--ink);color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px}
+.brand .bt{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand .bt small{display:block;font-weight:500;font-size:11px;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav a{display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:14px;color:var(--text-2);font-weight:600;font-size:14.5px;text-decoration:none;transition:background .15s,color .15s}
+.nav a svg{width:19px;height:19px;flex:none}
+.nav a:hover{background:#ffffff90;color:var(--text)}
+.nav a.on{background:var(--ink);color:var(--on-ink)}
+.nav .sep{height:1px;background:var(--line);margin:12px 6px}
+.side .foot{margin-top:auto;display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:14px}
+.side .foot .av{width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.side .foot .nm{font-size:13.5px;font-weight:600;line-height:1.2}
+.side .foot .nm small{display:block;font-weight:500;color:var(--text-3);font-size:11.5px}
+
+/* main */
+.main{flex:1;min-width:0;padding:22px clamp(16px,3vw,28px) 20px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.hello h1{font-size:clamp(22px,3.4vw,28px);font-weight:700;letter-spacing:-.02em}
+.hello p{color:var(--text-2);font-size:14.5px;margin-top:3px}
+.chip{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:7px 14px 7px 8px}
+.chip .av{width:30px;height:30px;border-radius:9px;background:var(--violet);color:var(--on-violet);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.chip .nm{font-size:13px;font-weight:700;line-height:1.15}
+.chip .nm small{display:block;font-weight:500;color:var(--text-3);font-size:11px}
+
+/* toolbar */
+.toolbar{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:10px 14px;min-width:230px;color:var(--text-3)}
+.search input{border:none;background:transparent;font-family:var(--f);font-size:14px;color:var(--text);outline:none;width:100%}
+.owners{display:flex;gap:7px}
+.own{padding:9px 14px;border-radius:var(--r-pill);background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer}
+.own.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.btn{font-family:var(--f);font-weight:700;font-size:13.5px;border:none;border-radius:var(--r-pill);padding:11px 18px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;line-height:1}
+.btn.dark{background:var(--ink);color:var(--on-ink)}
+.spacer{flex:1}
+
+/* board */
+.board{display:flex;gap:16px;overflow-x:auto;padding-bottom:10px;flex:1;align-items:flex-start}
+.col{flex:0 0 288px;display:flex;flex-direction:column;gap:12px}
+.col-head{display:flex;align-items:center;justify-content:space-between;padding:2px 6px}
+.col-head .cn{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px}
+.col-head .cn .cnt{background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);font-size:12px;padding:1px 9px;color:var(--text-2);font-weight:700}
+.col-head .sum{font-size:12px;font-weight:700;color:var(--text-3)}
+.col-dot{width:9px;height:9px;border-radius:50%}
+.deals{display:flex;flex-direction:column;gap:10px}
+
+.deal{background:var(--card);border-radius:18px;padding:15px 16px;box-shadow:var(--shadow);cursor:pointer;border:1px solid transparent;transition:border-color .15s,transform .1s}
+.deal:hover{border-color:var(--line);transform:translateY(-1px)}
+.deal .dn{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
+.deal .dsvc{font-size:12.5px;color:var(--text-2);font-weight:500;margin-top:3px}
+.deal .dmid{display:flex;align-items:center;justify-content:space-between;margin-top:13px}
+.deal .val{font-weight:800;font-size:15px}
+.deal .val small{font-weight:600;font-size:11px;color:var(--text-3)}
+.deal .own-av{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
+.deal .dfoot{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.deal .age{font-size:11.5px;color:var(--text-3);font-weight:600}
+
+.st{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 10px 5px 8px;border-radius:var(--r-pill);white-space:nowrap}
+.st .d{width:6px;height:6px;border-radius:50%}
+.st.paid{background:var(--paid-bg);color:var(--paid-tx)} .st.paid .d{background:var(--paid-dot)}
+.st.info{background:var(--info-bg);color:var(--info-tx)} .st.info .d{background:var(--info-dot)}
+.st.wait{background:var(--wait-bg);color:var(--wait-tx)} .st.wait .d{background:var(--wait-dot)}
+.st.draft{background:var(--draft-bg);color:var(--draft-tx)} .st.draft .d{background:var(--draft-dot)}
+
+.add{display:flex;align-items:center;gap:8px;justify-content:center;padding:11px;border-radius:16px;border:1.5px dashed var(--line);color:var(--text-3);font-weight:600;font-size:13px;cursor:pointer;background:transparent}
+.add:hover{color:var(--text-2);border-color:var(--text-3)}
+
+.mc{background:#2563eb}.gl{background:#e0813a}.sp{background:#0f9d78}
+
+@media(max-width:860px){ .side{display:none} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand"><div class="logo">D</div><div class="bt">Digital Discovery<small>Vendite</small></div></div>
+    <nav class="nav">
+      <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="18" rx="1.5"/><rect x="10" y="3" width="6" height="12" rx="1.5"/><rect x="17" y="3" width="4" height="8" rx="1.5"/></svg>Pipeline</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Clienti</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>Preventivi</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>Contratti</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pagamenti</a>
+      <div class="sep"></div>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team</a>
+    </nav>
+    <div class="foot"><div class="av">MC</div><div class="nm">Marco Convivo<small>Admin</small></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="hello"><h1>Pipeline</h1><p>Le trattative in corso, per fase. Trascina una card per farla avanzare.</p></div>
+      <div class="chip"><div class="av">MC</div><div class="nm">Marco Convivo<small>Admin</small></div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input placeholder="Cerca cliente…"></div>
+      <div class="owners">
+        <span class="own on">Tutti</span>
+        <span class="own">Le mie</span>
+        <span class="own">Giulia</span>
+        <span class="own">Sergio</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn dark"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Nuovo lead</button>
+    </div>
+
+    <div class="board">
+
+      <!-- LEAD -->
+      <div class="col">
+        <div class="col-head">
+          <div class="cn"><span class="col-dot" style="background:var(--draft-dot)"></span>Lead<span class="cnt">3</span></div>
+          <div class="sum tnum">€ 839/m</div>
+        </div>
+        <div class="deals">
+          <div class="deal">
+            <div class="dn">Bar Centrale</div><div class="dsvc">SEO local</div>
+            <div class="dmid"><span class="val tnum">€ 149<small>/mese</small></span><span class="own-av gl">GL</span></div>
+            <div class="dfoot"><span class="age">Nuovo · 2 giorni fa</span></div>
+          </div>
+          <div class="deal">
+            <div class="dn">Palestra FitZone</div><div class="dsvc">Social + Ads</div>
+            <div class="dmid"><span class="val tnum">€ 400<small>/mese</small></span><span class="own-av mc">MC</span></div>
+            <div class="dfoot"><span class="age">Da ricontattare</span></div>
+          </div>
+          <div class="deal">
+            <div class="dn">Studio Bianchi</div><div class="dsvc">Sito + SEO</div>
+            <div class="dmid"><span class="val tnum">€ 290<small>/mese</small></span><span class="own-av sp">SP</span></div>
+            <div class="dfoot"><span class="age">Nuovo · oggi</span></div>
+          </div>
+          <div class="add"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Aggiungi lead</div>
+        </div>
+      </div>
+
+      <!-- PREVENTIVO -->
+      <div class="col">
+        <div class="col-head">
+          <div class="cn"><span class="col-dot" style="background:var(--wait-dot)"></span>Preventivo<span class="cnt">2</span></div>
+          <div class="sum tnum">€ 439/m</div>
+        </div>
+        <div class="deals">
+          <div class="deal">
+            <div class="dn">Autofficina Verdi</div><div class="dsvc">SEO + Social</div>
+            <div class="dmid"><span class="val tnum">€ 349<small>/mese</small></span><span class="own-av mc">MC</span></div>
+            <div class="dfoot"><span class="st info"><span class="d"></span>Preventivo visto</span></div>
+          </div>
+          <div class="deal">
+            <div class="dn">Ristorante Da Luigi</div><div class="dsvc">Menu digitale</div>
+            <div class="dmid"><span class="val tnum">€ 90<small>/mese</small></span><span class="own-av gl">GL</span></div>
+            <div class="dfoot"><span class="st draft"><span class="d"></span>Inviato · 3 giorni fa</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRATTO -->
+      <div class="col">
+        <div class="col-head">
+          <div class="cn"><span class="col-dot" style="background:var(--info-dot)"></span>Contratto<span class="cnt">2</span></div>
+          <div class="sum tnum">€ 770/m</div>
+        </div>
+        <div class="deals">
+          <div class="deal">
+            <div class="dn">Immobiliare Sole</div><div class="dsvc">Social</div>
+            <div class="dmid"><span class="val tnum">€ 250<small>/mese</small></span><span class="own-av sp">SP</span></div>
+            <div class="dfoot"><span class="st wait"><span class="d"></span>Da firmare</span></div>
+          </div>
+          <div class="deal">
+            <div class="dn">Clinica Dentale San Marco</div><div class="dsvc">SEO + Ads</div>
+            <div class="dmid"><span class="val tnum">€ 520<small>/mese</small></span><span class="own-av mc">MC</span></div>
+            <div class="dfoot"><span class="st paid"><span class="d"></span>Firmato</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGAMENTO -->
+      <div class="col">
+        <div class="col-head">
+          <div class="cn"><span class="col-dot" style="background:var(--info-dot)"></span>Pagamento<span class="cnt">1</span></div>
+          <div class="sum tnum">€ 180/m</div>
+        </div>
+        <div class="deals">
+          <div class="deal">
+            <div class="dn">Boutique Aurora</div><div class="dsvc">Social</div>
+            <div class="dmid"><span class="val tnum">€ 180<small>/mese</small></span><span class="own-av gl">GL</span></div>
+            <div class="dfoot"><span class="st info"><span class="d"></span>Mandato SDD in attesa</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTIVO -->
+      <div class="col">
+        <div class="col-head">
+          <div class="cn"><span class="col-dot" style="background:var(--paid-dot)"></span>Attivo<span class="cnt">2</span></div>
+          <div class="sum tnum">€ 949/m</div>
+        </div>
+        <div class="deals">
+          <div class="deal">
+            <div class="dn">Rossi Impianti S.r.l.</div><div class="dsvc">SEO + Social</div>
+            <div class="dmid"><span class="val tnum">€ 349<small>/mese</small></span><span class="own-av mc">MC</span></div>
+            <div class="dfoot"><span class="st paid"><span class="d"></span>Cliente attivo</span></div>
+          </div>
+          <div class="deal">
+            <div class="dn">Hotel Belvedere</div><div class="dsvc">Full digital</div>
+            <div class="dmid"><span class="val tnum">€ 600<small>/mese</small></span><span class="own-av sp">SP</span></div>
+            <div class="dfoot"><span class="st paid"><span class="d"></span>Cliente attivo</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
