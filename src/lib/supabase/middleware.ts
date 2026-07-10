@@ -6,6 +6,7 @@ import type { Database } from "@/lib/database.types";
 // I webhook (Stripe/DocuSeal) arrivano senza sessione: devono restare pubblici.
 const PUBLIC_PATHS = [
   "/login",
+  "/accedi",
   "/auth",
   "/api/webhooks",
   "/paga",
@@ -52,7 +53,8 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    // il portale cliente ha un login proprio (magic link)
+    url.pathname = pathname.startsWith("/portale") ? "/accedi" : "/login";
     return NextResponse.redirect(url);
   }
 
