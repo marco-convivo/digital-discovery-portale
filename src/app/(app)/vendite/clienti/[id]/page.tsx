@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
+import { PianoPagamenti, type RataRow } from "@/components/internal/piano-pagamenti";
 import { STATO_META } from "@/lib/stati";
 import { euro, dataIt } from "@/lib/format";
 import type { Client, ClientStato } from "@/lib/types";
@@ -50,6 +51,13 @@ export default async function ClientePage({
     .eq("client_id", id)
     .order("created_at", { ascending: false });
   const quotes = (quotesData ?? []) as unknown as QuoteRow[];
+
+  const { data: payData } = await supabase
+    .from("payments")
+    .select("numero_rata, importo, scadenza, stato")
+    .eq("client_id", id)
+    .order("numero_rata", { ascending: true });
+  const rate = (payData ?? []) as unknown as RataRow[];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -129,6 +137,13 @@ export default async function ClientePage({
             ))}
           </ul>
         )}
+      </Card>
+
+      <Card className="mt-5">
+        <CardHeader>
+          <CardTitle>Piano pagamenti</CardTitle>
+        </CardHeader>
+        <PianoPagamenti rate={rate} />
       </Card>
     </div>
   );

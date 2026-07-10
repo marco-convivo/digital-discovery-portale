@@ -1,5 +1,19 @@
 import type { Tone } from "@/components/ui/status-pill";
 import type { ClientStato } from "@/lib/types";
+import type { Database } from "@/lib/database.types";
+
+type PaymentStato = Database["public"]["Enums"]["payment_stato"];
+
+// Stato delle rate (piano pagamenti) → linguaggio di stato.
+export const PAYMENT_STATO_META: Record<
+  PaymentStato,
+  { label: string; tone: Tone }
+> = {
+  scheduled: { label: "Programmata", tone: "draft" },
+  pending: { label: "In corso", tone: "wait" },
+  paid: { label: "Pagata", tone: "paid" },
+  failed: { label: "Fallita", tone: "fail" },
+};
 
 // Mappatura stato-di-dominio → linguaggio di stato dell'interfaccia.
 // Vive qui (non nel componente) così StatusPill resta condiviso CRM/portale.
