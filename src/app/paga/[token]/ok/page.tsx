@@ -1,0 +1,32 @@
+import { StatusPill } from "@/components/ui/status-pill";
+
+// Ritorno da Stripe dopo confirmSetup. Lo stato reale (mandato/incasso) lo
+// conferma il webhook: qui diamo solo il feedback all'utente.
+export default async function PagaOkPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_status?: string }>;
+}) {
+  const { redirect_status } = await searchParams;
+  const ok = redirect_status !== "failed";
+
+  return (
+    <main className="mx-auto grid min-h-dvh max-w-md place-items-center px-6">
+      <div className="w-full rounded-card border border-line/60 bg-card p-8 text-center shadow-card">
+        <div className="mb-4 flex justify-center">
+          <StatusPill tone={ok ? "wait" : "fail"}>
+            {ok ? "In attivazione" : "Non riuscito"}
+          </StatusPill>
+        </div>
+        <h1 className="text-lg font-extrabold text-text">
+          {ok ? "Grazie, ci siamo quasi" : "Qualcosa è andato storto"}
+        </h1>
+        <p className="mt-2 text-sm text-text-2">
+          {ok
+            ? "Stiamo attivando il pagamento. Per l'addebito SEPA la conferma della banca può richiedere qualche giorno: ti avviseremo appena il piano è attivo."
+            : "Il metodo di pagamento non è stato confermato. Riprova dal link che ti abbiamo inviato."}
+        </p>
+      </div>
+    </main>
+  );
+}
