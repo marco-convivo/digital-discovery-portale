@@ -33,9 +33,11 @@ export interface PrefillField {
   default_value: string;
 }
 
-/** Crea una submission dal template per un solo firmatario (Cliente), embedded. */
+/** Crea una submission dal template per un solo firmatario. Il `role` deve
+ *  corrispondere a quello definito nel template (vedi getTemplateFields). */
 export async function createSubmission(input: {
   templateId: number;
+  role: string;
   name: string;
   email: string;
   fields: PrefillField[];
@@ -44,10 +46,10 @@ export async function createSubmission(input: {
     method: "POST",
     body: JSON.stringify({
       template_id: input.templateId,
-      send_email: false, // firma embedded, niente email
+      send_email: false, // niente email: firma nel nostro canvas, completamento via API
       submitters: [
         {
-          role: "Cliente",
+          role: input.role,
           name: input.name,
           email: input.email,
           fields: input.fields,
@@ -74,14 +76,16 @@ export async function getSubmission(id: number): Promise<DsSubmission> {
  *  campi sconosciuti) e nomi dei campi firma (da valorizzare al completamento). */
 export async function getTemplateFields(
   id: number,
-): Promise<{ allowed: Set<string>; signatureNames: string[] }> {
-  const t = await ds<{ fields: { name: string; type: string }[] }>(
-    `/templates/${id}`,
-  );
+): Promise<{ allowed: Set<string>; signatureNames: string[]; role: string }> {
+  const t = await ds<{
+    fields: { name: string; type: string }[];
+    submitters?: { name: string }[];
+  }>(`/templates/${id}`);
   const fields = t.fields ?? [];
   return {
     allowed: new Set(fields.map((f) => f.name)),
     signatureNames: fields.filter((f) => f.type === "signature").map((f) => f.name),
+    role: t.submitters?.[0]?.name ?? "Cliente",
   };
 }
 

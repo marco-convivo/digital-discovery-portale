@@ -194,13 +194,14 @@ export async function signContract(
   };
 
   const templateId = Number(process.env.DOCUSEAL_TEMPLATE_ID);
-  const { allowed, signatureNames } = await getTemplateFields(templateId);
+  const { allowed, signatureNames, role } = await getTemplateFields(templateId);
   const fields: PrefillField[] = Object.entries(candidates)
     .filter(([name, value]) => allowed.has(name) && value !== "")
     .map(([name, default_value]) => ({ name, default_value }));
 
   const submitter = await createSubmission({
     templateId,
+    role,
     name: dati.ragioneSociale || q.client.ragione_sociale,
     email: dati.email || q.client.email || "cliente@example.com",
     fields,
