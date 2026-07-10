@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 
 // Percorsi accessibili senza login (staff). Il portale cliente arriverà in Fase 3.
-const PUBLIC_PATHS = ["/login", "/auth"];
+// I webhook (Stripe/DocuSeal) arrivano senza sessione: devono restare pubblici.
+const PUBLIC_PATHS = ["/login", "/auth", "/api/webhooks"];
 
 /**
  * Rinfresca la sessione Supabase a ogni richiesta e protegge le rotte interne.
