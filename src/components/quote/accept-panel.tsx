@@ -22,9 +22,14 @@ export function AcceptPanel({
       <div className="rounded-md bg-mint-soft p-4 text-center">
         <p className="font-bold text-on-mint">Preventivo accettato ✓</p>
         <p className="mt-1 text-sm text-text-2">
-          Grazie! A breve ricevi il contratto da firmare e il link per impostare
-          il pagamento.
+          Ultimo passaggio: firma il contratto online, poi imposti il pagamento.
         </p>
+        <a
+          href={`/firma/${token}`}
+          className="mt-4 inline-flex rounded-pill bg-ink px-5 py-2.5 text-[13.5px] font-bold text-on-ink hover:bg-ink/90"
+        >
+          Firma il contratto →
+        </a>
       </div>
     );
   }
