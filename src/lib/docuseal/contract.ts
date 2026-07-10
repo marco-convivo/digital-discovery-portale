@@ -6,6 +6,7 @@ import {
   getTemplateFieldNames,
   type PrefillField,
 } from "@/lib/docuseal/server";
+import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
 
 // Contesto firma pubblico (anon): admin client scoping sul token del preventivo.
 
@@ -17,6 +18,35 @@ function num(n: number | null | undefined): string {
   return new Intl.NumberFormat("it-IT", { minimumFractionDigits: 2 }).format(
     Number(n ?? 0),
   );
+}
+
+function oggiIt(): string {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+function oggiIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Da ordine (catalogo) → valori dei campi checkbox/testo servizi nel contratto.
+function serviceFields(ordine: OrdineSelezione | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!ordine) return out;
+  for (const svc of CATALOG) {
+    const sel = ordine[svc.key];
+    if (!sel?.selected) continue;
+    out[svc.docusealField] = "true"; // checkbox servizio
+    if (svc.option?.choices) {
+      for (const c of svc.option.choices) {
+        const on =
+          sel.channels?.includes(c.value) || sel.tipo === c.value;
+        if (on) out[c.docusealField] = "true";
+      }
+    }
+    if (sel.durata) out[`${svc.key}_durata`] = String(sel.durata);
+    if (sel.quantita) out[`${svc.key}_qta`] = String(sel.quantita);
+  }
+  return out;
 }
 
 /**
@@ -32,7 +62,7 @@ export async function ensureContractForToken(
   const { data: quote } = await db
     .from("quotes")
     .select(
-      "id, client_id, importo_totale, rate_num, rata_mensile, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato, indirizzo, p_iva, pec)",
+      "id, client_id, numero, importo_totale, rate_num, rata_mensile, ordine, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -42,9 +72,6 @@ export async function ensureContractForToken(
     ragione_sociale: string;
     email: string | null;
     stato: string;
-    indirizzo: string | null;
-    p_iva: string | null;
-    pec: string | null;
   };
 
   // contratto già esistente per questo preventivo?
@@ -69,15 +96,18 @@ export async function ensureContractForToken(
   // Prefill: tutti i dati che conosciamo. Filtriamo sui campi realmente
   // presenti nel template (DocuSeal dà 422 sui campi sconosciuti), così lo
   // stesso codice regge sia il template di test sia quello reale.
+  // Prefill lato NOSTRO (dal preventivo). I "Dati del Cliente" li compila il
+  // cliente in fase di firma, quindi NON li prefilliamo.
   const templateId = Number(process.env.DOCUSEAL_TEMPLATE_ID);
   const candidates: Record<string, string> = {
-    ragione_sociale: client.ragione_sociale,
-    indirizzo: client.indirizzo ?? "",
-    partita_iva: client.p_iva ?? "",
-    pec: client.pec ?? "",
+    numero_ordine: quote.numero ?? "",
     importo: num(quote.importo_totale),
     importo_rata: num(quote.rata_mensile),
     rate: String(quote.rate_num ?? ""),
+    scadenza_prima_rata: oggiIt(),
+    luogo: "L'Aquila",
+    data: oggiIso(),
+    ...serviceFields(quote.ordine as OrdineSelezione | null),
   };
   const allowed = await getTemplateFieldNames(templateId);
   const fields: PrefillField[] = Object.entries(candidates)

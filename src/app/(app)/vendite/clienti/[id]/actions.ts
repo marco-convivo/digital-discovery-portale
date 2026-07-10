@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
 
 export interface CreateQuoteInput {
   clientId: string;
@@ -10,12 +11,28 @@ export interface CreateQuoteInput {
   rateNum?: number | null;
   importoTotale?: number | null;
   validoFino?: string | null;
-  items: { descrizione: string; prezzo: number }[];
+  ordine: OrdineSelezione;
 }
 
 export type CreateQuoteResult =
   | { ok: true; token: string }
   | { ok: false; error: string };
+
+// Righe leggibili (per la pagina pubblica) derivate dalla selezione del catalogo.
+function itemsFromOrdine(ordine: OrdineSelezione): string[] {
+  const out: string[] = [];
+  for (const svc of CATALOG) {
+    const sel = ordine[svc.key];
+    if (!sel?.selected) continue;
+    const extra: string[] = [];
+    if (sel.channels?.length) extra.push(sel.channels.join(", "));
+    if (sel.tipo) extra.push(sel.tipo === "one_page" ? "One Page" : "Completo");
+    if (sel.durata) extra.push(`${sel.durata} mesi`);
+    if (sel.quantita) extra.push(`n. ${sel.quantita}`);
+    out.push(extra.length ? `${svc.label} — ${extra.join(" · ")}` : svc.label);
+  }
+  return out;
+}
 
 export async function createQuote(
   input: CreateQuoteInput,
@@ -26,16 +43,17 @@ export async function createQuote(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sessione scaduta." };
 
+  const descrizioni = itemsFromOrdine(input.ordine);
+  if (descrizioni.length === 0) {
+    return { ok: false, error: "Seleziona almeno un servizio." };
+  }
+
   const ricorrente = input.tipo === "ricorrente";
   const importoTotale = ricorrente
     ? Number(input.rataMensile ?? 0) * Number(input.rateNum ?? 0)
     : Number(input.importoTotale ?? 0);
+  if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
-  if (importoTotale <= 0) {
-    return { ok: false, error: "Importo non valido." };
-  }
-
-  // numero progressivo PREV-<anno>-<seq>
   const { count } = await supabase
     .from("quotes")
     .select("*", { count: "exact", head: true });
@@ -52,6 +70,7 @@ export async function createQuote(
       rate_num: ricorrente ? input.rateNum : null,
       valido_fino: input.validoFino || null,
       stato: "inviato",
+      ordine: input.ordine,
     })
     .select("id, public_token")
     .single();
@@ -60,19 +79,15 @@ export async function createQuote(
     return { ok: false, error: error?.message ?? "Errore creazione preventivo." };
   }
 
-  const items = input.items
-    .filter((it) => it.descrizione.trim() !== "")
-    .map((it) => ({
+  await supabase.from("quote_items").insert(
+    descrizioni.map((d) => ({
       quote_id: quote.id,
-      descrizione: it.descrizione.trim(),
+      descrizione: d,
       quantita: 1,
-      prezzo_unitario: Number(it.prezzo) || 0,
-    }));
-  if (items.length > 0) {
-    await supabase.from("quote_items").insert(items);
-  }
+      prezzo_unitario: 0,
+    })),
+  );
 
-  // Avanza la pratica: lead/prospect → preventivo_inviato.
   await supabase
     .from("clients")
     .update({ stato: "preventivo_inviato" })

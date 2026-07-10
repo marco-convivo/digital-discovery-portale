@@ -383,6 +383,7 @@ export type Database = {
           id: string
           importo_totale: number | null
           numero: string | null
+          ordine: Json | null
           public_token: string
           rata_mensile: number | null
           rate_num: number | null
@@ -398,6 +399,7 @@ export type Database = {
           id?: string
           importo_totale?: number | null
           numero?: string | null
+          ordine?: Json | null
           public_token?: string
           rata_mensile?: number | null
           rate_num?: number | null
@@ -413,6 +415,7 @@ export type Database = {
           id?: string
           importo_totale?: number | null
           numero?: string | null
+          ordine?: Json | null
           public_token?: string
           rata_mensile?: number | null
           rate_num?: number | null
