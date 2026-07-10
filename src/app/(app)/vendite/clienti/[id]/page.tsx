@@ -18,6 +18,12 @@ const QUOTE_TONE: Record<string, Tone> = {
   scaduto: "fail",
 };
 
+const CONTRACT_TONE: Record<string, Tone> = {
+  inviato: "info",
+  firmato: "paid",
+  annullato: "fail",
+};
+
 interface QuoteRow {
   id: string;
   numero: string | null;
@@ -25,6 +31,14 @@ interface QuoteRow {
   stato: string;
   importo_totale: number | null;
   public_token: string;
+  created_at: string;
+}
+
+interface ContractRow {
+  id: string;
+  stato: string;
+  signed_at: string | null;
+  signed_pdf_url: string | null;
   created_at: string;
 }
 
@@ -58,6 +72,13 @@ export default async function ClientePage({
     .eq("client_id", id)
     .order("numero_rata", { ascending: true });
   const rate = (payData ?? []) as unknown as RataRow[];
+
+  const { data: contrData } = await supabase
+    .from("contracts")
+    .select("id, stato, signed_at, signed_pdf_url, created_at")
+    .eq("client_id", id)
+    .order("created_at", { ascending: false });
+  const contratti = (contrData ?? []) as unknown as ContractRow[];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -144,6 +165,45 @@ export default async function ClientePage({
           <CardTitle>Piano pagamenti</CardTitle>
         </CardHeader>
         <PianoPagamenti rate={rate} />
+      </Card>
+
+      <Card className="mt-5">
+        <CardHeader>
+          <CardTitle>Contratti</CardTitle>
+        </CardHeader>
+        {contratti.length === 0 ? (
+          <p className="text-sm text-text-3">Nessun contratto ancora.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {contratti.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div>
+                  <div className="font-semibold text-text">
+                    Contratto {c.signed_at ? `· firmato il ${dataIt(c.signed_at)}` : ""}
+                  </div>
+                  <div className="text-[12.5px] text-text-3">
+                    Creato {dataIt(c.created_at)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusPill tone={CONTRACT_TONE[c.stato] ?? "draft"}>
+                    {c.stato}
+                  </StatusPill>
+                  {c.signed_pdf_url && (
+                    <a
+                      href={c.signed_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[13px] font-semibold text-violet hover:underline"
+                    >
+                      PDF firmato
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   );
