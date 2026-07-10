@@ -4,7 +4,7 @@ import type { Database } from "@/lib/database.types";
 
 // Percorsi accessibili senza login (staff). Il portale cliente arriverà in Fase 3.
 // I webhook (Stripe/DocuSeal) arrivano senza sessione: devono restare pubblici.
-const PUBLIC_PATHS = ["/login", "/auth", "/api/webhooks", "/paga"];
+const PUBLIC_PATHS = ["/login", "/auth", "/api/webhooks", "/paga", "/preventivo"];
 
 /**
  * Rinfresca la sessione Supabase a ogni richiesta e protegge le rotte interne.
