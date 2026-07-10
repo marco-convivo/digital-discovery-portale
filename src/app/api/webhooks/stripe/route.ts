@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
+import {
+  handleSetupSucceeded,
+  handleInvoicePaid,
+  handleInvoiceFailed,
+  handleSubscriptionDeleted,
+} from "@/lib/stripe/activate";
 
 // Webhook Stripe. Verifica la firma sul body RAW (niente parsing prima).
 // Le transizioni di stato vere si aggancieranno qui (scheletro per ora).
@@ -20,19 +26,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `firma: ${msg}` }, { status: 400 });
   }
 
-  // TODO FASE 2 — instradare alle transizioni (con createAdminClient, service role):
-  //   setup_intent.succeeded / mandato attivo -> pagamento_attivo + crea subscription
-  //   invoice.paid            -> payments.stato = paid
-  //   invoice.payment_failed  -> payments.stato = failed + dunning
-  //   customer.subscription.deleted -> cliente cessato
-  switch (event.type) {
-    case "setup_intent.succeeded":
-    case "invoice.paid":
-    case "invoice.payment_failed":
-    case "customer.subscription.deleted":
-      break;
-    default:
-      break;
+  // Instrada l'evento alla transizione di stato (handler con service role).
+  try {
+    switch (event.type) {
+      case "setup_intent.succeeded":
+        await handleSetupSucceeded(event.data.object as Stripe.SetupIntent);
+        break;
+      case "invoice.paid":
+        await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        break;
+      case "invoice.payment_failed":
+        await handleInvoiceFailed(event.data.object as Stripe.Invoice);
+        break;
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+      default:
+        break;
+    }
+  } catch (err) {
+    // 500 -> Stripe riprova l'evento (i webhook devono essere idempotenti).
+    const msg = err instanceof Error ? err.message : "errore handler";
+    console.error(`[stripe webhook] ${event.type}:`, msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
