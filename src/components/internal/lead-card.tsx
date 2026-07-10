@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StatusPill } from "@/components/ui/status-pill";
 import { STATO_META } from "@/lib/stati";
 import type { ClientWithOwner } from "@/lib/types";
@@ -26,7 +27,10 @@ export function LeadCard({ client }: { client: ClientWithOwner }) {
   const sub = client.referente ?? client.email;
 
   return (
-    <article className="rounded-md border border-line bg-card p-3.5 shadow-card transition-shadow hover:shadow-md">
+    <Link
+      href={`/vendite/clienti/${client.id}`}
+      className="block rounded-md border border-line bg-card p-3.5 shadow-card transition-shadow hover:shadow-md"
+    >
       <div className="text-[14px] font-bold text-text">
         {client.ragione_sociale}
       </div>
@@ -45,6 +49,6 @@ export function LeadCard({ client }: { client: ClientWithOwner }) {
       <div className="mt-2.5 text-[11.5px] text-text-3">
         Aggiunto · {eta(client.created_at)}
       </div>
-    </article>
+    </Link>
   );
 }
