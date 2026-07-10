@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { DocusealForm } from "@docuseal/react";
-import { submitDati } from "@/app/firma/[token]/actions";
+import { firma } from "@/app/firma/[token]/actions";
 import type { DatiCliente } from "@/lib/docuseal/contract";
+import { SignaturePad } from "@/components/firma/signature-pad";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-type Props = {
-  token: string;
-  initialEmbedSrc?: string;
-  prefill?: Partial<DatiCliente>;
-};
 
 const EMPTY: DatiCliente = {
   ragioneSociale: "",
@@ -25,11 +19,17 @@ const EMPTY: DatiCliente = {
   email: "",
 };
 
-export function FirmaFlow({ token, initialEmbedSrc, prefill }: Props) {
-  const [embedSrc, setEmbedSrc] = useState<string | null>(
-    initialEmbedSrc ?? null,
-  );
+export function FirmaFlow({
+  token,
+  prefill,
+}: {
+  token: string;
+  prefill?: Partial<DatiCliente>;
+}) {
+  const [phase, setPhase] = useState<"form" | "sign">("form");
   const [dati, setDati] = useState<DatiCliente>({ ...EMPTY, ...prefill });
+  const [signature, setSignature] = useState<string | null>(null);
+  const [consenso, setConsenso] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -37,32 +37,64 @@ export function FirmaFlow({ token, initialEmbedSrc, prefill }: Props) {
     setDati((d) => ({ ...d, [k]: v }));
   }
 
-  if (embedSrc) {
-    return (
-      <div className="overflow-hidden rounded-card border border-line/60 bg-card shadow-card">
-        <DocusealForm
-          src={embedSrc}
-          withTitle={false}
-          withDownloadButton={false}
-          onComplete={() => {
-            window.location.href = `/firma/${token}/ok`;
-          }}
-        />
-      </div>
-    );
+  function toSign() {
+    if (!dati.ragioneSociale.trim())
+      return setError("La ragione sociale è obbligatoria.");
+    setError(null);
+    setPhase("sign");
   }
 
   function submit() {
-    if (!dati.ragioneSociale.trim()) {
-      setError("La ragione sociale è obbligatoria.");
-      return;
-    }
+    if (!signature) return setError("Apponi la firma per proseguire.");
+    if (!consenso) return setError("Spunta il consenso per firmare.");
     setError(null);
     start(async () => {
-      const res = await submitDati(token, dati);
-      if (res.ok) setEmbedSrc(res.embedSrc);
+      const res = await firma(token, dati, signature);
+      if (res.ok) window.location.href = `/firma/${token}/ok`;
       else setError(res.error);
     });
+  }
+
+  if (phase === "sign") {
+    return (
+      <div className="rounded-card border border-line/60 bg-card p-6 shadow-card">
+        <h2 className="text-[15px] font-bold text-text">Firma</h2>
+        <p className="mt-0.5 text-sm text-text-2">
+          Firma nel riquadro qui sotto per concludere.
+        </p>
+        <div className="mt-4">
+          <SignaturePad onChange={setSignature} />
+        </div>
+
+        <label className="mt-4 flex items-start gap-2.5 text-[13px] text-text-2">
+          <input
+            type="checkbox"
+            checked={consenso}
+            onChange={(e) => setConsenso(e.target.checked)}
+            className="mt-0.5 size-4 accent-ink"
+          />
+          <span>
+            Dichiaro di aver letto e di accettare il contratto e le condizioni,
+            incluse le clausole ai sensi degli artt. 1341 e 1342 c.c.
+          </span>
+        </label>
+
+        {error && (
+          <p className="mt-3 rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-5 flex justify-between gap-2.5">
+          <Button variant="ghost" onClick={() => setPhase("form")} disabled={pending}>
+            ← Indietro
+          </Button>
+          <Button onClick={submit} disabled={pending}>
+            {pending ? "Firma in corso…" : "Firma e concludi"}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -133,8 +165,8 @@ export function FirmaFlow({ token, initialEmbedSrc, prefill }: Props) {
           </p>
         )}
 
-        <Button onClick={submit} disabled={pending} className="mt-1 self-start">
-          {pending ? "Preparazione…" : "Prosegui alla firma →"}
+        <Button onClick={toSign} className="mt-1 self-start">
+          Prosegui alla firma →
         </Button>
       </div>
     </div>

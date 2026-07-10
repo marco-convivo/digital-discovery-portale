@@ -49,11 +49,7 @@ export default async function FirmaPage({
         </h1>
       )}
 
-      <FirmaFlow
-        token={token}
-        initialEmbedSrc={view.status === "firma" ? view.embedSrc : undefined}
-        prefill={view.status === "form" ? view.prefill : undefined}
-      />
+      <FirmaFlow token={token} prefill={view.prefill} />
     </main>
   );
 }

@@ -63,15 +63,37 @@ interface DsSubmission {
   status: string;
   submitters: DsSubmitter[];
   documents?: { name: string; url: string }[];
+  audit_log_url?: string | null;
 }
 
 export async function getSubmission(id: number): Promise<DsSubmission> {
   return ds<DsSubmission>(`/submissions/${id}`);
 }
 
-/** Nomi dei campi definiti nel template (per filtrare i prefill: DocuSeal dà
- *  422 sui campi sconosciuti). */
-export async function getTemplateFieldNames(id: number): Promise<Set<string>> {
-  const t = await ds<{ fields: { name: string }[] }>(`/templates/${id}`);
-  return new Set((t.fields ?? []).map((f) => f.name));
+/** Campi del template: nomi (per filtrare i prefill — DocuSeal dà 422 sui
+ *  campi sconosciuti) e nomi dei campi firma (da valorizzare al completamento). */
+export async function getTemplateFields(
+  id: number,
+): Promise<{ allowed: Set<string>; signatureNames: string[] }> {
+  const t = await ds<{ fields: { name: string; type: string }[] }>(
+    `/templates/${id}`,
+  );
+  const fields = t.fields ?? [];
+  return {
+    allowed: new Set(fields.map((f) => f.name)),
+    signatureNames: fields.filter((f) => f.type === "signature").map((f) => f.name),
+  };
+}
+
+/** Completa la firma via API (il cliente firma nel nostro canvas): imposta i
+ *  valori firma + metadata di audit e chiude il submitter. */
+export async function completeSubmitter(
+  submitterId: number,
+  values: Record<string, string>,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  await ds(`/submitters/${submitterId}`, {
+    method: "PUT",
+    body: JSON.stringify({ completed: true, values, metadata }),
+  });
 }

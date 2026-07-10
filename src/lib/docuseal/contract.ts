@@ -3,10 +3,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createSubmission,
   getSubmission,
-  getTemplateFieldNames,
+  getTemplateFields,
+  completeSubmitter,
   type PrefillField,
 } from "@/lib/docuseal/server";
 import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
+
+export interface FirmaMeta {
+  ip: string;
+  userAgent: string;
+  consensoAt: string;
+}
 
 // Flusso firma pubblico (anon): admin client scoping sul token del preventivo.
 // Il cliente compila i Dati del Cliente nel NOSTRO form; noi li passiamo a
@@ -26,7 +33,6 @@ export interface DatiCliente {
 
 export type ContractView =
   | { status: "firmato" }
-  | { status: "firma"; embedSrc: string }
   | { status: "form"; ragioneSociale: string; prefill: Partial<DatiCliente> }
   | null;
 
@@ -105,17 +111,12 @@ export async function getContractView(token: string): Promise<ContractView> {
 
   const { data: contract } = await db
     .from("contracts")
-    .select("id, docuseal_submission_id, stato")
+    .select("id, stato")
     .eq("quote_id", q.id)
     .maybeSingle();
 
-  if (contract) {
-    if (contract.stato === "firmato") return { status: "firmato" };
-    const sub = await getSubmission(Number(contract.docuseal_submission_id));
-    const submitter = sub.submitters[0];
-    if (submitter?.status === "completed") return { status: "firmato" };
-    return { status: "firma", embedSrc: submitter.embed_src };
-  }
+  // Firma sincrona: un contratto esiste solo se già firmato.
+  if (contract) return { status: "firmato" };
 
   return {
     status: "form",
@@ -132,34 +133,33 @@ export async function getContractView(token: string): Promise<ContractView> {
   };
 }
 
-export type SubmitResult =
-  | { ok: true; embedSrc: string }
-  | { ok: false; error: string };
+export type SignResult = { ok: true } | { ok: false; error: string };
 
-/** Il cliente ha compilato i Dati: salva l'anagrafica, crea la submission
- *  DocuSeal con TUTTO prefillato, avanza a contratto_inviato. Idempotente. */
-export async function submitDatiAndCreateContract(
+/**
+ * Firma sincrona (ibrida): il cliente ha compilato i Dati e firmato nel nostro
+ * canvas. Salva l'anagrafica, crea la submission DocuSeal con TUTTO prefillato,
+ * la completa via API con l'immagine firma + metadata di audit, salva il PDF
+ * firmato e porta la pratica a `pagamento_setup`. Idempotente.
+ */
+export async function signContract(
   token: string,
   dati: DatiCliente,
-): Promise<SubmitResult> {
+  signaturePng: string,
+  meta: FirmaMeta,
+): Promise<SignResult> {
   const q = await loadQuote(token);
   if (!q || !q.client) return { ok: false, error: "Preventivo non trovato." };
+  if (!signaturePng) return { ok: false, error: "Firma mancante." };
   const db = createAdminClient();
 
-  // idempotenza: se il contratto esiste già, torna il suo embed
   const { data: existing } = await db
     .from("contracts")
-    .select("docuseal_submission_id, stato")
+    .select("id")
     .eq("quote_id", q.id)
     .maybeSingle();
-  if (existing) {
-    if (existing.stato === "firmato")
-      return { ok: false, error: "Contratto già firmato." };
-    const sub = await getSubmission(Number(existing.docuseal_submission_id));
-    return { ok: true, embedSrc: sub.submitters[0].embed_src };
-  }
+  if (existing) return { ok: false, error: "Contratto già firmato." };
 
-  // aggiorna l'anagrafica coi dati confermati dal cliente
+  // anagrafica confermata dal cliente
   await db
     .from("clients")
     .update({
@@ -194,7 +194,7 @@ export async function submitDatiAndCreateContract(
   };
 
   const templateId = Number(process.env.DOCUSEAL_TEMPLATE_ID);
-  const allowed = await getTemplateFieldNames(templateId);
+  const { allowed, signatureNames } = await getTemplateFields(templateId);
   const fields: PrefillField[] = Object.entries(candidates)
     .filter(([name, value]) => allowed.has(name) && value !== "")
     .map(([name, default_value]) => ({ name, default_value }));
@@ -206,25 +206,42 @@ export async function submitDatiAndCreateContract(
     fields,
   });
 
+  // Applica la firma catturata a tutti i campi firma del template.
+  const signValues: Record<string, string> = {};
+  for (const name of signatureNames) signValues[name] = signaturePng;
+
+  await completeSubmitter(submitter.id, signValues, {
+    ip: meta.ip,
+    user_agent: meta.userAgent,
+    consenso_at: meta.consensoAt,
+    email: dati.email,
+  });
+
+  // PDF firmato + audit trail
+  const sub = await getSubmission(submitter.submission_id);
+  const signedPdfUrl = sub.documents?.[0]?.url ?? null;
+
   await db.from("contracts").insert({
     quote_id: q.id,
     client_id: q.client.id,
     docuseal_submission_id: String(submitter.submission_id),
-    stato: "inviato",
+    stato: "firmato",
+    signed_at: new Date().toISOString(),
+    signed_pdf_url: signedPdfUrl,
   });
 
-  if (
-    ["preventivo_accettato", "preventivo_visto", "preventivo_inviato"].includes(
-      q.client.stato,
-    )
-  ) {
-    await db
-      .from("clients")
-      .update({ stato: "contratto_inviato" })
-      .eq("id", q.client.id);
-  }
+  await db
+    .from("clients")
+    .update({ stato: "pagamento_setup" })
+    .eq("id", q.client.id)
+    .in("stato", [
+      "preventivo_inviato",
+      "preventivo_visto",
+      "preventivo_accettato",
+      "contratto_inviato",
+    ]);
 
-  return { ok: true, embedSrc: submitter.embed_src };
+  return { ok: true };
 }
 
 /** Webhook DocuSeal (form.completed): contratto firmato → salva PDF, avanza a
