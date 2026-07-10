@@ -68,3 +68,10 @@ interface DsSubmission {
 export async function getSubmission(id: number): Promise<DsSubmission> {
   return ds<DsSubmission>(`/submissions/${id}`);
 }
+
+/** Nomi dei campi definiti nel template (per filtrare i prefill: DocuSeal dà
+ *  422 sui campi sconosciuti). */
+export async function getTemplateFieldNames(id: number): Promise<Set<string>> {
+  const t = await ds<{ fields: { name: string }[] }>(`/templates/${id}`);
+  return new Set((t.fields ?? []).map((f) => f.name));
+}

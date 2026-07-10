@@ -1,6 +1,11 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createSubmission, getSubmission } from "@/lib/docuseal/server";
+import {
+  createSubmission,
+  getSubmission,
+  getTemplateFieldNames,
+  type PrefillField,
+} from "@/lib/docuseal/server";
 
 // Contesto firma pubblico (anon): admin client scoping sul token del preventivo.
 
@@ -27,7 +32,7 @@ export async function ensureContractForToken(
   const { data: quote } = await db
     .from("quotes")
     .select(
-      "id, client_id, importo_totale, rate_num, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato)",
+      "id, client_id, importo_totale, rate_num, rata_mensile, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato, indirizzo, p_iva, pec)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -37,6 +42,9 @@ export async function ensureContractForToken(
     ragione_sociale: string;
     email: string | null;
     stato: string;
+    indirizzo: string | null;
+    p_iva: string | null;
+    pec: string | null;
   };
 
   // contratto già esistente per questo preventivo?
@@ -58,16 +66,29 @@ export async function ensureContractForToken(
     };
   }
 
-  // crea la submission DocuSeal (campi prefillati)
+  // Prefill: tutti i dati che conosciamo. Filtriamo sui campi realmente
+  // presenti nel template (DocuSeal dà 422 sui campi sconosciuti), così lo
+  // stesso codice regge sia il template di test sia quello reale.
+  const templateId = Number(process.env.DOCUSEAL_TEMPLATE_ID);
+  const candidates: Record<string, string> = {
+    ragione_sociale: client.ragione_sociale,
+    indirizzo: client.indirizzo ?? "",
+    partita_iva: client.p_iva ?? "",
+    pec: client.pec ?? "",
+    importo: num(quote.importo_totale),
+    importo_rata: num(quote.rata_mensile),
+    rate: String(quote.rate_num ?? ""),
+  };
+  const allowed = await getTemplateFieldNames(templateId);
+  const fields: PrefillField[] = Object.entries(candidates)
+    .filter(([name, value]) => allowed.has(name) && value !== "")
+    .map(([name, default_value]) => ({ name, default_value }));
+
   const submitter = await createSubmission({
-    templateId: Number(process.env.DOCUSEAL_TEMPLATE_ID),
+    templateId,
     name: client.ragione_sociale,
     email: client.email ?? "cliente@example.com",
-    fields: [
-      { name: "ragione_sociale", default_value: client.ragione_sociale },
-      { name: "importo", default_value: num(quote.importo_totale) },
-      { name: "rate", default_value: String(quote.rate_num ?? "") },
-    ],
+    fields,
   });
 
   await db.from("contracts").insert({
