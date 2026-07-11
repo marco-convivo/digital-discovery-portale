@@ -6,7 +6,8 @@ import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
 import { PreventiviList, type PreventivoItem } from "@/components/internal/preventivi-list";
-import { PianoPagamenti, type RataRow } from "@/components/internal/piano-pagamenti";
+import { type RataRow } from "@/components/internal/piano-pagamenti";
+import { PianiPagamento } from "@/components/internal/piani-pagamento";
 import { STATO_META } from "@/lib/stati";
 import { dataIt } from "@/lib/format";
 import type { Client, ClientStato } from "@/lib/types";
@@ -82,11 +83,15 @@ export default async function ClientePage({
       map.set(k, arr);
       return map;
     }, new Map<string, RataRow[]>()),
-  ).map(([k, rate]) => ({
-    key: k,
-    contract: k === NONE ? null : contratti.find((c) => c.id === k) ?? null,
-    rate,
-  }));
+  ).map(([k, rate]) => {
+    const contract = k === NONE ? null : contratti.find((c) => c.id === k) ?? null;
+    const label = contract
+      ? contract.signed_at
+        ? `Contratto · firmato il ${dataIt(contract.signed_at)}`
+        : "Contratto"
+      : "Piano";
+    return { key: k, label, rate };
+  });
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -133,26 +138,7 @@ export default async function ClientePage({
             <CardHeader>
               <CardTitle>Piano pagamenti</CardTitle>
             </CardHeader>
-            {gruppiPagamenti.length === 0 ? (
-              <PianoPagamenti rate={[]} />
-            ) : (
-              <div className="flex flex-col gap-5">
-                {gruppiPagamenti.map((g) => (
-                  <div key={g.key}>
-                    {gruppiPagamenti.length > 1 && (
-                      <div className="mb-2 border-b border-line pb-1.5 text-[12.5px] font-semibold text-text-2">
-                        {g.contract
-                          ? g.contract.signed_at
-                            ? `Contratto · firmato il ${dataIt(g.contract.signed_at)}`
-                            : "Contratto"
-                          : "Piano"}
-                      </div>
-                    )}
-                    <PianoPagamenti rate={g.rate} />
-                  </div>
-                ))}
-              </div>
-            )}
+            <PianiPagamento groups={gruppiPagamenti} />
           </Card>
 
           <Card>
@@ -183,7 +169,7 @@ export default async function ClientePage({
                           rel="noopener noreferrer"
                           className="text-[13px] font-semibold text-violet hover:underline"
                         >
-                          PDF
+                          Apri contratto
                         </a>
                       )}
                     </div>

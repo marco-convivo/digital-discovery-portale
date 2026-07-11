@@ -57,7 +57,7 @@ export default async function PortaleContratti() {
                       rel="noopener noreferrer"
                       className="text-[13px] font-semibold text-violet hover:underline"
                     >
-                      PDF firmato
+                      Apri contratto
                     </a>
                   )}
                 </div>
