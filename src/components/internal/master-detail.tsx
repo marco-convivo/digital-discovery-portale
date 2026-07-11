@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MasterClientiList } from "@/components/internal/master-clienti-list";
 import { euro } from "@/lib/format";
 
 export interface DettaglioDoc {
   id: string;
-  titolo: string; // "PREV-2026-002 · 10 lug 2026" oppure "Firmato il 01/06/2026"
+  titolo: string;
   stato: { tone: Tone; label: string };
   servizi: { label: string; importo?: number | null }[];
   totale: number | null;
@@ -28,84 +29,25 @@ export function MasterDetail({
   detailLabel,
 }: {
   clienti: ClienteConDoc[];
-  detailLabel: string; // "preventivi" | "contratti"
+  detailLabel: string;
 }) {
   const [sel, setSel] = useState<string | null>(clienti[0]?.id ?? null);
-  const [q, setQ] = useState("");
-
-  const query = q.toLowerCase().trim();
-  const filtrati = useMemo(
-    () =>
-      query
-        ? clienti.filter((c) => c.ragione_sociale.toLowerCase().includes(query))
-        : clienti,
-    [query, clienti],
-  );
   const current = clienti.find((c) => c.id === sel) ?? null;
 
   return (
     <div className="grid items-start gap-5 lg:grid-cols-3">
-      {/* Master: lista clienti */}
-      <Card className="p-3 lg:col-span-1 lg:sticky lg:top-6">
-        <div className="relative mb-2">
-          <svg
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-3 top-1/2 size-[17px] -translate-y-1/2 text-text-3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Cerca cliente…"
-            className="w-full rounded-md border border-line bg-card py-2 pl-9 pr-3 text-[13.5px] text-text placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet"
-          />
-        </div>
-        {filtrati.length === 0 ? (
-          <p className="px-2 py-6 text-center text-[13px] text-text-3">
-            Nessun cliente.
-          </p>
-        ) : (
-          <ul className="flex max-h-[65vh] flex-col gap-0.5 overflow-y-auto">
-            {filtrati.map((c) => {
-              const active = c.id === sel;
-              return (
-                <li key={c.id}>
-                  <button
-                    onClick={() => setSel(c.id)}
-                    className={
-                      "flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-[13.5px] transition-colors " +
-                      (active
-                        ? "bg-ink text-on-ink"
-                        : "text-text-2 hover:bg-card-2 hover:text-text")
-                    }
-                  >
-                    <span className="truncate font-semibold">
-                      {c.ragione_sociale}
-                    </span>
-                    <span
-                      className={
-                        "flex-none rounded-pill px-1.5 text-[11px] font-bold " +
-                        (active ? "bg-on-ink/20" : "bg-card-2 text-text-3")
-                      }
-                    >
-                      {c.documenti.length}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
+      <div className="lg:col-span-1">
+        <MasterClientiList
+          items={clienti.map((c) => ({
+            id: c.id,
+            ragione_sociale: c.ragione_sociale,
+            count: c.documenti.length,
+          }))}
+          selected={sel}
+          onSelect={setSel}
+        />
+      </div>
 
-      {/* Detail: documenti del cliente selezionato */}
       <div className="lg:col-span-2">
         {!current ? (
           <Card>

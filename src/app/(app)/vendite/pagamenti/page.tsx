@@ -1,54 +1,82 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui/card";
-import { EntityList, type EntityRow } from "@/components/internal/entity-list";
-import { PAYMENT_STATO_META } from "@/lib/stati";
-import { euro, dataIt } from "@/lib/format";
+import {
+  MasterDetailPagamenti,
+  type ClientePagamenti,
+} from "@/components/internal/master-detail-pagamenti";
+import { type RataRow } from "@/components/internal/piano-pagamenti";
+import { dataIt } from "@/lib/format";
 import type { Database } from "@/lib/database.types";
 
 type PaymentStato = Database["public"]["Enums"]["payment_stato"];
 
 interface Row {
-  id: string;
   numero_rata: number | null;
   importo: number | null;
   scadenza: string | null;
   stato: PaymentStato;
+  contract_id: string | null;
   client: { id: string; ragione_sociale: string } | null;
 }
 
 export default async function PagamentiPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("payments")
-    .select(
-      "id, numero_rata, importo, scadenza, stato, client:clients!payments_client_id_fkey(id, ragione_sociale)",
-    )
-    .order("scadenza", { ascending: true });
+  const [{ data: payData }, { data: contrData }] = await Promise.all([
+    supabase
+      .from("payments")
+      .select(
+        "numero_rata, importo, scadenza, stato, contract_id, client:clients!payments_client_id_fkey(id, ragione_sociale)",
+      )
+      .order("numero_rata", { ascending: true }),
+    supabase.from("contracts").select("id, signed_at"),
+  ]);
 
-  const rows: EntityRow[] = ((data ?? []) as unknown as Row[]).map((p) => {
-    const meta = PAYMENT_STATO_META[p.stato];
-    return {
-      id: p.id,
-      title: p.client?.ragione_sociale ?? "—",
-      subtitle: `Rata ${p.numero_rata ?? "—"} · ${euro(p.importo)} · scad. ${dataIt(p.scadenza)}`,
-      href: p.client ? `/vendite/clienti/${p.client.id}` : undefined,
-      search: p.client?.ragione_sociale ?? "",
-      pill: { tone: meta.tone, label: meta.label },
-    };
-  });
+  const firmato = new Map(
+    ((contrData ?? []) as { id: string; signed_at: string | null }[]).map((c) => [
+      c.id,
+      c.signed_at,
+    ]),
+  );
+
+  const byClient = new Map<string, ClientePagamenti>();
+  for (const p of (payData ?? []) as unknown as Row[]) {
+    if (!p.client) continue;
+    let cliente = byClient.get(p.client.id);
+    if (!cliente) {
+      cliente = {
+        id: p.client.id,
+        ragione_sociale: p.client.ragione_sociale,
+        piani: [],
+      };
+      byClient.set(p.client.id, cliente);
+    }
+    const key = p.contract_id ?? "__none__";
+    let piano = cliente.piani.find((pl) => pl.key === key);
+    if (!piano) {
+      const signedAt = p.contract_id ? firmato.get(p.contract_id) : null;
+      piano = {
+        key,
+        label: signedAt ? `Contratto firmato il ${dataIt(signedAt)}` : "Piano",
+        rate: [],
+      };
+      cliente.piani.push(piano);
+    }
+    (piano.rate as RataRow[]).push({
+      numero_rata: p.numero_rata,
+      importo: p.importo,
+      scadenza: p.scadenza,
+      stato: p.stato,
+    });
+  }
+  const clienti = [...byClient.values()].sort((a, b) =>
+    a.ragione_sociale.localeCompare(b.ragione_sociale),
+  );
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
         Pagamenti
       </h1>
-      <Card>
-        <EntityList
-          rows={rows}
-          placeholder="Cerca per cliente…"
-          empty="Nessuna rata."
-        />
-      </Card>
+      <MasterDetailPagamenti clienti={clienti} />
     </div>
   );
 }
