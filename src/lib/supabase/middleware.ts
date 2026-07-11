@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   "/paga",
   "/preventivo",
   "/firma",
+  // vetrina pubblica del catalogo (condivisibile senza login)
+  "/catalogo",
 ];
 
 /**
