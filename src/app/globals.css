@@ -70,7 +70,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Cifre in tabular-nums: importi e rate sempre allineati */
+/* Cifre in tabular-nums: solo dove serve l'allineamento (tabelle rate) */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Accessibilità: rispetta la preferenza di movimento ridotto */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

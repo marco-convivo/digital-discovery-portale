@@ -43,7 +43,7 @@ export default async function PortaleHome() {
         {prossima ? (
           <>
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="tnum text-4xl font-extrabold">
+              <span className="text-4xl font-extrabold">
                 {euro(prossima.importo)}
               </span>
               <span className="text-sm text-on-ink/70">
@@ -100,7 +100,7 @@ function Summary({
         <CardHeader>
           <CardTitle>{title}</CardTitle>
         </CardHeader>
-        <div className="tnum text-2xl font-extrabold text-text">{value}</div>
+        <div className="text-2xl font-extrabold text-text">{value}</div>
         <div className="text-[12.5px] text-text-3">{sub}</div>
       </Card>
     </Link>

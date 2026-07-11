@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface EntityRow {
   id: string;
@@ -60,9 +61,14 @@ export function EntityList({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-md border border-dashed border-line px-3 py-10 text-center text-sm text-text-3">
-          {query ? "Nessun risultato." : empty}
-        </div>
+        query ? (
+          <EmptyState
+            title="Nessun risultato"
+            hint="Nessuna voce corrisponde alla ricerca."
+          />
+        ) : (
+          <EmptyState title={empty} />
+        )
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {filtered.map((r) => (

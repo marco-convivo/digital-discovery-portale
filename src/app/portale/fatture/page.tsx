@@ -35,7 +35,7 @@ export default async function PortaleFatture() {
                   <div className="text-[12.5px] text-text-3">{dataIt(f.data)}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="tnum font-bold text-text">{euro(f.importo)}</span>
+                  <span className="font-bold text-text">{euro(f.importo)}</span>
                   {f.pdf_url && (
                     <a
                       href={f.pdf_url}

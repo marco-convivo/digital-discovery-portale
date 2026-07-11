@@ -58,7 +58,7 @@ export default async function PreventivoPage({
                 <div>
                   <div className="font-semibold text-text">{it.descrizione}</div>
                 </div>
-                <div className="tnum shrink-0 text-right font-bold text-text">
+                <div className="shrink-0 text-right font-bold text-text">
                   {euro(it.prezzo_unitario)}
                   {ricorrente && (
                     <span className="text-[12px] font-medium text-text-3">
@@ -93,7 +93,7 @@ export default async function PreventivoPage({
             <span className="text-[13px] font-semibold text-text-2">
               Totale contratto
             </span>
-            <span className="tnum text-xl font-extrabold text-text">
+            <span className="text-xl font-extrabold text-text">
               {euro(q.importo_totale)}
             </span>
           </div>
@@ -127,7 +127,7 @@ function Field({
       <dd
         className={
           strong
-            ? "tnum text-[15px] font-bold text-text"
+            ? "text-[15px] font-bold text-text"
             : "text-[14px] font-semibold text-text"
         }
       >

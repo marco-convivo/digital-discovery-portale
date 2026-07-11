@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { EmptyState } from "@/components/ui/empty-state";
 import { euro } from "@/lib/format";
 
 export interface DocServizio {
@@ -69,13 +70,21 @@ export function DocumentiList({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-md border border-dashed border-line px-3 py-10 text-center text-sm text-text-3">
-          {query ? "Nessun risultato." : empty}
-        </div>
+        query ? (
+          <EmptyState
+            title="Nessun risultato"
+            hint="Nessuna voce corrisponde alla ricerca."
+          />
+        ) : (
+          <EmptyState title={empty} />
+        )
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map((r) => (
-            <article key={r.id} className="rounded-md border border-line p-4">
+            <article
+              key={r.id}
+              className="rounded-md border border-line p-4 transition-shadow hover:shadow-card"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   {r.clientHref ? (
@@ -116,7 +125,7 @@ export function DocumentiList({
                     >
                       <span className="text-text">{s.label}</span>
                       {s.importo != null && (
-                        <span className="tnum flex-none text-text-2">
+                        <span className="flex-none text-text-2">
                           {euro(s.importo)}
                         </span>
                       )}
@@ -131,11 +140,11 @@ export function DocumentiList({
                 </span>
                 <div className="text-right">
                   {r.rata != null && (
-                    <div className="tnum text-[12.5px] text-text-2">
+                    <div className="text-[12.5px] text-text-2">
                       {euro(r.rata)}/mese
                     </div>
                   )}
-                  <div className="tnum text-[15px] font-extrabold text-text">
+                  <div className="text-[15px] font-extrabold text-text">
                     Totale {euro(r.totale)}
                   </div>
                 </div>

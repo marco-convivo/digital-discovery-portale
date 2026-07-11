@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { StatusPill } from "@/components/ui/status-pill";
+import { EmptyState } from "@/components/ui/empty-state";
 import { STATO_META } from "@/lib/stati";
 import type { ClientStato } from "@/lib/types";
 
@@ -53,11 +54,17 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
       </div>
 
       {filtrati.length === 0 ? (
-        <div className="rounded-md border border-dashed border-line px-3 py-10 text-center text-sm text-text-3">
-          {q
-            ? "Nessun cliente corrisponde alla ricerca."
-            : "Nessun cliente acquisito ancora."}
-        </div>
+        q ? (
+          <EmptyState
+            title="Nessun cliente trovato"
+            hint="Nessun cliente corrisponde a nome o partita IVA."
+          />
+        ) : (
+          <EmptyState
+            title="Ancora nessun cliente acquisito"
+            hint="I clienti compaiono qui quando firmano il contratto."
+          />
+        )
       ) : (
         <ul className="flex flex-col divide-y divide-line">
           {filtrati.map((c) => {

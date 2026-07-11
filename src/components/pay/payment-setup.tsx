@@ -50,7 +50,7 @@ export function PaymentSetup(props: Props) {
         <dl className="mt-4 grid grid-cols-3 gap-3 rounded-md bg-card-2 p-4">
           <div>
             <dt className="text-[11px] uppercase tracking-wide text-text-3">Rata</dt>
-            <dd className="tnum text-[15px] font-bold text-text">
+            <dd className="text-[15px] font-bold text-text">
               {euro(props.quote.rata_mensile)}
               <span className="text-[12px] font-medium text-text-3">/mese</span>
             </dd>
@@ -63,7 +63,7 @@ export function PaymentSetup(props: Props) {
           </div>
           <div>
             <dt className="text-[11px] uppercase tracking-wide text-text-3">Totale</dt>
-            <dd className="tnum text-[15px] font-bold text-text">
+            <dd className="text-[15px] font-bold text-text">
               {euro(props.quote.importo_totale)}
             </dd>
           </div>

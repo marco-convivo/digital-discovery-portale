@@ -29,7 +29,7 @@ export function PianiPagamento({ groups }: { groups: PianoGruppo[] }) {
                 <div className="truncate text-[13.5px] font-bold text-text">
                   {g.label}
                 </div>
-                <div className="tnum text-[12px] text-text-3">
+                <div className="text-[12px] text-text-3">
                   {euro(rata)}/mese · {pagate}/{g.rate.length} pagate
                 </div>
               </div>
