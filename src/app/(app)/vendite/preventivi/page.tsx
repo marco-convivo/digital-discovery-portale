@@ -64,7 +64,8 @@ export default async function PreventiviPage({
       durata: ricorrente ? `${q.rate_num ?? "—"} mesi` : (TIPO[q.tipo] ?? q.tipo),
       action: {
         href: `/preventivo/${q.public_token}`,
-        label: "Apri link cliente",
+        label: "Link cliente",
+        icon: "link",
         external: true,
       },
     };

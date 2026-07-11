@@ -15,15 +15,11 @@ export function PianiPagamento({ groups }: { groups: PianoGruppo[] }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      {groups.map((g, i) => {
+      {groups.map((g) => {
         const rata = g.rate[0]?.importo ?? null;
         const pagate = g.rate.filter((r) => r.stato === "paid").length;
         return (
-          <details
-            key={g.key}
-            open={i === 0}
-            className="group rounded-md border border-line"
-          >
+          <details key={g.key} className="group rounded-md border border-line">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3">
               <div className="min-w-0">
                 <div className="truncate text-[13.5px] font-bold text-text">

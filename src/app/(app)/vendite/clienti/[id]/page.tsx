@@ -8,6 +8,7 @@ import { CreateQuoteForm } from "@/components/internal/create-quote-form";
 import { PreventiviList, type PreventivoItem } from "@/components/internal/preventivi-list";
 import { type RataRow } from "@/components/internal/piano-pagamenti";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
+import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META } from "@/lib/stati";
 import { dataIt } from "@/lib/format";
 import type { Client, ClientStato } from "@/lib/types";
@@ -175,14 +176,11 @@ export default async function ClientePage({
                         {ct.stato}
                       </StatusPill>
                       {ct.signed_pdf_url && (
-                        <a
+                        <ActionLink
                           href={ct.signed_pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[13px] font-semibold text-violet hover:underline"
-                        >
-                          Apri contratto
-                        </a>
+                          label="PDF firmato"
+                          icon="pdf"
+                        />
                       )}
                     </div>
                   </li>

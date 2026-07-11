@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { ActionLink } from "@/components/internal/action-link";
 import { dataIt } from "@/lib/format";
 
 const TONE: Record<string, Tone> = {
@@ -51,14 +52,11 @@ export default async function PortaleContratti() {
                     {c.stato}
                   </StatusPill>
                   {c.signed_pdf_url && (
-                    <a
+                    <ActionLink
                       href={c.signed_pdf_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[13px] font-semibold text-violet hover:underline"
-                    >
-                      Apri contratto
-                    </a>
+                      label="PDF firmato"
+                      icon="pdf"
+                    />
                   )}
                 </div>
               </li>

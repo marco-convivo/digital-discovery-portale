@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MasterClientiList } from "@/components/internal/master-clienti-list";
+import { ActionLink, type ActionIcon } from "@/components/internal/action-link";
 import { euro } from "@/lib/format";
 
 export interface DettaglioDoc {
@@ -15,7 +16,7 @@ export interface DettaglioDoc {
   totale: number | null;
   rata?: number | null;
   durata?: string | null;
-  action?: { href: string; label: string; external?: boolean };
+  action?: { href: string; label: string; external?: boolean; icon?: ActionIcon };
 }
 
 export interface ClienteConDoc {
@@ -126,14 +127,13 @@ export function MasterDetail({
                       )}
 
                       {d.action && (
-                        <a
+                        <ActionLink
                           href={d.action.href}
-                          target={d.action.external ? "_blank" : undefined}
-                          rel={d.action.external ? "noopener noreferrer" : undefined}
-                          className="mt-3 inline-block text-[13px] font-semibold text-violet hover:underline"
-                        >
-                          {d.action.label} →
-                        </a>
+                          label={d.action.label}
+                          icon={d.action.icon}
+                          external={d.action.external}
+                          className="mt-3"
+                        />
                       )}
                     </div>
                   </details>

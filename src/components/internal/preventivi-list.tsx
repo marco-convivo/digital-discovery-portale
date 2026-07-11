@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { ActionLink } from "@/components/internal/action-link";
 import { euro, dataIt } from "@/lib/format";
 
 const TONE: Record<string, Tone> = {
@@ -46,13 +46,11 @@ export function PreventiviList({ quotes }: { quotes: PreventivoItem[] }) {
             </div>
             <div className="flex flex-none items-center gap-3">
               <StatusPill tone={TONE[q.stato] ?? "draft"}>{q.stato}</StatusPill>
-              <Link
+              <ActionLink
                 href={`/preventivo/${q.public_token}`}
-                target="_blank"
-                className="text-[13px] font-semibold text-violet hover:underline"
-              >
-                Apri link
-              </Link>
+                label="Link cliente"
+                icon="link"
+              />
             </div>
           </li>
         ))}

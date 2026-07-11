@@ -69,7 +69,12 @@ export default async function ContrattiPage({
           ? (TIPO[q.tipo] ?? q.tipo)
           : null,
       action: c.signed_pdf_url
-        ? { href: c.signed_pdf_url, label: "Apri contratto", external: true }
+        ? {
+            href: c.signed_pdf_url,
+            label: "PDF firmato",
+            icon: "pdf",
+            external: true,
+          }
         : undefined,
     };
     const cc = byClient.get(c.client.id);
