@@ -10,7 +10,7 @@ import type { Profile } from "@/lib/types";
 // disabilitate (i pattern esistono nei mockup, le pagine arrivano dopo).
 const NAV = [
   { href: "/vendite", label: "Pipeline", icon: PipelineIcon, ready: true },
-  { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: false },
+  { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: true },
   { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: false },
   { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: false },
   { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: false },
@@ -43,7 +43,9 @@ export function Sidebar({ profile }: { profile: Profile }) {
 
       <nav className="flex flex-col gap-0.5">
         {NAV.map(({ href, label, icon: Icon, ready }) => {
-          const active = ready && pathname === href;
+          const active =
+            ready &&
+            (href === "/vendite" ? pathname === href : pathname.startsWith(href));
           const base =
             "flex items-center gap-3.5 rounded-2xl px-3.5 py-3 text-[14.5px] font-semibold transition-colors";
           if (!ready) {
