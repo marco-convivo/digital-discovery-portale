@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui/card";
-import { DocumentiList, type DocRow } from "@/components/internal/documenti-list";
+import {
+  MasterDetail,
+  type ClienteConDoc,
+  type DettaglioDoc,
+} from "@/components/internal/master-detail";
 import type { Tone } from "@/components/ui/status-pill";
 import { serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { dataIt } from "@/lib/format";
@@ -42,40 +45,43 @@ export default async function PreventiviPage() {
     )
     .order("created_at", { ascending: false });
 
-  const rows: DocRow[] = ((data ?? []) as unknown as Row[]).map((q) => {
+  const byClient = new Map<string, ClienteConDoc>();
+  for (const q of (data ?? []) as unknown as Row[]) {
+    if (!q.client) continue;
     const ricorrente = q.tipo === "ricorrente";
-    const servizi = serviziDaOrdine(q.ordine);
-    return {
+    const doc: DettaglioDoc = {
       id: q.id,
-      clientName: q.client?.ragione_sociale ?? "—",
-      clientHref: q.client ? `/vendite/clienti/${q.client.id}` : undefined,
-      meta: `${q.numero ?? "—"} · ${dataIt(q.created_at)}`,
-      servizi: servizi.map((label) => ({ label })),
+      titolo: `${q.numero ?? "—"} · ${dataIt(q.created_at)}`,
+      stato: { tone: TONE[q.stato] ?? "draft", label: q.stato },
+      servizi: serviziDaOrdine(q.ordine).map((label) => ({ label })),
       totale: q.importo_totale,
       rata: ricorrente ? q.rata_mensile : null,
       durata: ricorrente ? `${q.rate_num ?? "—"} mesi` : (TIPO[q.tipo] ?? q.tipo),
-      stato: { tone: TONE[q.stato] ?? "draft", label: q.stato },
       action: {
         href: `/preventivo/${q.public_token}`,
-        label: "Apri link",
+        label: "Apri link cliente",
         external: true,
       },
-      search: `${q.client?.ragione_sociale ?? ""} ${q.numero ?? ""} ${servizi.join(" ")}`,
     };
-  });
+    const c = byClient.get(q.client.id);
+    if (c) c.documenti.push(doc);
+    else
+      byClient.set(q.client.id, {
+        id: q.client.id,
+        ragione_sociale: q.client.ragione_sociale,
+        documenti: [doc],
+      });
+  }
+  const clienti = [...byClient.values()].sort((a, b) =>
+    a.ragione_sociale.localeCompare(b.ragione_sociale),
+  );
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
         Preventivi
       </h1>
-      <Card>
-        <DocumentiList
-          rows={rows}
-          placeholder="Cerca per cliente, numero o servizio…"
-          empty="Nessun preventivo."
-        />
-      </Card>
+      <MasterDetail clienti={clienti} detailLabel="preventivi" />
     </div>
   );
 }
