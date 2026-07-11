@@ -18,7 +18,12 @@ interface Row {
   client: { id: string; ragione_sociale: string } | null;
 }
 
-export default async function PagamentiPage() {
+export default async function PagamentiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string }>;
+}) {
+  const { cliente } = await searchParams;
   const supabase = await createClient();
   const [{ data: payData }, { data: contrData }] = await Promise.all([
     supabase
@@ -76,7 +81,7 @@ export default async function PagamentiPage() {
       <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
         Pagamenti
       </h1>
-      <MasterDetailPagamenti clienti={clienti} />
+      <MasterDetailPagamenti clienti={clienti} initialSelected={cliente ?? null} />
     </div>
   );
 }

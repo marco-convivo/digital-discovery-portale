@@ -27,11 +27,17 @@ export interface ClienteConDoc {
 export function MasterDetail({
   clienti,
   detailLabel,
+  initialSelected,
 }: {
   clienti: ClienteConDoc[];
   detailLabel: string;
+  initialSelected?: string | null;
 }) {
-  const [sel, setSel] = useState<string | null>(clienti[0]?.id ?? null);
+  const first =
+    initialSelected && clienti.some((c) => c.id === initialSelected)
+      ? initialSelected
+      : (clienti[0]?.id ?? null);
+  const [sel, setSel] = useState<string | null>(first);
   const current = clienti.find((c) => c.id === sel) ?? null;
 
   return (

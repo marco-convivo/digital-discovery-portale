@@ -137,6 +137,12 @@ export default async function ClientePage({
           <Card>
             <CardHeader>
               <CardTitle>Piano pagamenti</CardTitle>
+              <Link
+                href={`/vendite/pagamenti?cliente=${c.id}`}
+                className="text-[13px] font-semibold text-violet hover:underline"
+              >
+                Apri →
+              </Link>
             </CardHeader>
             <PianiPagamento groups={gruppiPagamenti} />
           </Card>
@@ -144,6 +150,12 @@ export default async function ClientePage({
           <Card>
             <CardHeader>
               <CardTitle>Contratti</CardTitle>
+              <Link
+                href={`/vendite/contratti?cliente=${c.id}`}
+                className="text-[13px] font-semibold text-violet hover:underline"
+              >
+                Apri →
+              </Link>
             </CardHeader>
             {contratti.length === 0 ? (
               <p className="text-sm text-text-3">Nessun contratto ancora.</p>
@@ -192,6 +204,12 @@ export default async function ClientePage({
           <Card>
             <CardHeader>
               <CardTitle>Preventivi inviati</CardTitle>
+              <Link
+                href={`/vendite/preventivi?cliente=${c.id}`}
+                className="text-[13px] font-semibold text-violet hover:underline"
+              >
+                Apri →
+              </Link>
             </CardHeader>
             <PreventiviList quotes={quotes} />
           </Card>

@@ -35,7 +35,12 @@ interface Row {
   client: { id: string; ragione_sociale: string } | null;
 }
 
-export default async function ContrattiPage() {
+export default async function ContrattiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string }>;
+}) {
+  const { cliente } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase
     .from("contracts")
@@ -85,7 +90,11 @@ export default async function ContrattiPage() {
       <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
         Contratti
       </h1>
-      <MasterDetail clienti={clienti} detailLabel="contratti" />
+      <MasterDetail
+        clienti={clienti}
+        detailLabel="contratti"
+        initialSelected={cliente ?? null}
+      />
     </div>
   );
 }

@@ -36,7 +36,12 @@ interface Row {
   client: { id: string; ragione_sociale: string } | null;
 }
 
-export default async function PreventiviPage() {
+export default async function PreventiviPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cliente?: string }>;
+}) {
+  const { cliente } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase
     .from("quotes")
@@ -81,7 +86,11 @@ export default async function PreventiviPage() {
       <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
         Preventivi
       </h1>
-      <MasterDetail clienti={clienti} detailLabel="preventivi" />
+      <MasterDetail
+        clienti={clienti}
+        detailLabel="preventivi"
+        initialSelected={cliente ?? null}
+      />
     </div>
   );
 }
