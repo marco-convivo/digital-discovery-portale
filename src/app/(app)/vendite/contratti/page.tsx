@@ -5,14 +5,9 @@ import {
   type DettaglioDoc,
 } from "@/components/internal/master-detail";
 import type { Tone } from "@/components/ui/status-pill";
-import { serviziDettaglio, type OrdineSelezione } from "@/lib/catalog";
+import { type OrdineSelezione } from "@/lib/catalog";
+import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
-
-function addMesi(iso: string, m: number): string {
-  const d = new Date(iso);
-  d.setMonth(d.getMonth() + m);
-  return d.toISOString();
-}
 
 const TONE: Record<string, Tone> = {
   inviato: "info",
@@ -66,16 +61,10 @@ export default async function ContrattiPage({
         ? `Firmato il ${dataIt(c.signed_at)}`
         : `Creato ${dataIt(c.created_at)}`,
       stato: { tone: TONE[c.stato] ?? "draft", label: c.stato },
-      servizi: serviziDettaglio(q?.ordine ?? null).map((s) => {
-        if (s.unaTantum) return { label: s.label, scadenza: "una tantum" };
-        const mesi = s.durataMesi ?? 12;
-        return {
-          label: s.label,
-          scadenza: c.signed_at
-            ? `scade il ${dataIt(addMesi(c.signed_at, mesi))}`
-            : `${mesi} mesi dalla firma`,
-        };
-      }),
+      servizi: scadenzeServizi(q?.ordine ?? null, c.signed_at).map((s) => ({
+        label: s.label,
+        scadenza: labelScadenza(s),
+      })),
       totale: q?.importo_totale ?? null,
       rata: ricorrente ? (q?.rata_mensile ?? null) : null,
       durata: ricorrente
