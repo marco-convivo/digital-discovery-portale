@@ -86,8 +86,9 @@ export function CreateQuoteForm({ clientId }: { clientId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div>
         <span className="text-[13px] font-semibold text-text-2">Servizi</span>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CATALOG.map((svc) => {
           const s = sel[svc.key];
           const on = !!s?.selected;
@@ -193,6 +194,7 @@ export function CreateQuoteForm({ clientId }: { clientId: string }) {
             </div>
           );
         })}
+        </div>
       </div>
 
       <label className="flex flex-col gap-1.5">

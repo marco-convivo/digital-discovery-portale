@@ -4,6 +4,51 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
 
+export interface AnagraficaInput {
+  ragione_sociale: string;
+  referente: string | null;
+  email: string | null;
+  telefono: string | null;
+  p_iva: string | null;
+  codice_fiscale: string | null;
+  codice_sdi: string | null;
+  pec: string | null;
+  indirizzo: string | null;
+}
+
+export type UpdateResult = { ok: true } | { ok: false; error: string };
+
+export async function updateCliente(
+  clientId: string,
+  input: AnagraficaInput,
+): Promise<UpdateResult> {
+  if (!input.ragione_sociale.trim()) {
+    return { ok: false, error: "La ragione sociale è obbligatoria." };
+  }
+  const supabase = await createClient();
+  const clean = (v: string | null) => {
+    const t = (v ?? "").trim();
+    return t === "" ? null : t;
+  };
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      ragione_sociale: input.ragione_sociale.trim(),
+      referente: clean(input.referente),
+      email: clean(input.email),
+      telefono: clean(input.telefono),
+      p_iva: clean(input.p_iva),
+      codice_fiscale: clean(input.codice_fiscale),
+      codice_sdi: clean(input.codice_sdi),
+      pec: clean(input.pec),
+      indirizzo: clean(input.indirizzo),
+    })
+    .eq("id", clientId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/vendite/clienti/${clientId}`);
+  return { ok: true };
+}
+
 export interface CreateQuoteInput {
   clientId: string;
   tipo: "ricorrente" | "una_tantum" | "acconto";
