@@ -11,9 +11,9 @@ import type { Profile } from "@/lib/types";
 const NAV = [
   { href: "/vendite", label: "Pipeline", icon: PipelineIcon, ready: true },
   { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: true },
-  { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: false },
-  { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: false },
-  { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: false },
+  { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: true },
+  { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: true },
+  { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: true },
 ];
 
 export function Sidebar({ profile }: { profile: Profile }) {
