@@ -64,6 +64,22 @@ export async function listServiziInterni(): Promise<ServiceCatalogRow[]> {
   return (data ?? []) as unknown as ServiceCatalogRow[];
 }
 
+/** Mappa chiave→prezzo_base per precompilare l'editor preventivo. */
+export async function getPrezziBase(): Promise<Record<string, number | null>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("service_catalog")
+    .select("chiave, prezzo_base");
+  const out: Record<string, number | null> = {};
+  for (const r of (data ?? []) as unknown as {
+    chiave: string;
+    prezzo_base: number | null;
+  }[]) {
+    out[r.chiave] = r.prezzo_base;
+  }
+  return out;
+}
+
 /** Dettaglio INTERNO (staff) per chiave, con portfolio (anche se non attivo). */
 export async function getServizioInterno(
   chiave: string,
