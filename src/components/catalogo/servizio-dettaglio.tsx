@@ -40,7 +40,7 @@ export function ServizioDettaglio({
       </Link>
 
       <div className="mt-4 overflow-hidden rounded-card border border-line/60 bg-card shadow-card">
-        <div className="aspect-[21/9]">
+        <div className="aspect-[21/9] bg-card-2">
           {row.immagine_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={row.immagine_url} alt={row.titolo} className="h-full w-full object-cover" />
@@ -49,14 +49,14 @@ export function ServizioDettaglio({
           )}
         </div>
         <div className="p-6">
-          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
+          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-balance text-text">
             {row.titolo}
           </h1>
           {row.sottotitolo && (
             <p className="mt-1 text-[15px] text-text-2">{row.sottotitolo}</p>
           )}
           {row.descrizione && (
-            <p className="mt-4 max-w-[65ch] text-[15px] leading-relaxed text-text-2">
+            <p className="mt-4 max-w-[65ch] text-[15px] leading-relaxed text-pretty text-text-2">
               {row.descrizione}
             </p>
           )}
@@ -64,7 +64,7 @@ export function ServizioDettaglio({
             <Prezzo prezzo={row.prezzo_base} service={service} />
             <Link
               href={ctaHref}
-              className="rounded-pill bg-ink px-5 py-2.5 text-[14px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+              className="rounded-pill bg-ink px-5 py-2.5 text-[14px] font-semibold text-on-ink transition-[opacity,transform] duration-150 ease-out hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-violet/50"
             >
               Richiedi preventivo
             </Link>

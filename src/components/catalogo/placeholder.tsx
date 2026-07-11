@@ -1,14 +1,16 @@
-// Placeholder pulito quando manca l'immagine di un servizio/lavoro.
+// Placeholder di vetrina quando manca l'immagine: pannello salvia con il
+// monogramma del servizio. Calmo e riconoscibile — mai "immagine rotta" —
+// e differenzia le tessere già prima che vengano caricate le foto reali.
 export function ImgPlaceholder({ label }: { label?: string }) {
+  const initial = (label ?? "").trim().charAt(0).toUpperCase() || "•";
   return (
-    <div className="grid h-full w-full place-items-center bg-card-2 text-text-3">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
-        className="size-8 opacity-60" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="9" cy="9" r="2" />
-        <path d="m21 15-3.6-3.6a2 2 0 0 0-2.8 0L4 21" />
-      </svg>
-      {label && <span className="sr-only">{label}</span>}
+    <div
+      aria-hidden="true"
+      className="grid h-full w-full place-items-center bg-card-2"
+    >
+      <span className="select-none font-extrabold leading-none tracking-[-0.04em] text-ink/10 text-[clamp(3rem,9vw,6rem)]">
+        {initial}
+      </span>
     </div>
   );
 }

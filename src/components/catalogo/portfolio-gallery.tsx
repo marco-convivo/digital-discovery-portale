@@ -14,7 +14,7 @@ export function PortfolioGallery({ items }: { items: PortfolioItemRow[] }) {
             key={it.id}
             className="overflow-hidden rounded-card border border-line/60 bg-card shadow-card"
           >
-            <div className="aspect-[16/9]">
+            <div className="aspect-[16/9] bg-card-2">
               {it.immagine_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={it.immagine_url} alt={it.titolo}
@@ -41,7 +41,7 @@ export function PortfolioGallery({ items }: { items: PortfolioItemRow[] }) {
               )}
               {it.link_url && (
                 <a href={it.link_url} target="_blank" rel="noopener noreferrer"
-                  className="mt-1 text-[13px] font-semibold text-violet hover:underline">
+                  className="mt-1 w-fit rounded-sm text-[13px] font-semibold text-violet hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/50">
                   Vedi il lavoro →
                 </a>
               )}

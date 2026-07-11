@@ -19,20 +19,20 @@ export function ServizioCard({
   return (
     <Link
       href={`${basePath}/${row.chiave}`}
-      className="group flex flex-col overflow-hidden rounded-card border border-line/60 bg-card shadow-card transition-colors hover:border-violet"
+      className="group flex flex-col overflow-hidden rounded-card border border-line/60 bg-card shadow-card transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-violet focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-violet/50"
     >
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden bg-card-2">
         {row.immagine_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={row.immagine_url}
             alt={row.titolo}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
         ) : (
           <ImgPlaceholder label={row.titolo} />
         )}
-        <span className="absolute left-3 top-3 rounded-pill bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-text-2 backdrop-blur">
+        <span className="absolute left-3 top-3 rounded-pill bg-card/85 px-2.5 py-1 text-[11px] font-semibold text-text-2 ring-1 ring-line/70 backdrop-blur-sm">
           {badge}
         </span>
       </div>
