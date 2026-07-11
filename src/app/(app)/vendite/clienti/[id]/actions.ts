@@ -82,9 +82,9 @@ export async function createQuote(
   }
 
   const ricorrente = input.tipo === "ricorrente";
-  const importoTotale = ricorrente
-    ? Number(input.rataMensile ?? 0) * Number(input.rateNum ?? 0)
-    : Number(input.importoTotale ?? 0);
+  // Il form calcola il totale contratto (ricorrenti = mensile×mesi, una tantum
+  // = prezzo, meno sconto); qui lo usiamo direttamente. La rata è totale÷n.rate.
+  const importoTotale = Number(input.importoTotale ?? 0);
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
   const { count } = await supabase

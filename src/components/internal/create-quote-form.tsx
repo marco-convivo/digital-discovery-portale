@@ -5,7 +5,7 @@ import {
   createQuote,
   type CreateQuoteInput,
 } from "@/app/(app)/vendite/clienti/[id]/actions";
-import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
+import { CATALOG, type OrdineSelezione, type CatalogService } from "@/lib/catalog";
 import { euro } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ export function CreateQuoteForm({
   const [prezzi, setPrezzi] = useState<Record<string, string>>({});
   const [sconto, setSconto] = useState("");
   const [tipo, setTipo] = useState<Tipo>("ricorrente");
-  const [rateNum, setRateNum] = useState("12");
+  const [rateNum, setRateNum] = useState("");
+  const [rateTouched, setRateTouched] = useState(false);
   const [validoFino, setValidoFino] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
@@ -38,9 +39,15 @@ export function CreateQuoteForm({
     setSel((s) => ({ ...s, [key]: { ...s[key], ...p } }));
   }
   function toggleService(key: string, on: boolean) {
-    patch(key, { selected: on });
+    const svc = CATALOG.find((c) => c.key === key);
+    patch(key, {
+      selected: on,
+      // durata di default per i ricorrenti (12 mesi) alla prima selezione
+      ...(on && svc?.ricorrente && sel[key]?.durata === undefined
+        ? { durata: 12 }
+        : {}),
+    });
     if (on) {
-      // precompila il prezzo dal catalogo alla prima selezione
       setPrezzi((p) =>
         p[key] !== undefined
           ? p
@@ -56,32 +63,46 @@ export function CreateQuoteForm({
     });
   }
 
-  // --- calcolo riepilogo -----------------------------------------------------
-  const selectedKeys = CATALOG.filter((c) => sel[c.key]?.selected).map(
-    (c) => c.key,
-  );
+  // --- calcolo economico -----------------------------------------------------
   const prezzoNum = (k: string) => {
     const n = Number(prezzi[k]);
     return Number.isFinite(n) ? n : 0;
   };
-  const subtotale = selectedKeys.reduce((s, k) => s + prezzoNum(k), 0);
+  const durataOf = (c: CatalogService) => sel[c.key]?.durata ?? 12;
+  // Contributo al TOTALE contratto: ricorrente = prezzo mensile × mesi;
+  // una tantum / progetto = prezzo una volta.
+  const contributo = (c: CatalogService) =>
+    c.ricorrente ? prezzoNum(c.key) * durataOf(c) : prezzoNum(c.key);
+
+  const selectedServices = CATALOG.filter((c) => sel[c.key]?.selected);
+  const totaleServizi = selectedServices.reduce((s, c) => s + contributo(c), 0);
   const scontoNum = Math.max(0, Number(sconto) || 0);
-  const base = Math.max(0, subtotale - scontoNum); // rata (ricorrente) o importo
-  const rateN = Math.max(0, Math.trunc(Number(rateNum) || 0));
-  const totaleContratto = ricorrente ? base * rateN : base;
+  const totaleContratto = Math.max(0, totaleServizi - scontoNum);
+
+  // N. rate: default = durata più lunga tra i servizi ricorrenti; poi editabile.
+  const durateRicorrenti = selectedServices
+    .filter((c) => c.ricorrente)
+    .map(durataOf);
+  const mesiContratto = durateRicorrenti.length
+    ? Math.max(...durateRicorrenti)
+    : 12;
+  const rateN = rateTouched
+    ? Math.max(1, Math.trunc(Number(rateNum) || 0))
+    : mesiContratto;
+  const rata = ricorrente && rateN > 0 ? totaleContratto / rateN : 0;
 
   function submit() {
     setError(null);
     start(async () => {
       const prezziObj = Object.fromEntries(
-        selectedKeys.map((k) => [k, prezzoNum(k)]),
+        selectedServices.map((c) => [c.key, contributo(c)]),
       );
       const res = await createQuote({
         clientId,
         tipo,
-        rataMensile: ricorrente ? base : null,
+        rataMensile: ricorrente ? rata : null,
         rateNum: ricorrente ? rateN : null,
-        importoTotale: ricorrente ? null : base,
+        importoTotale: totaleContratto,
         validoFino: validoFino || null,
         ordine: sel,
         prezzi: prezziObj,
@@ -216,7 +237,7 @@ export function CreateQuoteForm({
                         onClick={() => patch(svc.key, { durata: m })}
                         className={cn(
                           "rounded-pill px-2 py-0.5 font-semibold",
-                          s?.durata === m
+                          durataOf(svc) === m
                             ? "bg-ink text-on-ink"
                             : "bg-card-2 text-text-2",
                         )}
@@ -230,19 +251,26 @@ export function CreateQuoteForm({
                 {on && (
                   <div className="mt-2 flex items-center justify-between gap-2 pl-6 text-[12px] text-text-2">
                     <span>Prezzo {svc.ricorrente ? "(€/mese)" : "(€)"}</span>
-                    <input
-                      type="number"
-                      value={prezzi[svc.key] ?? ""}
-                      onChange={(e) =>
-                        setPrezzi((p) => ({ ...p, [svc.key]: e.target.value }))
-                      }
-                      placeholder={
-                        prezziBase[svc.key] != null
-                          ? String(prezziBase[svc.key])
-                          : "—"
-                      }
-                      className="w-24 rounded-sm border border-line bg-card px-2 py-1 text-right text-[13px] tnum"
-                    />
+                    <div className="flex items-center gap-2">
+                      {svc.ricorrente && prezzoNum(svc.key) > 0 && (
+                        <span className="text-text-3 tnum">
+                          × {durataOf(svc)}m = {euro(contributo(svc))}
+                        </span>
+                      )}
+                      <input
+                        type="number"
+                        value={prezzi[svc.key] ?? ""}
+                        onChange={(e) =>
+                          setPrezzi((p) => ({ ...p, [svc.key]: e.target.value }))
+                        }
+                        placeholder={
+                          prezziBase[svc.key] != null
+                            ? String(prezziBase[svc.key])
+                            : "—"
+                        }
+                        className="w-24 rounded-sm border border-line bg-card px-2 py-1 text-right text-[13px] tnum"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -264,15 +292,17 @@ export function CreateQuoteForm({
         </select>
       </label>
 
-      {/* Riepilogo economico calcolato dai prezzi dei servizi */}
-      {selectedKeys.length > 0 && (
+      {/* Riepilogo economico: contributi al totale contratto → rata mensile */}
+      {selectedServices.length > 0 && (
         <div className="flex flex-col gap-2.5 rounded-md border border-line bg-card-2/60 p-3.5">
           <div className="flex items-center justify-between text-[13px] text-text-2">
-            <span>Subtotale{ricorrente ? " /mese" : ""}</span>
-            <span className="font-semibold text-text tnum">{euro(subtotale)}</span>
+            <span>Subtotale servizi</span>
+            <span className="font-semibold text-text tnum">
+              {euro(totaleServizi)}
+            </span>
           </div>
           <label className="flex items-center justify-between gap-3 text-[13px] text-text-2">
-            <span>Sconto {ricorrente ? "(€/mese)" : "(€)"}</span>
+            <span>Sconto (€)</span>
             <input
               type="number"
               value={sconto}
@@ -286,31 +316,30 @@ export function CreateQuoteForm({
               <span>N. rate</span>
               <input
                 type="number"
-                value={rateNum}
-                onChange={(e) => setRateNum(e.target.value)}
-                placeholder="12"
+                value={rateTouched ? rateNum : String(mesiContratto)}
+                onChange={(e) => {
+                  setRateTouched(true);
+                  setRateNum(e.target.value);
+                }}
                 className="w-28 rounded-sm border border-line bg-card px-2 py-1 text-right text-[13px] tnum"
               />
             </label>
           )}
           <div className="flex items-baseline justify-between border-t border-line pt-2.5">
             <span className="text-[13px] font-semibold text-text-2">
-              {ricorrente ? "Rata mensile" : "Importo"}
+              Totale contratto
             </span>
             <span className="text-[16px] font-extrabold text-text tnum">
-              {euro(base)}
-              {ricorrente && (
-                <span className="text-[12px] font-medium text-text-3"> /mese</span>
-              )}
+              {euro(totaleContratto)}
             </span>
           </div>
           {ricorrente && (
             <div className="flex items-baseline justify-between">
               <span className="text-[13px] text-text-3">
-                Totale contratto ({rateN || 0} rate)
+                Rata mensile ({rateN} rate)
               </span>
               <span className="text-[13px] font-bold text-text tnum">
-                {euro(totaleContratto)}
+                {euro(rata)} /mese
               </span>
             </div>
           )}
