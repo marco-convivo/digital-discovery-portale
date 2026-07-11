@@ -45,6 +45,7 @@ export const CATALOG: CatalogService[] = [
     key: "google",
     label: "Google Presence (GMB)",
     ricorrente: false,
+    unaTantum: true,
     docusealField: "svc_google",
   },
   {
@@ -109,6 +110,7 @@ export const CATALOG: CatalogService[] = [
     key: "whatsapp",
     label: "WhatsApp Business",
     ricorrente: false,
+    unaTantum: true,
     docusealField: "svc_whatsapp",
   },
 ];
@@ -154,6 +156,7 @@ export function serviziDettaglio(ordine: OrdineSelezione | null): ServizioDett[]
         .map((c) => c.label);
       if (labels.length) extra.push(labels.join(", "));
     }
+    if (sel.durata) extra.push(`${sel.durata} mesi`);
     if (sel.quantita) extra.push(`n. ${sel.quantita}`);
     out.push({
       label: extra.length ? `${svc.label} · ${extra.join(" · ")}` : svc.label,
