@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
+import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 
 export interface AnagraficaInput {
   ragione_sociale: string;
@@ -57,6 +57,10 @@ export interface CreateQuoteInput {
   importoTotale?: number | null;
   validoFino?: string | null;
   ordine: OrdineSelezione;
+  // prezzo per servizio selezionato (chiave→€) dal catalogo, modificabile
+  prezzi?: Record<string, number>;
+  // sconto in € (sulla rata se ricorrente, sull'importo altrimenti)
+  sconto?: number;
 }
 
 export type CreateQuoteResult =
@@ -78,9 +82,9 @@ export async function createQuote(
   }
 
   const ricorrente = input.tipo === "ricorrente";
-  const importoTotale = ricorrente
-    ? Number(input.rataMensile ?? 0) * Number(input.rateNum ?? 0)
-    : Number(input.importoTotale ?? 0);
+  // Il form calcola il totale contratto (ricorrenti = mensile×mesi, una tantum
+  // = prezzo, meno sconto); qui lo usiamo direttamente. La rata è totale÷n.rate.
+  const importoTotale = Number(input.importoTotale ?? 0);
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
   const { count } = await supabase
@@ -108,14 +112,26 @@ export async function createQuote(
     return { ok: false, error: error?.message ?? "Errore creazione preventivo." };
   }
 
-  await supabase.from("quote_items").insert(
-    descrizioni.map((d) => ({
+  // Righe = un servizio per riga col suo prezzo (dal catalogo, modificabile).
+  // `descrizioni` e le chiavi selezionate seguono lo stesso ordine di CATALOG.
+  const selectedKeys = CATALOG.filter(
+    (c) => input.ordine[c.key]?.selected,
+  ).map((c) => c.key);
+  const items = descrizioni.map((d, i) => ({
+    quote_id: quote.id,
+    descrizione: d,
+    quantita: 1,
+    prezzo_unitario: input.prezzi?.[selectedKeys[i]] ?? 0,
+  }));
+  if (input.sconto && input.sconto > 0) {
+    items.push({
       quote_id: quote.id,
-      descrizione: d,
+      descrizione: "Sconto",
       quantita: 1,
-      prezzo_unitario: 0,
-    })),
-  );
+      prezzo_unitario: -input.sconto,
+    });
+  }
+  await supabase.from("quote_items").insert(items);
 
   await supabase
     .from("clients")

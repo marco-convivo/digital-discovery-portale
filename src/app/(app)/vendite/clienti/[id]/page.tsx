@@ -10,6 +10,7 @@ import { type RataRow } from "@/components/internal/piano-pagamenti";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META } from "@/lib/stati";
+import { getPrezziBase } from "@/lib/catalogo/queries";
 import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
 import type { OrdineSelezione } from "@/lib/catalog";
@@ -46,6 +47,8 @@ export default async function ClientePage({
   if (!client) notFound();
   const c = client as Client;
   const meta = STATO_META[c.stato as ClientStato];
+
+  const prezziBase = await getPrezziBase();
 
   const [{ data: quotesData }, { data: payData }, { data: contrData }] =
     await Promise.all([
@@ -224,7 +227,7 @@ export default async function ClientePage({
             <CardHeader>
               <CardTitle>Nuovo preventivo</CardTitle>
             </CardHeader>
-            <CreateQuoteForm clientId={c.id} />
+            <CreateQuoteForm clientId={c.id} prezziBase={prezziBase} />
           </Card>
 
           <Card>

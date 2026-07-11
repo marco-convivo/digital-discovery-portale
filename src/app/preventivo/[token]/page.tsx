@@ -60,11 +60,6 @@ export default async function PreventivoPage({
                 </div>
                 <div className="shrink-0 text-right font-bold text-text">
                   {euro(it.prezzo_unitario)}
-                  {ricorrente && (
-                    <span className="text-[12px] font-medium text-text-3">
-                      /mese
-                    </span>
-                  )}
                 </div>
               </li>
             ))}
