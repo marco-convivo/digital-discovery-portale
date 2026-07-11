@@ -3,6 +3,9 @@ export function euro(n: number | null | undefined): string {
   return new Intl.NumberFormat("it-IT", {
     style: "currency",
     currency: "EUR",
+    // l'it-IT di default non raggruppa i 4 cifre (4188); per importi/contratti
+    // vogliamo sempre il separatore migliaia (4.188,00 €).
+    useGrouping: true,
   }).format(n);
 }
 
