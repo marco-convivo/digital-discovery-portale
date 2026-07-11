@@ -51,7 +51,7 @@ export default async function ClientePage({
         .order("created_at", { ascending: false }),
       supabase
         .from("payments")
-        .select("numero_rata, importo, scadenza, stato")
+        .select("numero_rata, importo, scadenza, stato, contract_id")
         .eq("client_id", id)
         .order("numero_rata", { ascending: true }),
       supabase
@@ -62,8 +62,31 @@ export default async function ClientePage({
     ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
-  const rate = (payData ?? []) as unknown as RataRow[];
   const contratti = (contrData ?? []) as unknown as ContractRow[];
+
+  // Raggruppa le rate per contratto (più contratti = più piani distinti).
+  const pays = (payData ?? []) as unknown as (RataRow & {
+    contract_id: string | null;
+  })[];
+  const NONE = "__none__";
+  const gruppiPagamenti = Array.from(
+    pays.reduce((map, p) => {
+      const k = p.contract_id ?? NONE;
+      const arr = map.get(k) ?? [];
+      arr.push({
+        numero_rata: p.numero_rata,
+        importo: p.importo,
+        scadenza: p.scadenza,
+        stato: p.stato,
+      });
+      map.set(k, arr);
+      return map;
+    }, new Map<string, RataRow[]>()),
+  ).map(([k, rate]) => ({
+    key: k,
+    contract: k === NONE ? null : contratti.find((c) => c.id === k) ?? null,
+    rate,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -110,7 +133,26 @@ export default async function ClientePage({
             <CardHeader>
               <CardTitle>Piano pagamenti</CardTitle>
             </CardHeader>
-            <PianoPagamenti rate={rate} />
+            {gruppiPagamenti.length === 0 ? (
+              <PianoPagamenti rate={[]} />
+            ) : (
+              <div className="flex flex-col gap-5">
+                {gruppiPagamenti.map((g) => (
+                  <div key={g.key}>
+                    {gruppiPagamenti.length > 1 && (
+                      <div className="mb-2 border-b border-line pb-1.5 text-[12.5px] font-semibold text-text-2">
+                        {g.contract
+                          ? g.contract.signed_at
+                            ? `Contratto · firmato il ${dataIt(g.contract.signed_at)}`
+                            : "Contratto"
+                          : "Piano"}
+                      </div>
+                    )}
+                    <PianoPagamenti rate={g.rate} />
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card>

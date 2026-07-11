@@ -46,16 +46,19 @@ async function metodoFromSetupIntent(si: Stripe.SetupIntent): Promise<PaymentMet
 export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void> {
   const quoteId = si.metadata?.quote_id;
   const clientId = si.metadata?.client_id;
+  const contractId = si.metadata?.contract_id || null;
   if (!quoteId || !clientId) return;
 
   const db = createAdminClient();
 
-  const { data: ps } = await db
+  const psQuery = db
     .from("payment_setups")
     .select("id, stripe_customer_id, stripe_subscription_id")
-    .eq("client_id", clientId)
-    .is("contract_id", null)
-    .maybeSingle();
+    .eq("client_id", clientId);
+  const { data: ps } = await (contractId
+    ? psQuery.eq("contract_id", contractId)
+    : psQuery.is("contract_id", null)
+  ).maybeSingle();
   if (!ps || ps.stripe_subscription_id) return; // già attivato
 
   const { data: quote } = await db
@@ -91,12 +94,14 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
       ],
       default_payment_method: pmId,
       cancel_at: cancelAt,
-      metadata: { quote_id: quoteId, client_id: clientId },
+      metadata: { quote_id: quoteId, client_id: clientId, contract_id: contractId ?? "" },
     });
 
-    // Pre-genera le N rate come "scheduled" (il piano che il cliente vedrà).
+    // Pre-genera le N rate come "scheduled" (il piano che il cliente vedrà),
+    // legate al contratto.
     const rows = Array.from({ length: rate }, (_, i) => ({
       client_id: clientId,
+      contract_id: contractId,
       subscription_id: sub.id,
       numero_rata: i + 1,
       importo: rata,
@@ -118,10 +123,11 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
       payment_method: pmId,
       off_session: true,
       confirm: true,
-      metadata: { quote_id: quoteId, client_id: clientId },
+      metadata: { quote_id: quoteId, client_id: clientId, contract_id: contractId ?? "" },
     });
     await db.from("payments").insert({
       client_id: clientId,
+      contract_id: contractId,
       numero_rata: 1,
       importo,
       scadenza: scadenzaMese(oggi, 0),

@@ -39,13 +39,24 @@ export async function ensurePaymentContext(
     email: string | null;
   };
 
-  // payment_setup "aperto" per il cliente (contract_id null finché non c'è DocuSeal)
-  const { data: existing } = await db
+  // Contratto (firmato) di QUESTO preventivo: il piano va legato al contratto,
+  // così un cliente con più contratti ha più piani indipendenti.
+  const { data: contract } = await db
+    .from("contracts")
+    .select("id")
+    .eq("quote_id", quote.id)
+    .maybeSingle();
+  const contractId = contract?.id ?? null;
+
+  // payment_setup per (cliente, contratto)
+  const psQuery = db
     .from("payment_setups")
     .select("id, stripe_customer_id")
-    .eq("client_id", client.id)
-    .is("contract_id", null)
-    .maybeSingle();
+    .eq("client_id", client.id);
+  const { data: existing } = await (contractId
+    ? psQuery.eq("contract_id", contractId)
+    : psQuery.is("contract_id", null)
+  ).maybeSingle();
 
   const stripe = getStripe();
   let setupId = existing?.id ?? null;
@@ -55,7 +66,11 @@ export async function ensurePaymentContext(
     const customer = await stripe.customers.create({
       name: client.ragione_sociale,
       email: client.email ?? undefined,
-      metadata: { client_id: client.id, quote_id: quote.id },
+      metadata: {
+        client_id: client.id,
+        quote_id: quote.id,
+        contract_id: contractId ?? "",
+      },
     });
     customerId = customer.id;
 
@@ -67,22 +82,29 @@ export async function ensurePaymentContext(
     } else {
       const { data: ins } = await db
         .from("payment_setups")
-        .insert({ client_id: client.id, stripe_customer_id: customerId })
+        .insert({
+          client_id: client.id,
+          contract_id: contractId,
+          stripe_customer_id: customerId,
+        })
         .select("id")
         .single();
       setupId = ins?.id ?? null;
     }
   }
 
-  // SetupIntent: salva mandato SDD / carta per l'addebito (subscription in Fase 2b).
-  // Solo i due metodi del prodotto (mockup): addebito SDD + carta.
-  // Con SEPA non ancora attiva la carta funziona già; l'SDD si completa appena
-  // la capability sepa_debit_payments è attiva sull'account.
+  // SetupIntent: salva mandato SDD / carta. Il contract_id nei metadata serve
+  // al webhook per legare subscription e rate al contratto giusto.
   const setupIntent = await stripe.setupIntents.create({
     customer: customerId,
     usage: "off_session",
     payment_method_types: ["sepa_debit", "card"],
-    metadata: { quote_id: quote.id, client_id: client.id, token },
+    metadata: {
+      quote_id: quote.id,
+      client_id: client.id,
+      contract_id: contractId ?? "",
+      token,
+    },
   });
 
   return {
