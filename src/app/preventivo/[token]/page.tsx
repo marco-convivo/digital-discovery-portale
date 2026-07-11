@@ -3,12 +3,6 @@ import { getPublicQuote } from "@/lib/quotes/public";
 import { AcceptPanel } from "@/components/quote/accept-panel";
 import { euro, dataIt } from "@/lib/format";
 
-const TIPO_LABEL: Record<string, string> = {
-  ricorrente: "Ricorrente",
-  una_tantum: "Una tantum",
-  acconto: "Acconto",
-};
-
 export default async function PreventivoPage({
   params,
 }: {
@@ -19,9 +13,6 @@ export default async function PreventivoPage({
   if (!q) notFound();
 
   const ricorrente = q.tipo === "ricorrente";
-  const formula = ricorrente
-    ? `Ricorrente · ${q.rate_num ?? "—"} mesi`
-    : TIPO_LABEL[q.tipo] ?? q.tipo;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -36,10 +27,10 @@ export default async function PreventivoPage({
         <p className="text-[13px] font-semibold uppercase tracking-wide text-text-3">
           Preventivo n. {q.numero ?? "—"}
         </p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-[-0.02em] text-text">
+        <h1 className="mt-1 text-3xl font-extrabold tracking-[-0.02em] text-balance text-text">
           Preparato per {q.ragioneSociale}
         </h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-text-2">
+        <p className="mt-3 max-w-[60ch] text-[15px] leading-relaxed text-pretty text-text-2">
           La vostra presenza digitale, gestita da noi — con un unico referente e
           risultati misurabili.
         </p>
@@ -49,53 +40,107 @@ export default async function PreventivoPage({
         </div>
       </header>
 
-      {q.items.length > 0 && (
-        <section className="mb-6 rounded-card border border-line/60 bg-card p-6 shadow-card">
+      {q.servizi.length > 0 && (
+        <section className="mb-6">
           <h2 className="mb-4 text-[15px] font-bold text-text">Cosa include</h2>
-          <ul className="flex flex-col gap-4">
-            {q.items.map((it, i) => (
-              <li key={i} className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="font-semibold text-text">{it.descrizione}</div>
+          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line/60 bg-card shadow-card">
+            {q.servizi.map((s, i) => (
+              <article key={i} className="flex items-start justify-between gap-4 p-5">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-text">{s.titolo}</h3>
+                  {s.meta && (
+                    <p className="mt-0.5 text-[12.5px] font-medium text-violet">
+                      {s.meta}
+                    </p>
+                  )}
+                  {s.descrizione && (
+                    <p className="mt-1.5 text-[13.5px] leading-relaxed text-text-2">
+                      {s.descrizione}
+                    </p>
+                  )}
+                  {s.attivita.length > 0 && (
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {s.attivita.map((a, j) => (
+                        <li
+                          key={j}
+                          className="flex gap-2 text-[12.5px] text-text-2"
+                        >
+                          <span className="text-violet">✓</span>
+                          <span>{a}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <div className="shrink-0 text-right font-bold text-text">
-                  {euro(it.prezzo_unitario)}
+                <div className="shrink-0 text-right font-bold text-text tnum">
+                  {euro(s.prezzo)}
                 </div>
-              </li>
+              </article>
             ))}
-          </ul>
+            {q.sconto > 0 && (
+              <div className="flex items-center justify-between gap-4 bg-mint-soft/50 p-5">
+                <span className="text-[13.5px] font-semibold text-text">
+                  Sconto applicato
+                </span>
+                <span className="font-bold text-on-mint tnum">
+                  −{euro(q.sconto)}
+                </span>
+              </div>
+            )}
+          </div>
         </section>
       )}
 
-      <section className="mb-8 rounded-card border border-line/60 bg-card p-6 shadow-card">
-        <h2 className="mb-4 text-[15px] font-bold text-text">
-          Condizioni di pagamento
-        </h2>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Field label="Formula" value={formula} />
-          {ricorrente && (
-            <Field label="Rate" value={`${q.rate_num ?? "—"} mensili`} />
-          )}
-          <Field label="Metodo" value="SDD o carta" />
-          <Field
-            label={ricorrente ? "Rata mensile" : "Importo"}
-            value={euro(ricorrente ? q.rata_mensile : q.importo_totale)}
-            strong
-          />
-        </dl>
-        <div className="mt-4 border-t border-line pt-4">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[13px] font-semibold text-text-2">
-              Totale contratto
-            </span>
-            <span className="text-xl font-extrabold text-text">
-              {euro(q.importo_totale)}
-            </span>
+      {/* Il piano: la rata è l'eroe, il totale è minimizzato. */}
+      <section className="mb-8 overflow-hidden rounded-card bg-ink text-on-ink shadow-card">
+        {ricorrente ? (
+          <div className="p-6 sm:p-7">
+            <p className="text-[13px] font-semibold text-on-ink/60">
+              Il tuo piano
+            </p>
+            <div className="mt-1.5 flex items-end gap-2">
+              <span className="text-5xl font-extrabold tracking-[-0.03em]">
+                {euro(q.rata_mensile)}
+              </span>
+              <span className="mb-1.5 text-lg font-semibold text-on-ink/70">
+                /mese
+              </span>
+            </div>
+            <p className="mt-1 text-[14px] text-on-ink/70">
+              {`per ${q.rate_num ?? "—"} mesi · prima rata all'attivazione`}
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-pill bg-mint-soft px-3 py-1.5 text-[13px] font-bold text-on-mint">
+                <span aria-hidden>✓</span> Senza anticipo
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-pill bg-mint-soft px-3 py-1.5 text-[13px] font-bold text-on-mint">
+                <span aria-hidden>✓</span> Tasso zero
+              </span>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-on-ink/15 pt-3.5 text-[13px] text-on-ink/60">
+              <span>
+                Totale{" "}
+                <span className="font-semibold text-on-ink/90 tnum">
+                  {euro(q.importo_totale)}
+                </span>{" "}
+                · IVA esclusa
+              </span>
+              <span>Addebito SDD o carta aziendale</span>
+            </div>
           </div>
-          <p className="mt-2 text-[12px] text-text-3">
-            Importi IVA esclusa. Prima rata all&apos;attivazione del mandato.
-          </p>
-        </div>
+        ) : (
+          <div className="p-6 sm:p-7">
+            <p className="text-[13px] font-semibold text-on-ink/60">Importo</p>
+            <div className="mt-1.5 text-5xl font-extrabold tracking-[-0.03em]">
+              {euro(q.importo_totale)}
+            </div>
+            <p className="mt-2 text-[14px] text-on-ink/70">
+              Pagamento unico · IVA esclusa · SDD o carta aziendale
+            </p>
+          </div>
+        )}
       </section>
 
       <AcceptPanel token={token} alreadyAccepted={q.stato === "accettato"} />
@@ -104,30 +149,5 @@ export default async function PreventivoPage({
         Digital Discovery S.r.l. · Firma online, nessun cartaceo
       </footer>
     </main>
-  );
-}
-
-function Field({
-  label,
-  value,
-  strong,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-[11px] uppercase tracking-wide text-text-3">{label}</dt>
-      <dd
-        className={
-          strong
-            ? "text-[15px] font-bold text-text"
-            : "text-[14px] font-semibold text-text"
-        }
-      >
-        {value}
-      </dd>
-    </div>
   );
 }
