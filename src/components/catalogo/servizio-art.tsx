@@ -1,24 +1,15 @@
 // Illustrazione di servizio in puro CSS/SVG, stile "liquid glass" neon su fondo
-// scuro: fondo blu-nero profondo, alone luminoso, e l'icona resa come tubo di
-// vetro traslucido con bagliore (bloom) e riflesso speculare.
+// scuro (ispirazione AI/Framer): un unico blu elettrico, icona a filo di vetro
+// sottile e molto luminosa (bloom marcato) su fondo quasi nero — alto contrasto.
 
 const DARK_BG =
-  "radial-gradient(130% 120% at 50% 32%, #0c1f4a 0%, #06112c 48%, #020713 100%)";
+  "radial-gradient(125% 120% at 50% 30%, #0a1a3d 0%, #050d24 42%, #010409 100%)";
 
-// Accento neon per servizio (palette fredda, coerente e premium).
-const ACCENT: Record<string, string> = {
-  social: "#4f8cff",
-  google: "#33b8ff",
-  sito: "#2fd9c4",
-  ecommerce: "#9a7bff",
-  ads: "#41d0ff",
-  brand: "#b98cff",
-  shooting: "#6f8cff",
-  video: "#5aa0ff",
-  whatsapp: "#3fe0a0",
-};
+// Blu unico per tutti i servizi (come la reference).
+const ACCENT = "#3f82ff";
+const ACCENT_SOFT = "#8fb6ff";
 
-// Icone come tracciato singolo (outline), rese poi come tubo di vetro.
+// Icone come tracciato singolo (outline), rese come filo di vetro luminoso.
 const PATH: Record<string, string> = {
   social:
     "M24 39C11 30 7 21 12.5 15.5 16 12 21 13 24 17 27 13 32 12 35.5 15.5 41 21 37 30 24 39Z",
@@ -38,7 +29,6 @@ const PATH: Record<string, string> = {
 };
 
 export function ServizioArt({ chiave }: { chiave: string }) {
-  const accent = ACCENT[chiave] ?? "#4f8cff";
   const d = PATH[chiave] ?? PATH.sito;
   const gid = `svc-${chiave}`;
   return (
@@ -47,32 +37,36 @@ export function ServizioArt({ chiave }: { chiave: string }) {
       className="relative h-full w-full overflow-hidden"
       style={{ background: DARK_BG }}
     >
-      {/* alone luminoso dietro l'icona (bloom) */}
+      {/* bloom largo + hotspot luminoso al centro (alto contrasto) */}
       <div
-        className="absolute left-1/2 top-1/2 size-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[38px]"
-        style={{ background: `radial-gradient(circle, ${accent}59, transparent 68%)` }}
+        className="absolute left-1/2 top-1/2 size-[92%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[48px]"
+        style={{ background: `radial-gradient(circle, ${ACCENT}55, transparent 68%)` }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2 size-[46%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[26px]"
+        style={{ background: `radial-gradient(circle, ${ACCENT_SOFT}66, transparent 70%)` }}
       />
       <div className="absolute inset-0 grid place-items-center">
         <svg
           viewBox="0 0 48 48"
           fill="none"
-          className="w-[38%] max-w-[128px]"
+          className="w-[36%] max-w-[120px]"
           style={{
-            filter: `drop-shadow(0 0 3px ${accent}) drop-shadow(0 0 10px ${accent}cc) drop-shadow(0 0 24px ${accent}88)`,
+            filter: `drop-shadow(0 0 2px ${ACCENT_SOFT}) drop-shadow(0 0 10px ${ACCENT}) drop-shadow(0 0 26px ${ACCENT}cc) drop-shadow(0 0 54px ${ACCENT}80)`,
           }}
         >
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#eef4ff" />
-              <stop offset="0.5" stopColor={accent} />
-              <stop offset="1" stopColor="#20408f" />
+              <stop offset="0" stopColor="#eaf1ff" />
+              <stop offset="0.55" stopColor={ACCENT_SOFT} />
+              <stop offset="1" stopColor={ACCENT} />
             </linearGradient>
           </defs>
           <g strokeLinecap="round" strokeLinejoin="round" fill="none">
-            {/* corpo in vetro */}
-            <path d={d} stroke={`url(#${gid})`} strokeWidth={3.4} opacity={0.95} />
+            {/* filo di vetro sottile */}
+            <path d={d} stroke={`url(#${gid})`} strokeWidth={2.1} opacity={0.92} />
             {/* riflesso speculare */}
-            <path d={d} stroke="#ffffff" strokeWidth={1} opacity={0.8} />
+            <path d={d} stroke="#ffffff" strokeWidth={0.8} opacity={0.85} />
           </g>
         </svg>
       </div>
