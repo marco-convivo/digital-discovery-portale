@@ -12,7 +12,11 @@ export interface DettaglioDoc {
   id: string;
   titolo: string;
   stato: { tone: Tone; label: string };
-  servizi: { label: string; importo?: number | null }[];
+  servizi: {
+    label: string;
+    importo?: number | null;
+    scadenza?: string | null;
+  }[];
   totale: number | null;
   rata?: number | null;
   durata?: string | null;
@@ -111,12 +115,21 @@ export function MasterDetail({
                               key={j}
                               className="flex items-baseline justify-between gap-3 text-[13px]"
                             >
-                              <span className="text-text">{s.label}</span>
-                              {s.importo != null && (
-                                <span className="flex-none text-text-2">
-                                  {euro(s.importo)}
-                                </span>
-                              )}
+                              <span className="min-w-0 truncate text-text">
+                                {s.label}
+                              </span>
+                              <span className="flex flex-none items-baseline gap-3">
+                                {s.scadenza && (
+                                  <span className="text-[12px] text-text-3">
+                                    {s.scadenza}
+                                  </span>
+                                )}
+                                {s.importo != null && (
+                                  <span className="text-text-2">
+                                    {euro(s.importo)}
+                                  </span>
+                                )}
+                              </span>
                             </li>
                           ))}
                         </ul>

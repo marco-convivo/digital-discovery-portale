@@ -7,6 +7,8 @@ export interface CatalogService {
   key: string; // chiave interna (salvata in quotes.ordine)
   label: string;
   ricorrente: boolean; // true = piano mensile (social, ads)
+  // una tantum: deliverable singolo, nessuna scadenza (anche se rateizzato)
+  unaTantum?: boolean;
   docusealField: string; // nome checkbox nel template DocuSeal
   option?: {
     kind: OptionKind;
@@ -92,12 +94,14 @@ export const CATALOG: CatalogService[] = [
     key: "shooting",
     label: "Shooting Foto",
     ricorrente: false,
+    unaTantum: true,
     docusealField: "svc_shooting",
   },
   {
     key: "video",
     label: "Video Reel",
     ricorrente: false,
+    unaTantum: true,
     docusealField: "svc_video",
     option: { kind: "quantita", label: "N. reel" },
   },
@@ -127,6 +131,35 @@ export function serviziDaOrdine(ordine: OrdineSelezione | null): string[] {
     if (sel.durata) extra.push(`${sel.durata} mesi`);
     if (sel.quantita) extra.push(`n. ${sel.quantita}`);
     out.push(extra.length ? `${svc.label} · ${extra.join(" · ")}` : svc.label);
+  }
+  return out;
+}
+
+// Dettaglio servizi con durata e flag una tantum (per calcolare le scadenze).
+export interface ServizioDett {
+  label: string;
+  durataMesi: number | null; // mesi indicati (social/ads); null se non specificato
+  unaTantum: boolean;
+}
+export function serviziDettaglio(ordine: OrdineSelezione | null): ServizioDett[] {
+  if (!ordine) return [];
+  const out: ServizioDett[] = [];
+  for (const svc of CATALOG) {
+    const sel = ordine[svc.key];
+    if (!sel?.selected) continue;
+    const extra: string[] = [];
+    if (svc.option?.choices) {
+      const labels = svc.option.choices
+        .filter((c) => sel.channels?.includes(c.value) || sel.tipo === c.value)
+        .map((c) => c.label);
+      if (labels.length) extra.push(labels.join(", "));
+    }
+    if (sel.quantita) extra.push(`n. ${sel.quantita}`);
+    out.push({
+      label: extra.length ? `${svc.label} · ${extra.join(" · ")}` : svc.label,
+      durataMesi: sel.durata ?? null,
+      unaTantum: !!svc.unaTantum,
+    });
   }
   return out;
 }
