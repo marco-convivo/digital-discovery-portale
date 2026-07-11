@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ImgPlaceholder } from "@/components/catalogo/placeholder";
+import { ServizioArt } from "@/components/catalogo/servizio-art";
 import { euro } from "@/lib/format";
 import { categoria, suffissoPrezzo, TONE_BADGE } from "@/lib/catalogo/ui";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export function ServizioCard({
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
         ) : (
-          <ImgPlaceholder label={row.titolo} tone={cat.tone} />
+          <ServizioArt chiave={row.chiave} />
         )}
         <span
           className={cn(

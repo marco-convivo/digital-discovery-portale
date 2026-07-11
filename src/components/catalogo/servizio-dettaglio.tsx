@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ImgPlaceholder } from "@/components/catalogo/placeholder";
+import { ServizioArt } from "@/components/catalogo/servizio-art";
 import { PortfolioGallery } from "@/components/catalogo/portfolio-gallery";
 import { euro } from "@/lib/format";
 import {
@@ -85,7 +85,7 @@ export function ServizioDettaglio({
               className="h-full w-full object-cover"
             />
           ) : (
-            <ImgPlaceholder label={row.titolo} tone={cat.tone} />
+            <ServizioArt chiave={row.chiave} />
           )}
         </div>
 
