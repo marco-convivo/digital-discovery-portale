@@ -158,26 +158,6 @@ export function CreateQuoteForm({ clientId }: { clientId: string }) {
                       ))}
                     </div>
                   )}
-                  {svc.key === "social" && (
-                    <div className="mt-2 flex items-center gap-2 text-[12px] text-text-2">
-                      Durata:
-                      {[3, 6, 12].map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => patch(svc.key, { durata: m })}
-                          className={cn(
-                            "rounded-pill px-2 py-0.5 font-semibold",
-                            s?.durata === m
-                              ? "bg-ink text-on-ink"
-                              : "bg-card-2 text-text-2",
-                          )}
-                        >
-                          {m}m
-                        </button>
-                      ))}
-                    </div>
-                  )}
                   {svc.option.kind === "quantita" && (
                     <input
                       type="number"
@@ -189,6 +169,27 @@ export function CreateQuoteForm({ clientId }: { clientId: string }) {
                       className="w-24 rounded-sm border border-line bg-card px-2 py-1 text-[13px]"
                     />
                   )}
+                </div>
+              )}
+
+              {on && svc.ricorrente && (
+                <div className="mt-2 flex items-center gap-2 pl-6 text-[12px] text-text-2">
+                  Durata:
+                  {[3, 6, 9, 12].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => patch(svc.key, { durata: m })}
+                      className={cn(
+                        "rounded-pill px-2 py-0.5 font-semibold",
+                        s?.durata === m
+                          ? "bg-ink text-on-ink"
+                          : "bg-card-2 text-text-2",
+                      )}
+                    >
+                      {m}m
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
