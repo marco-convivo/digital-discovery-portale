@@ -11,6 +11,7 @@ export interface EntityRow {
   href?: string; // link (di solito alla scheda cliente)
   search: string; // testo su cui filtrare
   pill?: { tone: Tone; label: string };
+  tags?: string[]; // chip informativi (es. servizi acquistati)
   action?: { href: string; label: string; external?: boolean };
 }
 
@@ -80,6 +81,18 @@ export function EntityList({
                 {r.subtitle && (
                   <div className="mt-0.5 truncate text-[12.5px] text-text-3">
                     {r.subtitle}
+                  </div>
+                )}
+                {r.tags && r.tags.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {r.tags.map((t, i) => (
+                      <span
+                        key={i}
+                        className="rounded-pill bg-card-2 px-2 py-0.5 text-[11.5px] font-medium text-text-2"
+                      >
+                        {t}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>

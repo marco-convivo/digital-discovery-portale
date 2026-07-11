@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
+import { serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 
 export interface AnagraficaInput {
   ragione_sociale: string;
@@ -63,22 +63,6 @@ export type CreateQuoteResult =
   | { ok: true; token: string }
   | { ok: false; error: string };
 
-// Righe leggibili (per la pagina pubblica) derivate dalla selezione del catalogo.
-function itemsFromOrdine(ordine: OrdineSelezione): string[] {
-  const out: string[] = [];
-  for (const svc of CATALOG) {
-    const sel = ordine[svc.key];
-    if (!sel?.selected) continue;
-    const extra: string[] = [];
-    if (sel.channels?.length) extra.push(sel.channels.join(", "));
-    if (sel.tipo) extra.push(sel.tipo === "one_page" ? "One Page" : "Completo");
-    if (sel.durata) extra.push(`${sel.durata} mesi`);
-    if (sel.quantita) extra.push(`n. ${sel.quantita}`);
-    out.push(extra.length ? `${svc.label} — ${extra.join(" · ")}` : svc.label);
-  }
-  return out;
-}
-
 export async function createQuote(
   input: CreateQuoteInput,
 ): Promise<CreateQuoteResult> {
@@ -88,7 +72,7 @@ export async function createQuote(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sessione scaduta." };
 
-  const descrizioni = itemsFromOrdine(input.ordine);
+  const descrizioni = serviziDaOrdine(input.ordine);
   if (descrizioni.length === 0) {
     return { ok: false, error: "Seleziona almeno un servizio." };
   }

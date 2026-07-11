@@ -109,6 +109,28 @@ export const CATALOG: CatalogService[] = [
   },
 ];
 
+// Riepilogo leggibile dei servizi selezionati (per liste/contratti).
+// Es: ["Gestione Social · Facebook, Instagram · 12 mesi", "Sito Web · Completo"]
+export function serviziDaOrdine(ordine: OrdineSelezione | null): string[] {
+  if (!ordine) return [];
+  const out: string[] = [];
+  for (const svc of CATALOG) {
+    const sel = ordine[svc.key];
+    if (!sel?.selected) continue;
+    const extra: string[] = [];
+    if (svc.option?.choices) {
+      const labels = svc.option.choices
+        .filter((c) => sel.channels?.includes(c.value) || sel.tipo === c.value)
+        .map((c) => c.label);
+      if (labels.length) extra.push(labels.join(", "));
+    }
+    if (sel.durata) extra.push(`${sel.durata} mesi`);
+    if (sel.quantita) extra.push(`n. ${sel.quantita}`);
+    out.push(extra.length ? `${svc.label} · ${extra.join(" · ")}` : svc.label);
+  }
+  return out;
+}
+
 // Forma della selezione salvata in quotes.ordine (JSONB).
 export interface OrdineSelezione {
   [serviceKey: string]: {
