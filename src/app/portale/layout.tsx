@@ -39,9 +39,11 @@ export default async function PortaleLayout({
   }
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh flex-col lg:flex-row">
       <PortaleSidebar ragioneSociale={client.ragione_sociale} />
-      <main className="flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>
+      <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
+        {children}
+      </main>
     </div>
   );
 }
