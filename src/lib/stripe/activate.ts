@@ -86,7 +86,8 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
         {
           price_data: {
             currency: "eur",
-            product: process.env.STRIPE_PRODUCT_ID!,
+            // sanifica: tollera spazi/righe multiple incollate per errore nell'env
+            product: (process.env.STRIPE_PRODUCT_ID ?? "").trim().split(/\s+/)[0],
             unit_amount: Math.round(rata * 100),
             recurring: { interval: "month" },
           },
