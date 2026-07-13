@@ -1,20 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPortalClient } from "@/lib/portale/client";
-import { getPortaleHomeData, type ServizioAttivo } from "@/lib/portale/home";
+import { getPortaleHomeData } from "@/lib/portale/home";
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
 import { ServiziCarosello } from "@/components/portale/servizi-carosello";
-import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { ServiziAttivi } from "@/components/portale/servizi-attivi";
 import { euro, dataIt } from "@/lib/format";
 
 const MAILTO = "mailto:info@digitaldiscovery.it";
-
-function statoServizio(s: ServizioAttivo): { tone: Tone; label: string } {
-  if (s.unaTantum || s.giorni == null) return { tone: "paid", label: "attivo" };
-  if (s.giorni < 0) return { tone: "fail", label: "scaduto" };
-  if (s.giorni <= 30) return { tone: "wait", label: `scade tra ${s.giorni} gg` };
-  return { tone: "paid", label: "attivo" };
-}
 
 export default async function PortaleHome() {
   const client = await getPortalClient();
@@ -129,31 +122,7 @@ export default async function PortaleHome() {
               Vedi tutti →
             </Link>
           </div>
-          <div className="rounded-card border border-line/60 bg-card shadow-card">
-            <ul className="flex flex-col divide-y divide-line">
-              {data.serviziAttivi.slice(0, 6).map((s, i) => {
-                const st = statoServizio(s);
-                return (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between gap-3 px-5 py-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-[14px] font-semibold text-text">
-                        {s.label}
-                      </div>
-                      {!s.unaTantum && s.scadenzaIso && (
-                        <div className="text-[12.5px] text-text-3">
-                          Rinnovo il {dataIt(s.scadenzaIso)}
-                        </div>
-                      )}
-                    </div>
-                    <StatusPill tone={st.tone}>{st.label}</StatusPill>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+          <ServiziAttivi servizi={data.serviziAttivi.slice(0, 4)} />
         </section>
       )}
 
