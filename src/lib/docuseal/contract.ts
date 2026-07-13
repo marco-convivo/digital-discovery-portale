@@ -7,12 +7,22 @@ import {
   completeSubmitter,
   type PrefillField,
 } from "@/lib/docuseal/server";
-import { CATALOG, type OrdineSelezione } from "@/lib/catalog";
+import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 
 export interface FirmaMeta {
   ip: string;
   userAgent: string;
   consensoAt: string;
+  vessatorieAt: string; // approvazione specifica artt. 1341/1342 c.c.
+}
+
+export interface ContrattoHeader {
+  numero: string | null;
+  importo: number | null;
+  rata: number | null;
+  rateNum: number | null;
+  servizi: string[]; // etichette leggibili
+  serviceKeys: string[]; // chiavi catalogo (per Condizioni Particolari)
 }
 
 // Flusso firma pubblico (anon): admin client scoping sul token del preventivo.
@@ -33,7 +43,12 @@ export interface DatiCliente {
 
 export type ContractView =
   | { status: "firmato" }
-  | { status: "form"; ragioneSociale: string; prefill: Partial<DatiCliente> }
+  | {
+      status: "form";
+      ragioneSociale: string;
+      prefill: Partial<DatiCliente>;
+      contratto: ContrattoHeader;
+    }
   | null;
 
 function num(n: number | null | undefined): string {
@@ -118,6 +133,10 @@ export async function getContractView(token: string): Promise<ContractView> {
   // Firma sincrona: un contratto esiste solo se già firmato.
   if (contract) return { status: "firmato" };
 
+  const serviceKeys = CATALOG.filter((c) => q.ordine?.[c.key]?.selected).map(
+    (c) => c.key,
+  );
+
   return {
     status: "form",
     ragioneSociale: q.client.ragione_sociale,
@@ -129,6 +148,14 @@ export async function getContractView(token: string): Promise<ContractView> {
       rappresentante: q.client.referente ?? "",
       pec: q.client.pec ?? "",
       email: q.client.email ?? "",
+    },
+    contratto: {
+      numero: q.numero,
+      importo: q.importo_totale,
+      rata: q.rata_mensile,
+      rateNum: q.rate_num,
+      servizi: serviziDaOrdine(q.ordine),
+      serviceKeys,
     },
   };
 }
@@ -215,6 +242,7 @@ export async function signContract(
     ip: meta.ip,
     user_agent: meta.userAgent,
     consenso_at: meta.consensoAt,
+    approvazione_vessatorie_at: meta.vessatorieAt,
     email: dati.email,
   });
 
