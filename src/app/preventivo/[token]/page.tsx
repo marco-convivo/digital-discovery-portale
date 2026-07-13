@@ -71,8 +71,11 @@ export default async function PreventivoPage({
                     </ul>
                   )}
                 </div>
-                <div className="shrink-0 text-right font-bold text-text tnum">
-                  {euro(s.prezzo)}
+                <div className="shrink-0 text-right">
+                  <div className="font-bold text-text tnum">{euro(s.prezzo)}</div>
+                  <div className="text-[10.5px] font-normal text-text-3">
+                    IVA esclusa
+                  </div>
                 </div>
               </article>
             ))}

@@ -18,10 +18,13 @@ export function Prezzo({
       ? "una tantum"
       : null;
   return (
-    <div className={size === "sm" ? "text-[13px]" : "text-[15px]"}>
-      <span className="text-text-3">a partire da </span>
-      <span className="font-extrabold text-text">{euro(prezzo)}</span>
-      {suffisso && <span className="text-text-3"> {suffisso}</span>}
+    <div>
+      <div className={size === "sm" ? "text-[13px]" : "text-[15px]"}>
+        <span className="text-text-3">a partire da </span>
+        <span className="font-extrabold text-text">{euro(prezzo)}</span>
+        {suffisso && <span className="text-text-3"> {suffisso}</span>}
+      </div>
+      <div className="text-[10.5px] text-text-3">IVA esclusa</div>
     </div>
   );
 }

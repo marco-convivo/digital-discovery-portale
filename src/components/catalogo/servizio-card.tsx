@@ -65,6 +65,9 @@ export function ServizioCard({
                     {suffisso}
                   </span>
                 )}
+                <span className="block text-[10px] font-medium text-text-3">
+                  IVA esclusa
+                </span>
               </>
             ) : (
               <span className="text-[13px] font-semibold text-text-2">

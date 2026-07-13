@@ -122,6 +122,9 @@ export function ServizioDettaglio({
                       {suffisso}
                     </span>
                   )}
+                  <span className="block text-[11px] font-medium text-on-ink/50">
+                    IVA esclusa
+                  </span>
                 </>
               ) : (
                 <span className="text-lg font-bold">Prezzo su richiesta</span>
