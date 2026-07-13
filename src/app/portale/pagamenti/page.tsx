@@ -54,6 +54,10 @@ export default async function PortalePagamenti() {
       <Card>
         <PianiPagamento groups={groups} />
       </Card>
+      <p className="mt-3 text-[12.5px] text-text-3">
+        Importi indicati al netto (imponibile); l&apos;addebito avviene IVA
+        inclusa (22%).
+      </p>
     </div>
   );
 }

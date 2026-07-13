@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
+import { ALIQUOTA_IVA } from "@/lib/format";
 import type { Database } from "@/lib/database.types";
 
 type PaymentMetodo = Database["public"]["Enums"]["payment_metodo"];
@@ -89,7 +90,8 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
             currency: "eur",
             // sanifica: tollera spazi/righe multiple incollate per errore nell'env
             product: (process.env.STRIPE_PRODUCT_ID ?? "").trim().split(/\s+/)[0],
-            unit_amount: Math.round(rata * 100),
+            // addebito LORDO (IVA inclusa): il netto è in quote.rata_mensile
+            unit_amount: Math.round(rata * (1 + ALIQUOTA_IVA) * 100),
             recurring: { interval: "month" },
           },
         },
@@ -120,7 +122,7 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
     const importo = Number(quote.importo_totale ?? 0);
     const pi = await stripe.paymentIntents.create({
       customer: customerId,
-      amount: Math.round(importo * 100),
+      amount: Math.round(importo * (1 + ALIQUOTA_IVA) * 100), // lordo (IVA inclusa)
       currency: "eur",
       payment_method: pmId,
       off_session: true,

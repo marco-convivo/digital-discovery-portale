@@ -5,7 +5,7 @@ import { getPortaleHomeData } from "@/lib/portale/home";
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
 import { ServiziCarosello } from "@/components/portale/servizi-carosello";
 import { ServiziAttivi } from "@/components/portale/servizi-attivi";
-import { euro, dataIt } from "@/lib/format";
+import { euro, dataIt, conIva } from "@/lib/format";
 
 const MAILTO = "mailto:info@digital-discovery.it";
 
@@ -50,6 +50,9 @@ export default async function PortaleHome() {
                     {euro(data.prossimaRata.importo)}
                   </span>
                 </div>
+                <p className="mt-1 text-[13px] text-on-ink/55">
+                  {euro(conIva(data.prossimaRata.importo))} IVA inclusa
+                </p>
                 <p className="mt-1 text-[14px] text-on-ink/70">
                   Rata {data.prossimaRata.numero_rata} · in scadenza il{" "}
                   {dataIt(data.prossimaRata.scadenza)}

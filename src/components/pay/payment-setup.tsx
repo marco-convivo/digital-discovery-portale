@@ -10,6 +10,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
+import { conIva } from "@/lib/format";
 import type { PaymentContext } from "@/lib/stripe/setup";
 
 type Props = PaymentContext & { token: string };
@@ -53,6 +54,9 @@ export function PaymentSetup(props: Props) {
               {euro(props.quote.rata_mensile)}
               <span className="text-[12px] font-medium text-text-3">/mese</span>
             </dd>
+            <div className="mt-0.5 text-[11px] text-text-3">
+              {euro(conIva(props.quote.rata_mensile))} IVA incl.
+            </div>
           </div>
           <div>
             <dt className="text-[11px] uppercase tracking-wide text-text-3">Durata</dt>
@@ -65,6 +69,9 @@ export function PaymentSetup(props: Props) {
             <dd className="text-[15px] font-bold text-text">
               {euro(props.quote.importo_totale)}
             </dd>
+            <div className="mt-0.5 text-[11px] text-text-3">
+              {euro(conIva(props.quote.importo_totale))} IVA incl.
+            </div>
           </div>
         </dl>
 

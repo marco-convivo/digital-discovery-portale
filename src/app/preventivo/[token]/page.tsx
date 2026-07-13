@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublicQuote } from "@/lib/quotes/public";
 import { AcceptPanel } from "@/components/quote/accept-panel";
-import { euro, dataIt } from "@/lib/format";
+import { euro, dataIt, conIva } from "@/lib/format";
 import { Logo } from "@/components/ui/logo";
 
 export default async function PreventivoPage({
@@ -105,6 +105,9 @@ export default async function PreventivoPage({
                 /mese
               </span>
             </div>
+            <p className="mt-1 text-[13px] text-on-ink/55">
+              {euro(conIva(q.rata_mensile))} IVA inclusa (22%)
+            </p>
             <p className="mt-1 text-[14px] text-on-ink/70">
               {`per ${q.rate_num ?? "—"} mesi · prima rata all'attivazione`}
             </p>
@@ -124,7 +127,7 @@ export default async function PreventivoPage({
                 <span className="font-semibold text-on-ink/90 tnum">
                   {euro(q.importo_totale)}
                 </span>{" "}
-                · IVA esclusa
+                imponibile · {euro(conIva(q.importo_totale))} IVA inclusa
               </span>
               <span>Addebito SDD o carta aziendale</span>
             </div>
@@ -135,8 +138,11 @@ export default async function PreventivoPage({
             <div className="mt-1.5 text-5xl font-extrabold tracking-[-0.03em]">
               {euro(q.importo_totale)}
             </div>
+            <p className="mt-1 text-[13px] text-on-ink/55">
+              {euro(conIva(q.importo_totale))} IVA inclusa (22%)
+            </p>
             <p className="mt-2 text-[14px] text-on-ink/70">
-              Pagamento unico · IVA esclusa · SDD o carta aziendale
+              Pagamento unico · SDD o carta aziendale
             </p>
           </div>
         )}
