@@ -1,5 +1,6 @@
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
 import { CatalogoVetrina } from "@/components/catalogo/vetrina";
+import { Logo } from "@/components/ui/logo";
 
 export const metadata = {
   title: "Catalogo servizi · Digital Discovery",
@@ -11,9 +12,7 @@ export default async function CatalogoPubblicoPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-8 flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-[11px] bg-ink text-base font-extrabold text-on-ink">
-          D
-        </div>
+        <Logo />
         <div className="font-bold">Digital Discovery</div>
       </div>
       <header className="mb-8 max-w-2xl">

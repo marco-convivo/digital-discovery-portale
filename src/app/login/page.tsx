@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -21,9 +22,7 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-6">
       <Card className="w-full max-w-sm p-8 text-center">
-        <div className="mx-auto mb-5 grid size-12 place-items-center rounded-[14px] bg-ink text-lg font-extrabold text-on-ink">
-          D
-        </div>
+        <Logo className="mx-auto mb-5 size-12 rounded-[14px]" />
         <h1 className="text-xl font-extrabold tracking-[-0.01em] text-text">
           Digital Discovery
         </h1>

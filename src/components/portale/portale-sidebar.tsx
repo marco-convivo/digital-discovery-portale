@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOutCliente } from "@/lib/actions/auth";
+import { Logo } from "@/components/ui/logo";
 
 const NAV = [
   { href: "/portale", label: "Home" },
@@ -26,9 +27,7 @@ export function PortaleSidebar({ ragioneSociale }: { ragioneSociale: string }) {
   return (
     <aside className="flex w-[250px] flex-none flex-col gap-6 p-4">
       <div className="flex items-center gap-3 px-2 py-1.5">
-        <div className="grid size-[38px] place-items-center rounded-[11px] bg-ink text-[19px] font-extrabold text-on-ink">
-          D
-        </div>
+        <Logo className="size-[38px]" />
         <div className="leading-tight">
           <div className="text-[17px] font-bold tracking-[-0.01em]">
             Digital Discovery

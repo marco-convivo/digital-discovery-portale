@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPublicQuote } from "@/lib/quotes/public";
 import { AcceptPanel } from "@/components/quote/accept-panel";
 import { euro, dataIt } from "@/lib/format";
+import { Logo } from "@/components/ui/logo";
 
 export default async function PreventivoPage({
   params,
@@ -17,9 +18,7 @@ export default async function PreventivoPage({
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="mb-8 flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-[11px] bg-ink text-base font-extrabold text-on-ink">
-          D
-        </div>
+        <Logo />
         <div className="font-bold">Digital Discovery</div>
       </div>
 

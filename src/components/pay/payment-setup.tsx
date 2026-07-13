@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { Logo } from "@/components/ui/logo";
 import {
   Elements,
   PaymentElement,
@@ -30,9 +31,7 @@ export function PaymentSetup(props: Props) {
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
       <div className="mb-6 flex items-center gap-3">
-        <div className="grid size-10 place-items-center rounded-[11px] bg-ink text-base font-extrabold text-on-ink">
-          D
-        </div>
+        <Logo />
         <div className="leading-tight">
           <div className="font-bold">Digital Discovery</div>
           <div className="text-[12px] text-text-3">Attiva il pagamento</div>
