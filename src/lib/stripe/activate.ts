@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import type { Database } from "@/lib/database.types";
 
 type PaymentMetodo = Database["public"]["Enums"]["payment_metodo"];
@@ -143,6 +144,14 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
   }
 
   await db.from("clients").update({ stato: "pagamento_attivo" }).eq("id", clientId);
+
+  // Invito di accesso al portale (magic link) — best-effort, non blocca il flusso.
+  const { data: cli } = await db
+    .from("clients")
+    .select("email")
+    .eq("id", clientId)
+    .maybeSingle();
+  await inviaAccessoPortale((cli as { email: string | null } | null)?.email);
 }
 
 /** invoice.paid: segna pagata la prima rata ancora "scheduled" della subscription. */

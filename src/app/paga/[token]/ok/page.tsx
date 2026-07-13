@@ -23,9 +23,17 @@ export default async function PagaOkPage({
         </h1>
         <p className="mt-2 text-sm text-text-2">
           {ok
-            ? "Stiamo attivando il pagamento. Per l'addebito SEPA la conferma della banca può richiedere qualche giorno: ti avviseremo appena il piano è attivo."
+            ? "Stiamo attivando il pagamento. Per l'addebito SEPA la conferma della banca può richiedere qualche giorno. Ti abbiamo inviato un'email per accedere al tuo portale, dove trovi rate, servizi e contratti."
             : "Il metodo di pagamento non è stato confermato. Riprova dal link che ti abbiamo inviato."}
         </p>
+        {ok && (
+          <a
+            href="/accedi"
+            className="mt-5 inline-block rounded-pill bg-ink px-5 py-2.5 text-[14px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+          >
+            Accedi al tuo portale
+          </a>
+        )}
       </div>
     </main>
   );
