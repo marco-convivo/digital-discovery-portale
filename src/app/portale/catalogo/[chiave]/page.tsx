@@ -14,7 +14,7 @@ export default async function PortaleServizioPage({
     <ServizioDettaglio
       v={v}
       basePath="/portale/catalogo"
-      ctaHref="mailto:info@digitaldiscovery.it?subject=Richiesta%20preventivo"
+      ctaHref="mailto:info@digital-discovery.it?subject=Richiesta%20preventivo"
     />
   );
 }

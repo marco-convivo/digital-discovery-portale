@@ -7,7 +7,7 @@ import { ServiziCarosello } from "@/components/portale/servizi-carosello";
 import { ServiziAttivi } from "@/components/portale/servizi-attivi";
 import { euro, dataIt } from "@/lib/format";
 
-const MAILTO = "mailto:info@digitaldiscovery.it";
+const MAILTO = "mailto:info@digital-discovery.it";
 
 export default async function PortaleHome() {
   const client = await getPortalClient();

@@ -3,7 +3,7 @@ import { getServizioPubblico } from "@/lib/catalogo/queries";
 import { ServizioDettaglio } from "@/components/catalogo/servizio-dettaglio";
 
 const MAILTO =
-  "mailto:info@digitaldiscovery.it?subject=Richiesta%20preventivo";
+  "mailto:info@digital-discovery.it?subject=Richiesta%20preventivo";
 
 export default async function ServizioPubblicoPage({
   params,
