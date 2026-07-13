@@ -3,7 +3,7 @@
 Decisioni prese:
 - **Hosting**: Vercel (Pro). **DB**: stesso progetto Supabase `fnjwsnmngaihrjsacgov` (Pro), pulendo i dati demo.
 - **Email/SMTP**: Resend.
-- **Dominio (app)**: `account.digital-discovery.it` (sottodominio; `digital-discovery.it` gestito su Register.it). Il sito marketing può restare separato sul dominio radice.
+- **Dominio (app)**: `clienti.digital-discovery.it` (sottodominio; `digital-discovery.it` gestito su Register.it). Il sito marketing può restare separato sul dominio radice.
 - **Firma**: DocuSeal prod (già disponibile). **Pagamenti**: Stripe Live (da attivare).
 
 Legenda: **[M]** = azione manuale di Marco · **[C]** = la faccio io (Claude) via tool.
@@ -38,11 +38,11 @@ cablano dopo il deploy.
 - [M] Imposta le **env var di produzione** (vedi checklist in fondo). All'inizio bastano
   Supabase + DocuSeal prod; le chiavi Stripe live si aggiungono in Fase 3.
 - [M] **Deploy** → ottieni l'URL `*.vercel.app` (verifica che l'app carichi).
-- [M] Vercel → **Settings → Domains** → aggiungi `account.digital-discovery.it`. Vercel
+- [M] Vercel → **Settings → Domains** → aggiungi `clienti.digital-discovery.it`. Vercel
   chiederà un record **CNAME**: su **Register.it → DNS** del dominio `digital-discovery.it`
-  crea un record **CNAME** con host `account` che punta al valore indicato da Vercel
+  crea un record **CNAME** con host `clienti` che punta al valore indicato da Vercel
   (tipicamente `cname.vercel-dns.com`). TTL default. (Niente record A: è un sottodominio.)
-- ✅ Verifica: dopo la propagazione DNS, `https://account.digital-discovery.it` carica la
+- ✅ Verifica: dopo la propagazione DNS, `https://clienti.digital-discovery.it` carica la
   vetrina pubblica `/catalogo` (HTTPS emesso in automatico da Vercel).
 
 ---
@@ -53,8 +53,8 @@ cablano dopo il deploy.
 - [C/M] **Pulizia dati demo**: eseguo `cleanup-demo.sql` (mantiene schema, catalogo,
   profili staff) — **solo quando dai l'ok** (dopo che hai finito i test).
 - [M] **Auth → URL Configuration**:
-  - **Site URL** = `https://account.digital-discovery.it`
-  - **Redirect URLs** (Add): `https://account.digital-discovery.it/auth/callback`, `https://account.digital-discovery.it/auth/callback?next=/portale`
+  - **Site URL** = `https://clienti.digital-discovery.it`
+  - **Redirect URLs** (Add): `https://clienti.digital-discovery.it/auth/callback`, `https://clienti.digital-discovery.it/auth/callback?next=/portale`
     (aggiungi anche l'URL `*.vercel.app` equivalente se vuoi testare da lì).
 - [M] **Google OAuth (login staff)**: in Google Cloud Console (client OAuth) il redirect è
   `https://fnjwsnmngaihrjsacgov.supabase.co/auth/v1/callback` (dovrebbe già esserci).
@@ -69,7 +69,7 @@ cablano dopo il deploy.
      - Sender email `noreply@digital-discovery.it` · Sender name `Digital Discovery`
   4. (Consigliato) personalizza il **template email** del Magic Link (Auth → Email Templates).
   Nota: il dominio di invio (`digital-discovery.it`) è indipendente dal sottodominio
-  dell'app (`account.…`) — va bene così.
+  dell'app (`clienti.…`) — va bene così.
 - ✅ Verifica: richiedi un magic link su `/accedi` con un'email reale → arriva e apre `/portale`.
 
 ---
@@ -79,7 +79,7 @@ cablano dopo il deploy.
 - [M] In modalità **Live**: copia `sk_live_…` e `pk_live_…`.
 - [M] Crea il **Prodotto** live riusabile (prezzo dinamico per preventivo) → `prod_…` live.
 - [M] **Developers → Webhooks → Add endpoint**:
-  - URL: `https://account.digital-discovery.it/api/webhooks/stripe`
+  - URL: `https://clienti.digital-discovery.it/api/webhooks/stripe`
   - Eventi: `setup_intent.succeeded`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`
   - Copia il **Signing secret** `whsec_…` (live).
 - [M] Aggiorna le env var Vercel (Production) e **redeploy**:
@@ -102,7 +102,7 @@ cablano dopo il deploy.
   - `DOCUSEAL_API_TOKEN=…` (prod)
   - `DOCUSEAL_TEMPLATE_ID=…` (prod)
   - `DOCUSEAL_BASE_URL=https://api.docuseal.com`
-  - (opzionale) webhook DocuSeal → `https://account.digital-discovery.it/api/webhooks/docuseal` + `DOCUSEAL_WEBHOOK_SECRET`
+  - (opzionale) webhook DocuSeal → `https://clienti.digital-discovery.it/api/webhooks/docuseal` + `DOCUSEAL_WEBHOOK_SECRET`
 - ✅ Verifica: firma un contratto di prova → PDF firmato + audit trail generati.
 
 ---
