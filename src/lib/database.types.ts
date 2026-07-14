@@ -304,6 +304,7 @@ export type Database = {
           paid_at: string | null
           recovery_checkout_id: string | null
           recovery_stato: Database["public"]["Enums"]["recovery_stato"]
+          recovery_token: string | null
           recovery_url: string | null
           scadenza: string | null
           stato: Database["public"]["Enums"]["payment_stato"]
@@ -326,6 +327,7 @@ export type Database = {
           paid_at?: string | null
           recovery_checkout_id?: string | null
           recovery_stato?: Database["public"]["Enums"]["recovery_stato"]
+          recovery_token?: string | null
           recovery_url?: string | null
           scadenza?: string | null
           stato?: Database["public"]["Enums"]["payment_stato"]
@@ -348,6 +350,7 @@ export type Database = {
           paid_at?: string | null
           recovery_checkout_id?: string | null
           recovery_stato?: Database["public"]["Enums"]["recovery_stato"]
+          recovery_token?: string | null
           recovery_url?: string | null
           scadenza?: string | null
           stato?: Database["public"]["Enums"]["payment_stato"]

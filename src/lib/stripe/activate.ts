@@ -253,12 +253,12 @@ export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void
   await inviaAlertInsoluto(rata.id);
 }
 
-/** checkout.session.completed: recupero carta andato a buon fine → rata pagata. */
+/** payment_intent.succeeded: recupero carta andato a buon fine → rata pagata. */
 export async function handleRecoveryPaid(
-  session: Stripe.Checkout.Session,
+  pi: Stripe.PaymentIntent,
 ): Promise<void> {
-  const paymentId = session.metadata?.payment_id;
-  if (!paymentId || session.payment_status !== "paid") return;
+  const paymentId = pi.metadata?.payment_id;
+  if (!paymentId || pi.metadata?.tipo !== "recupero") return;
   const db = createAdminClient();
   await db
     .from("payments")

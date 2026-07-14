@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { creaLinkRecupero } from "@/lib/stripe/recupero";
 import { sendEmail } from "@/lib/email/send";
+import { emailBrand } from "@/lib/email/templates";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -63,21 +64,15 @@ export async function azioneInviaLinkEmail(
       error: "Il cliente non ha un'email: copia il link e invialo manualmente.",
     };
 
-  const html = `
-    <div style="font-family:Helvetica,Arial,sans-serif;color:#1e1e22;max-width:480px">
-      <h2 style="margin:0 0 8px;font-size:18px">Saldo rata in sospeso</h2>
-      <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#55555e">
-        Gentile ${row?.client?.ragione_sociale ?? "Cliente"}, l'addebito della rata
-        ${row?.numero_rata ?? ""} non è andato a buon fine. Puoi saldare in sicurezza
-        con carta dal link qui sotto.
-      </p>
-      <a href="${link.url}" style="display:inline-block;background:#222;color:#fff;
-        text-decoration:none;border-radius:999px;padding:12px 24px;font-weight:700;font-size:14px">
-        Salda ora</a>
-      <p style="margin:16px 0 0;font-size:12px;color:#8a8a93">
-        Se il pulsante non funziona, copia questo link: ${link.url}
-      </p>
-    </div>`;
+  const html = emailBrand({
+    heading: "Salda la rata in sospeso",
+    paragraphs: [
+      `Gentile <b>${row?.client?.ragione_sociale ?? "Cliente"}</b>, l'addebito della rata ${row?.numero_rata ?? ""} non è andato a buon fine.`,
+      "Puoi saldare in tutta sicurezza con carta dal pulsante qui sotto. Bastano pochi istanti.",
+    ],
+    cta: { label: "Salda ora", url: link.url },
+    fallbackUrl: link.url,
+  });
 
   const sent = await sendEmail({
     to: email,

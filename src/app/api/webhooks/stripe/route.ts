@@ -42,8 +42,8 @@ export async function POST(req: Request) {
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
-      case "checkout.session.completed":
-        await handleRecoveryPaid(event.data.object as Stripe.Checkout.Session);
+      case "payment_intent.succeeded":
+        await handleRecoveryPaid(event.data.object as Stripe.PaymentIntent);
         break;
       default:
         break;

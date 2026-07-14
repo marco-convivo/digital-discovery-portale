@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send";
+import { emailBrand } from "@/lib/email/templates";
 import { euro } from "@/lib/format";
 
 const SITE =
@@ -40,18 +41,14 @@ export async function inviaAlertInsoluto(paymentId: string): Promise<void> {
     }
 
     const link = `${SITE}/vendite/insoluti?p=${paymentId}`;
-    const html = `
-      <div style="font-family:Helvetica,Arial,sans-serif;color:#1e1e22;max-width:480px">
-        <h2 style="margin:0 0 8px;font-size:18px">Addebito non riuscito</h2>
-        <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#55555e">
-          <b>${cli.ragione_sociale}</b> — rata ${row.numero_rata ?? "—"} ·
-          ${euro(Number(row.importo ?? 0))}<br>
-          Motivo: ${row.failure_reason ?? "Addebito non riuscito."}
-        </p>
-        <a href="${link}" style="display:inline-block;background:#222;color:#fff;
-          text-decoration:none;border-radius:999px;padding:11px 22px;font-weight:700;font-size:14px">
-          Gestisci l'insoluto</a>
-      </div>`;
+    const html = emailBrand({
+      heading: "Addebito non riuscito",
+      paragraphs: [
+        `<b>${cli.ragione_sociale}</b> — rata ${row.numero_rata ?? "—"} · ${euro(Number(row.importo ?? 0))}`,
+        `Motivo: ${row.failure_reason ?? "Addebito non riuscito."}`,
+      ],
+      cta: { label: "Gestisci l'insoluto", url: link },
+    });
 
     await sendEmail({
       to: [...dest],
