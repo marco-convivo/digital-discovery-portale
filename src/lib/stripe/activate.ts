@@ -65,14 +65,7 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
     ? psQuery.eq("contract_id", contractId)
     : psQuery.is("contract_id", null)
   ).maybeSingle();
-  if (!ps || ps.stripe_subscription_id) return; // già attivato
-
-  const { data: quote } = await db
-    .from("quotes")
-    .select("tipo, rata_mensile, rate_num, importo_totale")
-    .eq("id", quoteId)
-    .maybeSingle();
-  if (!quote) return;
+  if (!ps) return;
 
   const stripe = getStripe();
   const pmId = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
@@ -80,6 +73,38 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
     typeof si.customer === "string" ? si.customer : si.customer?.id;
   const metodo = await metodoFromSetupIntent(si);
   const oggi = new Date();
+
+  // Flusso "nuovo mandato": la subscription esiste già → non ricrearla, ma
+  // ripuntarla al nuovo metodo di pagamento e ritentare le rate insolute.
+  if (ps.stripe_subscription_id) {
+    if (!pmId) return;
+    await stripe.subscriptions.update(ps.stripe_subscription_id, {
+      default_payment_method: pmId,
+    });
+    await db.from("payment_setups").update({ metodo }).eq("id", ps.id);
+    const { data: falliti } = await db
+      .from("payments")
+      .select("stripe_invoice_id")
+      .eq("subscription_id", ps.stripe_subscription_id)
+      .eq("stato", "failed")
+      .not("stripe_invoice_id", "is", null);
+    for (const f of (falliti ?? []) as { stripe_invoice_id: string | null }[]) {
+      if (!f.stripe_invoice_id) continue;
+      try {
+        await stripe.invoices.pay(f.stripe_invoice_id, { payment_method: pmId });
+      } catch {
+        // best-effort: l'esito lo scrivono i webhook invoice.paid/payment_failed
+      }
+    }
+    return;
+  }
+
+  const { data: quote } = await db
+    .from("quotes")
+    .select("tipo, rata_mensile, rate_num, importo_totale")
+    .eq("id", quoteId)
+    .maybeSingle();
+  if (!quote) return;
 
   if (quote.tipo === "ricorrente") {
     const rate = quote.rate_num ?? 12;
