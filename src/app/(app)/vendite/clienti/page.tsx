@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { ClientiList, type ClienteItem } from "@/components/internal/clienti-list";
@@ -68,14 +69,22 @@ export default async function ClientiPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
-          Clienti
-        </h1>
-        <p className="mt-0.5 text-sm text-text-2">
-          I clienti acquisiti — contratto firmato. Cerca e apri la scheda
-          completa.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
+            Clienti
+          </h1>
+          <p className="mt-0.5 text-sm text-text-2">
+            I clienti acquisiti — contratto firmato. Cerca e apri la scheda
+            completa.
+          </p>
+        </div>
+        <Link
+          href="/vendite/clienti/nuovo"
+          className="inline-flex flex-none rounded-pill bg-ink px-4 py-2 text-[13.5px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+        >
+          + Cliente esistente
+        </Link>
       </header>
 
       <Card>

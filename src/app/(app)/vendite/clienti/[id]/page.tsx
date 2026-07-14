@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
+import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
 import { PreventiviList, type PreventivoItem } from "@/components/internal/preventivi-list";
 import { type RataRow } from "@/components/internal/piano-pagamenti";
@@ -59,7 +60,7 @@ export default async function ClientePage({
         .order("created_at", { ascending: false }),
       supabase
         .from("payments")
-        .select("numero_rata, importo, scadenza, stato, contract_id")
+        .select("id, numero_rata, importo, scadenza, stato, contract_id, subscription_id")
         .eq("client_id", id)
         .order("numero_rata", { ascending: true }),
       supabase
@@ -77,29 +78,33 @@ export default async function ClientePage({
   // Raggruppa le rate per contratto (più contratti = più piani distinti).
   const pays = (payData ?? []) as unknown as (RataRow & {
     contract_id: string | null;
+    subscription_id: string | null;
   })[];
   const NONE = "__none__";
   const gruppiPagamenti = Array.from(
     pays.reduce((map, p) => {
       const k = p.contract_id ?? NONE;
-      const arr = map.get(k) ?? [];
-      arr.push({
+      const g = map.get(k) ?? { rate: [] as RataRow[], manuale: true };
+      g.rate.push({
+        id: p.id,
         numero_rata: p.numero_rata,
         importo: p.importo,
         scadenza: p.scadenza,
         stato: p.stato,
       });
-      map.set(k, arr);
+      // "manuale" = nessuna rata legata a una subscription Stripe
+      if (p.subscription_id) g.manuale = false;
+      map.set(k, g);
       return map;
-    }, new Map<string, RataRow[]>()),
-  ).map(([k, rate]) => {
+    }, new Map<string, { rate: RataRow[]; manuale: boolean }>()),
+  ).map(([k, g]) => {
     const contract = k === NONE ? null : contratti.find((c) => c.id === k) ?? null;
     const label = contract
       ? contract.signed_at
         ? `Contratto · firmato il ${dataIt(contract.signed_at)}`
         : "Contratto"
       : "Piano";
-    return { key: k, label, rate };
+    return { key: k, label, rate: g.rate, manuale: g.manuale };
   });
 
   return (
@@ -120,7 +125,10 @@ export default async function ClientePage({
             <p className="mt-0.5 text-sm text-text-2">{c.referente}</p>
           )}
         </div>
-        <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+        <div className="flex flex-none flex-col items-end gap-2">
+          <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+          <InviaAccessoButton clientId={c.id} />
+        </div>
       </header>
 
       <div className="grid items-start gap-5 lg:grid-cols-3">
