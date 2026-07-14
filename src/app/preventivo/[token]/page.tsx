@@ -3,6 +3,7 @@ import { getPublicQuote } from "@/lib/quotes/public";
 import { AcceptPanel } from "@/components/quote/accept-panel";
 import { euro, dataIt, conIva } from "@/lib/format";
 import { Logo } from "@/components/ui/logo";
+import { FlowStepper } from "@/components/flow/flow-stepper";
 
 export default async function PreventivoPage({
   params,
@@ -21,6 +22,8 @@ export default async function PreventivoPage({
         <Logo />
         <div className="font-bold">Digital Discovery</div>
       </div>
+
+      <FlowStepper current={1} />
 
       <header className="mb-8">
         <p className="text-[13px] font-semibold uppercase tracking-wide text-text-3">

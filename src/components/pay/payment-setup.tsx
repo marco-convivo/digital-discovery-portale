@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Logo } from "@/components/ui/logo";
+import { FlowStepper } from "@/components/flow/flow-stepper";
 import {
   Elements,
   PaymentElement,
@@ -38,6 +39,8 @@ export function PaymentSetup(props: Props) {
           <div className="text-[12px] text-text-3">Attiva il pagamento</div>
         </div>
       </div>
+
+      <FlowStepper current={4} />
 
       <div className="rounded-card border border-line/60 bg-card p-6 shadow-card">
         <h1 className="text-lg font-extrabold tracking-[-0.01em] text-text">

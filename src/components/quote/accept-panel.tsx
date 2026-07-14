@@ -20,9 +20,10 @@ export function AcceptPanel({
   if (done) {
     return (
       <div className="rounded-md bg-mint-soft p-4 text-center">
-        <p className="font-bold text-on-mint">Preventivo accettato ✓</p>
+        <p className="font-bold text-on-mint">Passo 1 completato ✓</p>
         <p className="mt-1 text-sm text-text-2">
-          Ultimo passaggio: firma il contratto online, poi imposti il pagamento.
+          Restano tre passaggi: inserisci i dati per il contratto, firma online e
+          imposta il pagamento. Bastano pochi minuti.
         </p>
         <a
           href={`/firma/${token}`}
