@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Logo } from "@/components/ui/logo";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -20,25 +19,29 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center px-6">
-      <Card className="w-full max-w-sm p-8 text-center">
-        <Logo className="mx-auto mb-5 size-12 rounded-[14px]" />
-        <h1 className="text-xl font-extrabold tracking-[-0.01em] text-text">
-          Digital Discovery
-        </h1>
-        <p className="mt-1 text-sm text-text-2">Area vendite — accesso staff</p>
+    <AuthShell variant="staff">
+      <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
+        Accedi
+      </h1>
+      <p className="mt-1.5 text-[15px] text-text-2">
+        Area vendite · staff Digital Discovery
+      </p>
 
-        <Button
-          onClick={signInWithGoogle}
-          disabled={loading}
-          variant="outline"
-          className="mt-7 w-full"
-        >
-          <GoogleIcon />
-          {loading ? "Reindirizzamento…" : "Accedi con Google"}
-        </Button>
-      </Card>
-    </main>
+      <Button
+        onClick={signInWithGoogle}
+        disabled={loading}
+        variant="outline"
+        className="mt-8 w-full"
+      >
+        <GoogleIcon />
+        {loading ? "Reindirizzamento…" : "Accedi con Google"}
+      </Button>
+
+      <p className="mt-4 text-[12.5px] leading-relaxed text-text-3">
+        Riservato allo staff con email <b>@convivostudio.it</b>. Il primo accesso
+        va abilitato da un amministratore.
+      </p>
+    </AuthShell>
   );
 }
 
