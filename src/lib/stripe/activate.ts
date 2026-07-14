@@ -3,6 +3,8 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
+import { motivoInsoluto } from "@/lib/stripe/insoluti-reason";
+import { inviaAlertInsoluto } from "@/lib/insoluti/alert";
 import { ALIQUOTA_IVA } from "@/lib/format";
 import type { Database } from "@/lib/database.types";
 
@@ -156,41 +158,116 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
   await inviaAccessoPortale((cli as { email: string | null } | null)?.email);
 }
 
-/** invoice.paid: segna pagata la prima rata ancora "scheduled" della subscription. */
-export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  const subId = subIdFromInvoice(invoice);
-  if (!subId) return;
-  const db = createAdminClient();
-  const { data: next } = await db
+// Trova (o aggancia stabilmente) la rata di un invoice di subscription: alla
+// prima comparsa dell'invoice lo si assegna alla prima rata senza invoice; dopo
+// si matcha sempre per stripe_invoice_id (i retry colpiscono la stessa rata).
+async function rataPerInvoice(
+  db: ReturnType<typeof createAdminClient>,
+  subId: string,
+  invoiceId: string,
+): Promise<{ id: string } | null> {
+  const { data: byInv } = await db
+    .from("payments")
+    .select("id")
+    .eq("stripe_invoice_id", invoiceId)
+    .maybeSingle();
+  if (byInv) return byInv as { id: string };
+
+  const { data: libera } = await db
     .from("payments")
     .select("id")
     .eq("subscription_id", subId)
-    .eq("stato", "scheduled")
+    .is("stripe_invoice_id", null)
     .order("numero_rata", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (!next) return;
-  await db
-    .from("payments")
-    .update({ stato: "paid", paid_at: new Date().toISOString() })
-    .eq("id", next.id);
+  if (!libera) return null;
+  const id = (libera as { id: string }).id;
+  await db.from("payments").update({ stripe_invoice_id: invoiceId }).eq("id", id);
+  return { id };
 }
 
-/** invoice.payment_failed: segna fallita la prossima rata schedulata (dunning). */
+/** invoice.paid: segna pagata la rata di quell'invoice (idempotente; chiude un eventuale recupero). */
+export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  const subId = subIdFromInvoice(invoice);
+  if (!subId || !invoice.id) return;
+  const db = createAdminClient();
+  const rata = await rataPerInvoice(db, subId, invoice.id);
+  if (!rata) return;
+  await db
+    .from("payments")
+    .update({
+      stato: "paid",
+      paid_at: new Date().toISOString(),
+      recovery_stato: "nessuno",
+      failure_code: null,
+      failure_reason: null,
+    })
+    .eq("id", rata.id);
+}
+
+/** invoice.payment_failed: marca insoluta la rata dell'invoice, salva motivo, avvisa. */
 export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void> {
   const subId = subIdFromInvoice(invoice);
-  if (!subId) return;
+  if (!subId || !invoice.id) return;
   const db = createAdminClient();
-  const { data: next } = await db
+  const rata = await rataPerInvoice(db, subId, invoice.id);
+  if (!rata) return;
+
+  // reason: dal charge collegato o da last_finalization_error
+  let code: string | null = null;
+  const anyInv = invoice as unknown as {
+    last_finalization_error?: { code?: string } | null;
+    charge?: string | null;
+  };
+  if (anyInv.charge) {
+    try {
+      const ch = await getStripe().charges.retrieve(anyInv.charge);
+      code = ch.failure_code ?? ch.outcome?.reason ?? null;
+    } catch {
+      // ignora: usiamo il fallback sotto
+    }
+  }
+  code = code ?? anyInv.last_finalization_error?.code ?? null;
+  const { code: c, reason } = motivoInsoluto(code);
+
+  const { data: cur } = await db
     .from("payments")
-    .select("id")
-    .eq("subscription_id", subId)
-    .eq("stato", "scheduled")
-    .order("numero_rata", { ascending: true })
-    .limit(1)
+    .select("attempts")
+    .eq("id", rata.id)
     .maybeSingle();
-  if (!next) return;
-  await db.from("payments").update({ stato: "failed" }).eq("id", next.id);
+  const attempts = ((cur as { attempts: number } | null)?.attempts ?? 0) + 1;
+
+  await db
+    .from("payments")
+    .update({
+      stato: "failed",
+      failure_code: c,
+      failure_reason: reason,
+      failed_at: new Date().toISOString(),
+      attempts,
+      recovery_stato: "da_recuperare",
+    })
+    .eq("id", rata.id);
+
+  await inviaAlertInsoluto(rata.id);
+}
+
+/** checkout.session.completed: recupero carta andato a buon fine → rata pagata. */
+export async function handleRecoveryPaid(
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  const paymentId = session.metadata?.payment_id;
+  if (!paymentId || session.payment_status !== "paid") return;
+  const db = createAdminClient();
+  await db
+    .from("payments")
+    .update({
+      stato: "paid",
+      paid_at: new Date().toISOString(),
+      recovery_stato: "recuperato",
+    })
+    .eq("id", paymentId);
 }
 
 /** customer.subscription.deleted: il cliente cessa. */
