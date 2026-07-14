@@ -1,0 +1,74 @@
+<!-- Template email "Magic Link" / "Confirm signup" — Digital Discovery.
+     Da incollare in Supabase → Authentication → Email Templates.
+     Variabile del link: {{ .ConfirmationURL }} (fornita da Supabase).
+     Email-safe: tabelle + stili inline, font di sistema (Fustat non carica nelle email). -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e9ece6;margin:0;padding:32px 12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e1e4dd;border-radius:16px;overflow:hidden;">
+        <!-- Header / brand -->
+        <tr>
+          <td style="padding:28px 32px 4px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="40" height="40" align="center" valign="middle" style="width:40px;height:40px;background:#222222;border-radius:10px;color:#ffffff;font-size:15px;font-weight:800;">DD</td>
+                <td style="padding-left:12px;font-size:17px;font-weight:700;color:#1e1e22;">Digital Discovery</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:18px 32px 4px;">
+            <h1 style="margin:0 0 8px;font-size:22px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;color:#1e1e22;">Accedi al tuo portale</h1>
+            <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#55555e;">
+              Ecco il tuo accesso sicuro all'area clienti Digital Discovery: da qui trovi il tuo piano di pagamento, i servizi attivi e i contratti. Il link è valido per un'ora.
+            </p>
+
+            <!-- Bottone -->
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" bgcolor="#222222" style="background:#222222;border-radius:999px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">Accedi al portale</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:22px 0 0;font-size:12.5px;line-height:1.6;color:#8a8a93;">
+              Se il pulsante non funziona, copia e incolla questo link nel browser:<br>
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#7c6cf0;word-break:break-all;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Nota sicurezza -->
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="border-top:1px solid #e1e4dd;padding-top:16px;">
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#8a8a93;">
+                  Non hai richiesto questo accesso? Puoi ignorare questa email in tutta sicurezza: nessuno potrà entrare senza il link qui sopra.
+                </p>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:18px 32px 28px;">
+            <p style="margin:0;font-size:12px;line-height:1.7;color:#8a8a93;">
+              Digital Discovery S.r.l. · Piazzale Sant'Antonio 7, L'Aquila<br>
+              <a href="https://clienti.digital-discovery.it" target="_blank" style="color:#8a8a93;text-decoration:none;">clienti.digital-discovery.it</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <p style="max-width:480px;margin:16px auto 0;font-size:11px;line-height:1.5;color:#a7aaa2;text-align:center;">
+        Ricevi questa email perché è stato richiesto l'accesso al portale con questo indirizzo.
+      </p>
+    </td>
+  </tr>
+</table>
