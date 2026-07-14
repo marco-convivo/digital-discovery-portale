@@ -4,18 +4,22 @@ import { CATALOG } from "@/lib/catalog";
 import { Card } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Prezzo } from "@/components/catalogo/prezzo";
+import { NuovoServizio } from "@/components/internal/nuovo-servizio";
 
 export default async function CatalogoAdminPage() {
   const servizi = await listServiziInterni();
   return (
     <div className="mx-auto max-w-5xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
-          Catalogo servizi
-        </h1>
-        <p className="mt-0.5 text-sm text-text-2">
-          Gestisci contenuti, prezzo, immagine e portfolio di ciascun servizio.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
+            Catalogo servizi
+          </h1>
+          <p className="mt-0.5 text-sm text-text-2">
+            Gestisci contenuti, prezzo, immagine e portfolio di ciascun servizio.
+          </p>
+        </div>
+        <NuovoServizio />
       </header>
       <div className="grid gap-3 sm:grid-cols-2">
         {servizi.map((row) => {

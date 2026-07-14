@@ -17,7 +17,8 @@ const NAV = [
   { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: true },
   { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: true },
   { href: "/vendite/scadenze", label: "Scadenze", icon: ClockIcon, ready: true },
-  { href: "/vendite/catalogo", label: "Catalogo", icon: GridIcon, ready: true },
+  { href: "/vendite/catalogo", label: "Catalogo", icon: GridIcon, ready: true, adminOnly: true },
+  { href: "/vendite/utenti", label: "Utenti", icon: ShieldIcon, ready: true, adminOnly: true },
 ];
 
 export function Sidebar({ profile }: { profile: Profile }) {
@@ -30,9 +31,12 @@ export function Sidebar({ profile }: { profile: Profile }) {
     .join("")
     .toUpperCase();
 
+  const isAdmin = profile.role === "admin";
+  const items = NAV.filter((n) => !n.adminOnly || isAdmin);
+
   const nav = (onNavigate?: () => void) => (
     <nav className="flex flex-col gap-0.5">
-      {NAV.map(({ href, label, icon: Icon, ready }) => {
+      {items.map(({ href, label, icon: Icon, ready }) => {
         const active =
           ready &&
           (href === "/vendite" ? pathname === href : pathname.startsWith(href));
@@ -236,6 +240,14 @@ function GridIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
+      <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+      <path d="M9.5 12l2 2 3.5-3.5" />
     </svg>
   );
 }

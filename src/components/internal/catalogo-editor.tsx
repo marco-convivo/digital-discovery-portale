@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   updateServizio,
   uploadImmagine,
   setImmagineServizio,
+  deleteServizio,
   type ServizioContenuto,
 } from "@/lib/catalogo/actions";
 import { Button } from "@/components/ui/button";
@@ -38,10 +40,12 @@ export function CatalogoEditor({
   immagineUrl: string | null;
   initial: ServizioContenuto;
 }) {
+  const router = useRouter();
   const [d, setD] = useState<ServizioContenuto>(initial);
   const [img, setImg] = useState<string | null>(immagineUrl);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
   const [pending, start] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof ServizioContenuto>(k: K, v: ServizioContenuto[K]) =>
@@ -52,6 +56,15 @@ export function CatalogoEditor({
     start(async () => {
       const res = await updateServizio(chiave, d);
       if (res.ok) setSaved(true);
+      else setError(res.error);
+    });
+  }
+
+  function elimina() {
+    setError(null);
+    start(async () => {
+      const res = await deleteServizio(chiave);
+      if (res.ok) router.push("/vendite/catalogo");
       else setError(res.error);
     });
   }
@@ -116,6 +129,45 @@ export function CatalogoEditor({
         <Button size="sm" onClick={save} disabled={pending}>
           {pending ? "Salvataggio…" : "Salva"}
         </Button>
+      </div>
+
+      {/* Elimina servizio */}
+      <div className="mt-2 border-t border-line/60 pt-4">
+        {!confirmDel ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDel(true)}
+            className="text-[13px] font-semibold text-fail-tx hover:underline"
+          >
+            Elimina servizio dal catalogo
+          </button>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-[13px] text-text-2">
+              Eliminare <b>{d.titolo}</b>? Verranno rimossi anche i lavori di
+              portfolio collegati. L&apos;azione non è reversibile.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={elimina}
+                disabled={pending}
+                className="text-fail-tx"
+              >
+                {pending ? "Eliminazione…" : "Sì, elimina"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirmDel(false)}
+                disabled={pending}
+              >
+                Annulla
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -6,7 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-async function assertStaff(): Promise<string | null> {
+// Il catalogo è interamente riservato all'admin (scrittura). Ritorna un
+// messaggio d'errore se l'utente non è admin attivo, altrimenti null.
+async function assertAdmin(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,11 +16,13 @@ async function assertStaff(): Promise<string | null> {
   if (!user) return "Sessione scaduta.";
   const { data } = await supabase
     .from("profiles")
-    .select("id, active")
+    .select("role, active")
     .eq("id", user.id)
     .maybeSingle();
-  if (!data || !(data as { active: boolean }).active)
-    return "Accesso non abilitato.";
+  const p = data as { role: string; active: boolean } | null;
+  if (!p || !p.active) return "Accesso non abilitato.";
+  if (p.role !== "admin")
+    return "Solo un amministratore può gestire il catalogo.";
   return null;
 }
 
@@ -45,7 +49,7 @@ export async function updateServizio(
   chiave: string,
   input: ServizioContenuto,
 ): Promise<ActionResult> {
-  const err = await assertStaff();
+  const err = await assertAdmin();
   if (err) return { ok: false, error: err };
   if (!input.titolo.trim()) return { ok: false, error: "Il titolo è obbligatorio." };
   const supabase = await createClient();
@@ -89,7 +93,7 @@ export interface PortfolioInput {
 export async function savePortfolioItem(
   input: PortfolioInput,
 ): Promise<ActionResult> {
-  const err = await assertStaff();
+  const err = await assertAdmin();
   if (err) return { ok: false, error: err };
   if (!input.titolo.trim()) return { ok: false, error: "Il titolo è obbligatorio." };
   const supabase = await createClient();
@@ -113,7 +117,7 @@ export async function savePortfolioItem(
 }
 
 export async function deletePortfolioItem(id: string): Promise<ActionResult> {
-  const err = await assertStaff();
+  const err = await assertAdmin();
   if (err) return { ok: false, error: err };
   const supabase = await createClient();
   const { error } = await supabase.from("portfolio_items").delete().eq("id", id);
@@ -126,7 +130,7 @@ export async function deletePortfolioItem(id: string): Promise<ActionResult> {
 export async function uploadImmagine(
   form: FormData,
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const err = await assertStaff();
+  const err = await assertAdmin();
   if (err) return { ok: false, error: err };
   const file = form.get("file");
   const prefix = String(form.get("prefix") ?? "servizio");
@@ -149,12 +153,83 @@ export async function uploadImmagine(
   return { ok: true, url: data.publicUrl };
 }
 
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+/**
+ * Crea un nuovo servizio a catalogo (bozza non attiva) e ne ritorna la chiave.
+ * La chiave è uno slug del titolo, resa univoca. Solo admin.
+ */
+export async function createServizio(
+  titolo: string,
+): Promise<{ ok: true; chiave: string } | { ok: false; error: string }> {
+  const err = await assertAdmin();
+  if (err) return { ok: false, error: err };
+  const t = titolo.trim();
+  if (!t) return { ok: false, error: "Il titolo è obbligatorio." };
+  const supabase = await createClient();
+
+  // Chiave univoca: slug base, poi -2, -3, … se già esiste.
+  const base = slugify(t) || "servizio";
+  const { data: esistenti } = await supabase
+    .from("service_catalog")
+    .select("chiave")
+    .like("chiave", `${base}%`);
+  const prese = new Set(
+    ((esistenti ?? []) as { chiave: string }[]).map((r) => r.chiave),
+  );
+  let chiave = base;
+  for (let i = 2; prese.has(chiave); i++) chiave = `${base}-${i}`;
+
+  // Ordine: in coda alla vetrina.
+  const { data: last } = await supabase
+    .from("service_catalog")
+    .select("ordine")
+    .order("ordine", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ordine = ((last as { ordine: number } | null)?.ordine ?? 0) + 1;
+
+  const { error } = await supabase.from("service_catalog").insert({
+    chiave,
+    titolo: t,
+    ordine,
+    attivo: false, // bozza: si pubblica dall'editor quando è pronta
+  });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/vendite/catalogo");
+  revalidatePath("/catalogo");
+  return { ok: true, chiave };
+}
+
+/** Elimina un servizio a catalogo (il portfolio collegato cade in cascata). Solo admin. */
+export async function deleteServizio(chiave: string): Promise<ActionResult> {
+  const err = await assertAdmin();
+  if (err) return { ok: false, error: err };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("service_catalog")
+    .delete()
+    .eq("chiave", chiave);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/vendite/catalogo");
+  revalidatePath("/catalogo");
+  return { ok: true };
+}
+
 /** Aggiorna l'immagine di anteprima di un servizio. */
 export async function setImmagineServizio(
   chiave: string,
   url: string,
 ): Promise<ActionResult> {
-  const err = await assertStaff();
+  const err = await assertAdmin();
   if (err) return { ok: false, error: err };
   const supabase = await createClient();
   const { error } = await supabase
