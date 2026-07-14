@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ServizioArt } from "@/components/catalogo/servizio-art";
+import { ServizioGlyph } from "@/components/catalogo/servizio-glyph";
 import { euro } from "@/lib/format";
 import { categoria, suffissoPrezzo, TONE_BADGE } from "@/lib/catalogo/ui";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ export function ServizioCard({
   return (
     <Link
       href={`${basePath}/${row.chiave}`}
-      className="group flex flex-col overflow-hidden rounded-card border border-line/60 bg-card shadow-card transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-violet focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-violet/50"
+      className="group flex flex-col overflow-hidden rounded-card border border-white/70 bg-white/55 shadow-[0_16px_44px_-18px_rgba(37,99,235,0.4)] ring-1 ring-white/40 backdrop-blur-xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/72 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-blue-400/50"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
         {row.immagine_url ? (
@@ -29,11 +29,19 @@ export function ServizioCard({
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
         ) : (
-          <ServizioArt chiave={row.chiave} />
+          <div
+            className="grid h-full w-full place-items-center"
+            style={{ background: "linear-gradient(160deg,#eff5ff 0%,#dbe8ff 100%)" }}
+          >
+            <ServizioGlyph
+              chiave={row.chiave}
+              className="size-[58%] transition-transform duration-300 ease-out group-hover:scale-105"
+            />
+          </div>
         )}
         <span
           className={cn(
-            "absolute left-3 top-3 rounded-pill px-2.5 py-1 text-[11px] font-bold",
+            "absolute left-3 top-3 rounded-pill px-2.5 py-1 text-[11px] font-bold backdrop-blur",
             TONE_BADGE[cat.tone],
           )}
         >
@@ -77,7 +85,7 @@ export function ServizioCard({
           </div>
           <span
             aria-hidden
-            className="grid size-8 flex-none place-items-center rounded-full bg-card-2 text-text-2 transition-colors group-hover:bg-violet group-hover:text-on-violet"
+            className="grid size-8 flex-none place-items-center rounded-full bg-white/70 text-text-2 shadow-sm transition-colors group-hover:bg-blue-500 group-hover:text-white"
           >
             →
           </span>

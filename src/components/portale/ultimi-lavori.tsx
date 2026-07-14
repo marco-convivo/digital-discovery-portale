@@ -1,4 +1,4 @@
-import { ServizioArt } from "@/components/catalogo/servizio-art";
+import { ServizioGlyph } from "@/components/catalogo/servizio-glyph";
 import type { LavoroItem } from "@/lib/catalogo/queries";
 
 function LavoroCard({ l }: { l: LavoroItem }) {
@@ -13,7 +13,15 @@ function LavoroCard({ l }: { l: LavoroItem }) {
             className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
           />
         ) : (
-          <ServizioArt chiave={l.servizioChiave ?? "sito"} />
+          <div
+            className="grid h-full w-full place-items-center"
+            style={{ background: "linear-gradient(160deg,#eff5ff 0%,#dbe8ff 100%)" }}
+          >
+            <ServizioGlyph
+              chiave={l.servizioChiave ?? "sito"}
+              className="size-[52%] transition-transform duration-300 ease-out group-hover:scale-105"
+            />
+          </div>
         )}
       </div>
       <div className="p-5">
@@ -54,7 +62,7 @@ function LavoroCard({ l }: { l: LavoroItem }) {
   );
 
   const cls =
-    "group block overflow-hidden rounded-card border border-line/60 bg-card shadow-card transition-[transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-violet";
+    "group block overflow-hidden rounded-card border border-white/70 bg-white/55 shadow-[0_16px_44px_-18px_rgba(37,99,235,0.4)] ring-1 ring-white/40 backdrop-blur-xl transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/72";
 
   return l.link_url ? (
     <a href={l.link_url} target="_blank" rel="noopener noreferrer" className={cls}>
