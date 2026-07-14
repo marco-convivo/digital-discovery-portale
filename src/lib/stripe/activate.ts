@@ -5,7 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import { motivoInsoluto } from "@/lib/stripe/insoluti-reason";
 import { inviaAlertInsoluto } from "@/lib/insoluti/alert";
-import { ALIQUOTA_IVA } from "@/lib/format";
+import { inviaConfermaMandato } from "@/lib/pagamenti/mandato";
+import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
+import { ALIQUOTA_IVA, conIva } from "@/lib/format";
 import type { Database } from "@/lib/database.types";
 
 type PaymentMetodo = Database["public"]["Enums"]["payment_metodo"];
@@ -152,10 +154,23 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
   // Invito di accesso al portale (magic link) — best-effort, non blocca il flusso.
   const { data: cli } = await db
     .from("clients")
-    .select("email")
+    .select("email, ragione_sociale")
     .eq("id", clientId)
     .maybeSingle();
-  await inviaAccessoPortale((cli as { email: string | null } | null)?.email);
+  const cliRow = cli as { email: string | null; ragione_sociale: string } | null;
+  await inviaAccessoPortale(cliRow?.email);
+
+  // Conferma mandato SEPA per i piani ricorrenti pagati con addebito diretto.
+  if (metodo === "sdd" && quote.tipo === "ricorrente" && cliRow) {
+    const { statement_descriptor } = await getAppSettingsAdmin();
+    await inviaConfermaMandato({
+      email: cliRow.email,
+      ragioneSociale: cliRow.ragione_sociale,
+      rataLorda: conIva(Number(quote.rata_mensile ?? 0)),
+      rateNum: quote.rate_num ?? 12,
+      descriptor: statement_descriptor,
+    });
+  }
 }
 
 // Trova (o aggancia stabilmente) la rata di un invoice di subscription: alla
@@ -268,6 +283,63 @@ export async function handleRecoveryPaid(
       recovery_stato: "recuperato",
     })
     .eq("id", paymentId);
+}
+
+/**
+ * charge.dispute.created: ritorno tardivo (l'insoluto arriva DOPO un "pagato").
+ * Riapre la rata come insoluta e avvisa.
+ */
+export async function handleChargeDispute(dispute: Stripe.Dispute): Promise<void> {
+  const chargeId =
+    typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
+  if (!chargeId) return;
+  const db = createAdminClient();
+  const stripe = getStripe();
+
+  let rataId: string | null = null;
+  try {
+    const ch = await stripe.charges.retrieve(chargeId);
+    const anyCh = ch as unknown as {
+      invoice?: string | null;
+      payment_intent?: string | null;
+    };
+    if (anyCh.invoice) {
+      const { data } = await db
+        .from("payments")
+        .select("id")
+        .eq("stripe_invoice_id", anyCh.invoice)
+        .maybeSingle();
+      rataId = (data as { id: string } | null)?.id ?? null;
+    }
+    if (!rataId && anyCh.payment_intent) {
+      const pi = await stripe.paymentIntents.retrieve(anyCh.payment_intent);
+      rataId = pi.metadata?.payment_id ?? null;
+    }
+  } catch {
+    return;
+  }
+  if (!rataId) return;
+
+  const { data: cur } = await db
+    .from("payments")
+    .select("attempts")
+    .eq("id", rataId)
+    .maybeSingle();
+  const attempts = ((cur as { attempts: number } | null)?.attempts ?? 0) + 1;
+
+  await db
+    .from("payments")
+    .update({
+      stato: "failed",
+      recovery_stato: "da_recuperare",
+      failure_code: "DISPUTE",
+      failure_reason: "Addebito stornato/contestato dopo l'incasso.",
+      failed_at: new Date().toISOString(),
+      attempts,
+    })
+    .eq("id", rataId);
+
+  await inviaAlertInsoluto(rataId);
 }
 
 /** customer.subscription.deleted: il cliente cessa. */

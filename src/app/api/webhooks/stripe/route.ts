@@ -7,6 +7,7 @@ import {
   handleInvoiceFailed,
   handleSubscriptionDeleted,
   handleRecoveryPaid,
+  handleChargeDispute,
 } from "@/lib/stripe/activate";
 
 // Webhook Stripe. Verifica la firma sul body RAW (niente parsing prima).
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
         break;
       case "payment_intent.succeeded":
         await handleRecoveryPaid(event.data.object as Stripe.PaymentIntent);
+        break;
+      case "charge.dispute.created":
+        await handleChargeDispute(event.data.object as Stripe.Dispute);
         break;
       default:
         break;

@@ -7,6 +7,8 @@ import {
   azioneInviaLinkEmail,
   azioneSegnaPagato,
   azioneAnnulla,
+  azioneRitentaSepa,
+  azioneNuovoMandato,
 } from "@/lib/insoluti/actions";
 import { euro, dataIt } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -112,6 +114,24 @@ function Riga({
           onClick={() => setBonifico((v) => !v)}
         >
           Bonifico
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          onClick={() => run(azioneRitentaSepa(r.id), "Addebito SEPA ritentato.")}
+        >
+          Ritenta SEPA
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          onClick={() =>
+            run(azioneNuovoMandato(r.id), "Richiesta nuovo mandato inviata al cliente.")
+          }
+        >
+          Nuovo mandato
         </Button>
         <Button
           size="sm"
