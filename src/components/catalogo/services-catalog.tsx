@@ -1,33 +1,7 @@
-import {
-  Monitor,
-  Video,
-  Camera,
-  ShoppingBag,
-  Share2,
-  Megaphone,
-  Palette,
-  MapPin,
-  MessageCircle,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
 import { ServiceCard } from "@/components/catalogo/service-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { iconForChiave } from "@/lib/catalogo/service-icons";
 import type { VetrinaServizio } from "@/lib/catalogo/types";
-
-// Mappa chiave servizio → icona lucide (a linea sottile). La chiave è stabile
-// (da catalog.ts / service_catalog); i titoli arrivano dal catalogo.
-const ICONS: Record<string, LucideIcon> = {
-  sito: Monitor,
-  video: Video,
-  shooting: Camera,
-  ecommerce: ShoppingBag,
-  social: Share2,
-  ads: Megaphone,
-  brand: Palette,
-  google: MapPin,
-  whatsapp: MessageCircle,
-};
 
 export function ServicesCatalog({
   servizi,
@@ -51,7 +25,7 @@ export function ServicesCatalog({
       {servizi.map((v) => (
         <ServiceCard
           key={v.row.id}
-          icon={ICONS[v.row.chiave] ?? Sparkles}
+          icon={iconForChiave(v.row.chiave)}
           title={v.row.titolo}
           description={v.row.sottotitolo ?? v.row.descrizione ?? ""}
           href={`${basePath}/${v.row.chiave}`}

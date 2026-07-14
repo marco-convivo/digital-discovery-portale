@@ -1,23 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DARK_CARD_STYLE,
+  DARK_SPOTLIGHT_STYLE,
+  ICON_GLOW,
+} from "@/components/catalogo/card-style";
 
 // Scheda scura su sfondo chiaro — riferimento: docs/catalogo-servizi-A-minimal.html.
 // Riusabile come link (vetrina) o come selettore (builder preventivi, via onClick).
-
-const CARD_STYLE: React.CSSProperties = {
-  background: "linear-gradient(180deg,#12151f,#0c0e15)",
-  border: "1px solid rgba(255,255,255,.08)",
-  boxShadow:
-    "0 30px 60px -26px rgba(120,90,240,.5), 0 12px 26px -14px rgba(20,20,30,.5)",
-};
-const SPOTLIGHT_STYLE: React.CSSProperties = {
-  background:
-    "radial-gradient(120% 62% at 50% -8%, rgba(162,142,249,.52), transparent 58%)",
-};
-const ICON_GLOW: React.CSSProperties = {
-  filter: "drop-shadow(0 0 11px rgba(162,142,249,.55))",
-};
 
 export interface ServiceCardProps {
   icon: LucideIcon;
@@ -54,7 +45,7 @@ export function ServiceCard({
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={{ ...SPOTLIGHT_STYLE, zIndex: 0 }}
+        style={{ ...DARK_SPOTLIGHT_STYLE, zIndex: 0 }}
       />
       <span className="relative z-10 block">
         <span className="mx-auto mb-6 mt-1.5 block leading-none text-white" style={ICON_GLOW}>
@@ -76,7 +67,7 @@ export function ServiceCard({
 
   if (href) {
     return (
-      <Link href={href} className={wrapper} style={CARD_STYLE} aria-label={title}>
+      <Link href={href} className={wrapper} style={DARK_CARD_STYLE} aria-label={title}>
         {content}
       </Link>
     );
@@ -88,14 +79,14 @@ export function ServiceCard({
         onClick={onClick}
         aria-pressed={selected}
         className={wrapper}
-        style={CARD_STYLE}
+        style={DARK_CARD_STYLE}
       >
         {content}
       </button>
     );
   }
   return (
-    <div className={wrapper} style={CARD_STYLE}>
+    <div className={wrapper} style={DARK_CARD_STYLE}>
       {content}
     </div>
   );
