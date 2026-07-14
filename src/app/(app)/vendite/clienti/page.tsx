@@ -33,6 +33,26 @@ export default async function ClientiPage() {
     .order("ragione_sociale", { ascending: true });
 
   const rows = (data ?? []) as unknown as Row[];
+
+  // Insoluti aperti per cliente: pill di evidenza + azione rapida.
+  const { data: insData } = await supabase
+    .from("payments")
+    .select("id, client_id, failed_at")
+    .eq("stato", "failed")
+    .in("recovery_stato", [
+      "da_recuperare",
+      "link_inviato",
+      "nuovo_mandato",
+      "bonifico_in_verifica",
+    ])
+    .order("failed_at", { ascending: false, nullsFirst: false });
+  const insolutiMap = new Map<string, { count: number; paymentId: string }>();
+  for (const p of (insData ?? []) as { id: string; client_id: string }[]) {
+    const cur = insolutiMap.get(p.client_id);
+    if (cur) cur.count += 1;
+    else insolutiMap.set(p.client_id, { count: 1, paymentId: p.id });
+  }
+
   const clienti: ClienteItem[] = rows.map((r) => ({
     id: r.id,
     ragione_sociale: r.ragione_sociale,
@@ -42,6 +62,8 @@ export default async function ClientiPage() {
     telefono: r.telefono,
     stato: r.stato,
     owner_name: r.owner?.full_name ?? null,
+    insolutoCount: insolutiMap.get(r.id)?.count ?? 0,
+    insolutoPaymentId: insolutiMap.get(r.id)?.paymentId ?? null,
   }));
 
   return (

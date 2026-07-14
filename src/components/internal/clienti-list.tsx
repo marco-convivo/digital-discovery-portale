@@ -5,6 +5,7 @@ import Link from "next/link";
 import { StatusPill } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
 import { STATO_META } from "@/lib/stati";
+import { cn } from "@/lib/utils";
 import type { ClientStato } from "@/lib/types";
 
 export interface ClienteItem {
@@ -16,6 +17,8 @@ export interface ClienteItem {
   telefono: string | null;
   stato: ClientStato;
   owner_name: string | null;
+  insolutoCount: number;
+  insolutoPaymentId: string | null;
 }
 
 function norm(s: string) {
@@ -69,27 +72,51 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
         <ul className="flex flex-col divide-y divide-line">
           {filtrati.map((c) => {
             const meta = STATO_META[c.stato];
+            const insoluto = c.insolutoCount > 0;
             return (
-              <li key={c.id}>
+              <li
+                key={c.id}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-card-2",
+                  insoluto && "bg-fail-bg/25",
+                )}
+              >
+                {/* stretched link: tutta la riga apre la scheda cliente */}
                 <Link
                   href={`/vendite/clienti/${c.id}`}
-                  className="flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-card-2"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-bold text-text">
+                  aria-label={c.ragione_sociale}
+                  className="absolute inset-0 rounded-md"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-bold text-text">
                       {c.ragione_sociale}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-[12.5px] text-text-3">
-                      {c.p_iva && <span>P.IVA {c.p_iva}</span>}
-                      {c.referente && <span>{c.referente}</span>}
-                      {c.email && <span className="truncate">{c.email}</span>}
-                    </div>
+                    </span>
                   </div>
-                  <div className="flex flex-none items-center gap-3">
-                    <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-                    <span className="text-text-3">›</span>
+                  <div className="mt-0.5 flex flex-wrap gap-x-3 text-[12.5px] text-text-3">
+                    {c.p_iva && <span>P.IVA {c.p_iva}</span>}
+                    {c.referente && <span>{c.referente}</span>}
+                    {c.email && <span className="truncate">{c.email}</span>}
                   </div>
-                </Link>
+                </div>
+                <div className="relative z-10 flex flex-none items-center gap-2.5">
+                  {insoluto && c.insolutoPaymentId && (
+                    <Link
+                      href={`/vendite/insoluti?p=${c.insolutoPaymentId}`}
+                      className="inline-flex items-center gap-1.5 rounded-pill bg-fail-bg px-2.5 py-1 text-[12px] font-bold text-fail-tx transition-colors hover:bg-fail-tx hover:text-white"
+                    >
+                      <span className="size-1.5 rounded-full bg-fail-dot" />
+                      {c.insolutoCount === 1
+                        ? "Insoluto"
+                        : `${c.insolutoCount} insoluti`}
+                      <span aria-hidden>→</span>
+                    </Link>
+                  )}
+                  <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+                  <span className="text-text-3" aria-hidden>
+                    ›
+                  </span>
+                </div>
               </li>
             );
           })}
