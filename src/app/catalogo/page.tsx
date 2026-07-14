@@ -1,5 +1,5 @@
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
-import { CatalogoVetrina } from "@/components/catalogo/vetrina";
+import { ServicesCatalog } from "@/components/catalogo/services-catalog";
 import { Logo } from "@/components/ui/logo";
 
 export const metadata = {
@@ -24,7 +24,7 @@ export default async function CatalogoPubblicoPage() {
           e risultati misurabili. Esplora attività, condizioni e lavori realizzati.
         </p>
       </header>
-      <CatalogoVetrina servizi={servizi} basePath="/catalogo" />
+      <ServicesCatalog servizi={servizi} basePath="/catalogo" />
       <footer className="mt-12 text-center text-[12px] text-text-3">
         Digital Discovery S.r.l.
       </footer>

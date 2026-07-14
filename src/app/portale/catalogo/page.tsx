@@ -1,5 +1,5 @@
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
-import { CatalogoVetrina } from "@/components/catalogo/vetrina";
+import { ServicesCatalog } from "@/components/catalogo/services-catalog";
 
 export default async function PortaleCatalogoPage() {
   const servizi = await getVetrinaPubblica();
@@ -13,7 +13,7 @@ export default async function PortaleCatalogoPage() {
           Esplora i nostri servizi, le condizioni e i lavori realizzati.
         </p>
       </header>
-      <CatalogoVetrina servizi={servizi} basePath="/portale/catalogo" />
+      <ServicesCatalog servizi={servizi} basePath="/portale/catalogo" />
     </div>
   );
 }
