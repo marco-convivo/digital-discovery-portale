@@ -55,6 +55,33 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          causale_bonifico: string | null
+          iban_bonifico: string | null
+          id: boolean
+          maggiorazione_insoluto: number
+          statement_descriptor: string | null
+          updated_at: string
+        }
+        Insert: {
+          causale_bonifico?: string | null
+          iban_bonifico?: string | null
+          id?: boolean
+          maggiorazione_insoluto?: number
+          statement_descriptor?: string | null
+          updated_at?: string
+        }
+        Update: {
+          causale_bonifico?: string | null
+          iban_bonifico?: string | null
+          id?: boolean
+          maggiorazione_insoluto?: number
+          statement_descriptor?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           auth_user_id: string | null
@@ -263,41 +290,68 @@ export type Database = {
       }
       payments: {
         Row: {
+          attempts: number
           client_id: string
           contract_id: string | null
           created_at: string
+          failed_at: string | null
+          failure_code: string | null
+          failure_reason: string | null
           id: string
           importo: number | null
+          maggiorazione: number | null
           numero_rata: number | null
           paid_at: string | null
+          recovery_checkout_id: string | null
+          recovery_stato: Database["public"]["Enums"]["recovery_stato"]
+          recovery_url: string | null
           scadenza: string | null
           stato: Database["public"]["Enums"]["payment_stato"]
+          stripe_invoice_id: string | null
           stripe_payment_intent_id: string | null
           subscription_id: string | null
         }
         Insert: {
+          attempts?: number
           client_id: string
           contract_id?: string | null
           created_at?: string
+          failed_at?: string | null
+          failure_code?: string | null
+          failure_reason?: string | null
           id?: string
           importo?: number | null
+          maggiorazione?: number | null
           numero_rata?: number | null
           paid_at?: string | null
+          recovery_checkout_id?: string | null
+          recovery_stato?: Database["public"]["Enums"]["recovery_stato"]
+          recovery_url?: string | null
           scadenza?: string | null
           stato?: Database["public"]["Enums"]["payment_stato"]
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
           subscription_id?: string | null
         }
         Update: {
+          attempts?: number
           client_id?: string
           contract_id?: string | null
           created_at?: string
+          failed_at?: string | null
+          failure_code?: string | null
+          failure_reason?: string | null
           id?: string
           importo?: number | null
+          maggiorazione?: number | null
           numero_rata?: number | null
           paid_at?: string | null
+          recovery_checkout_id?: string | null
+          recovery_stato?: Database["public"]["Enums"]["recovery_stato"]
+          recovery_url?: string | null
           scadenza?: string | null
           stato?: Database["public"]["Enums"]["payment_stato"]
+          stripe_invoice_id?: string | null
           stripe_payment_intent_id?: string | null
           subscription_id?: string | null
         }
@@ -611,6 +665,13 @@ export type Database = {
         | "rifiutato"
         | "scaduto"
       quote_tipo: "ricorrente" | "una_tantum" | "acconto"
+      recovery_stato:
+        | "nessuno"
+        | "da_recuperare"
+        | "link_inviato"
+        | "recuperato"
+        | "nuovo_mandato"
+        | "annullato"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -764,6 +825,14 @@ export const Constants = {
         "scaduto",
       ],
       quote_tipo: ["ricorrente", "una_tantum", "acconto"],
+      recovery_stato: [
+        "nessuno",
+        "da_recuperare",
+        "link_inviato",
+        "recuperato",
+        "nuovo_mandato",
+        "annullato",
+      ],
     },
   },
 } as const
