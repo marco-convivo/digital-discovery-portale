@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Discovery — Catalogo (Ipotesi A, icona minimale)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fustat:wght@300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e9ece6; --text-3:#8a8a93;
+  --violet:#a28ef9;
+  --dark:#0c0e15; --dark-2:#12151f;
+  --f:'Fustat',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);-webkit-font-smoothing:antialiased;padding:56px 24px 90px}
+.wrap{max-width:1000px;margin:0 auto}
+.note{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);text-align:center;margin-bottom:40px}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+@media(max-width:820px){.grid{grid-template-columns:1fr;max-width:340px;margin:0 auto}}
+
+/* ---- scheda scura (Ipotesi A) ---- */
+.card{
+  position:relative;border-radius:26px;overflow:hidden;isolation:isolate;text-align:center;
+  padding:38px 28px 30px;
+  background:linear-gradient(180deg,var(--dark-2),var(--dark));
+  border:1px solid rgba(255,255,255,.08);
+  /* ombra colorata morbida = "riflesso" adattato al fondo chiaro */
+  box-shadow:0 30px 60px -26px rgba(120,90,240,.5), 0 12px 26px -14px rgba(20,20,30,.5);
+}
+/* spotlight dall'alto */
+.card::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(120% 62% at 50% -8%, color-mix(in srgb,var(--violet) 52%,transparent), transparent 58%);
+}
+
+/* ---- icona minimale: linea sottile, niente cerchio ---- */
+.icn{
+  margin:6px auto 24px;color:#fff;line-height:0;
+  filter:drop-shadow(0 0 11px color-mix(in srgb,var(--violet) 55%,transparent));
+}
+.icn svg{width:46px;height:46px;stroke-width:1.4}
+
+.card h3{color:#fff;font-weight:700;font-size:21px;letter-spacing:-.01em;margin-bottom:11px}
+.card p{color:#a7abbd;font-weight:400;font-size:13.5px;line-height:1.5;margin-bottom:24px}
+
+.cta{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;width:100%;
+  background:#fff;color:#111;font-weight:700;border:none;border-radius:15px;
+  padding:14px 20px;cursor:pointer;font-family:var(--f);font-size:14.5px}
+.cta svg{width:17px;height:17px;stroke-width:2.4}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="note">Ipotesi A · icona a linea sottile, senza cerchio</div>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="icn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3M2 9h20"/></svg>
+      </div>
+      <h3>Sviluppo Sito Web</h3>
+      <p>Sito completo o one page, con dominio, testi e integrazioni incluse.</p>
+      <button class="cta">Scopri <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+
+    <div class="card">
+      <div class="icn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>
+      </div>
+      <h3>Creazione Video Reel</h3>
+      <p>Storyboard, riprese in loco e produzione dei tuoi Reel in HD.</p>
+      <button class="cta">Scopri <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+
+    <div class="card">
+      <div class="icn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      </div>
+      <h3>Gestione Social &amp; Ads</h3>
+      <p>Strategia, contenuti e campagne, con report mensile chiaro.</p>
+      <button class="cta">Scopri <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
