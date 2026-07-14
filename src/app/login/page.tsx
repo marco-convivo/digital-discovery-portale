@@ -38,8 +38,7 @@ export default function LoginPage() {
       </Button>
 
       <p className="mt-4 text-[12.5px] leading-relaxed text-text-3">
-        Riservato allo staff con email <b>@convivostudio.it</b>. Il primo accesso
-        va abilitato da un amministratore.
+        Accesso riservato allo staff Digital Discovery.
       </p>
     </AuthShell>
   );
