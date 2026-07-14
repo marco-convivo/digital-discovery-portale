@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   "/paga",
   "/preventivo",
   "/firma",
+  // esito del pagamento di recupero (link carta insoluto)
+  "/recupero",
   // vetrina pubblica del catalogo (condivisibile senza login)
   "/catalogo",
 ];

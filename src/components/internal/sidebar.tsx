@@ -16,12 +16,19 @@ const NAV = [
   { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: true },
   { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: true },
   { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: true },
+  { href: "/vendite/insoluti", label: "Insoluti", icon: AlertIcon, ready: true },
   { href: "/vendite/scadenze", label: "Scadenze", icon: ClockIcon, ready: true },
   { href: "/vendite/catalogo", label: "Catalogo", icon: GridIcon, ready: true, adminOnly: true },
   { href: "/vendite/utenti", label: "Utenti", icon: ShieldIcon, ready: true, adminOnly: true },
 ];
 
-export function Sidebar({ profile }: { profile: Profile }) {
+export function Sidebar({
+  profile,
+  insolutiCount = 0,
+}: {
+  profile: Profile;
+  insolutiCount?: number;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const initials = (profile.full_name ?? profile.email ?? "?")
@@ -69,6 +76,11 @@ export function Sidebar({ profile }: { profile: Profile }) {
           >
             <Icon />
             {label}
+            {href === "/vendite/insoluti" && insolutiCount > 0 && (
+              <span className="ml-auto grid min-w-5 place-items-center rounded-full bg-fail-tx px-1.5 text-[11px] font-bold text-white">
+                {insolutiCount}
+              </span>
+            )}
           </Link>
         );
       })}
@@ -240,6 +252,14 @@ function GridIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1.5" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+function AlertIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4M12 17h.01" />
     </svg>
   );
 }

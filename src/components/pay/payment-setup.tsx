@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Logo } from "@/components/ui/logo";
 import { FlowStepper } from "@/components/flow/flow-stepper";
+import { SepaAvviso } from "@/components/pay/sepa-avviso";
 import {
   Elements,
   PaymentElement,
@@ -94,7 +95,10 @@ export function PaymentSetup(props: Props) {
             },
           }}
         >
-          <SetupForm token={props.token} />
+          <SetupForm
+            token={props.token}
+            descrittore={props.statementDescriptor}
+          />
         </Elements>
 
         <p className="mt-4 text-[12px] leading-relaxed text-text-3">
@@ -106,11 +110,18 @@ export function PaymentSetup(props: Props) {
   );
 }
 
-function SetupForm({ token }: { token: string }) {
+function SetupForm({
+  token,
+  descrittore,
+}: {
+  token: string;
+  descrittore: string | null;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [metodo, setMetodo] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -133,7 +144,8 @@ function SetupForm({ token }: { token: string }) {
 
   return (
     <form onSubmit={onSubmit} className="mt-5">
-      <PaymentElement />
+      <PaymentElement onChange={(e) => setMetodo(e.value.type)} />
+      {metodo === "sepa_debit" && <SepaAvviso descrittore={descrittore} />}
       {error && (
         <p className="mt-3 rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
           {error}

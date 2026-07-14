@@ -4,6 +4,7 @@ import { signOut } from "@/lib/actions/auth";
 import { Sidebar } from "@/components/internal/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { countInsolutiAperti } from "@/lib/insoluti/queries";
 import type { Profile } from "@/lib/types";
 
 export default async function AppLayout({
@@ -45,9 +46,11 @@ export default async function AppLayout({
     );
   }
 
+  const insolutiCount = await countInsolutiAperti();
+
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      <Sidebar profile={profile} />
+      <Sidebar profile={profile} insolutiCount={insolutiCount} />
       <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
         {children}
       </main>

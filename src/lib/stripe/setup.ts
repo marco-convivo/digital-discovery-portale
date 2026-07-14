@@ -1,6 +1,7 @@
 import "server-only";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 
 // Il flusso pagamento pubblico gira in contesto anon: usiamo l'admin client
 // (service role) MA sempre filtrato per public_token — il token è la capability.
@@ -16,6 +17,7 @@ export interface PaymentContext {
     rate_num: number | null;
   };
   ragioneSociale: string;
+  statementDescriptor: string | null;
 }
 
 /** Carica il preventivo dal token, garantisce Customer + payment_setup, crea un SetupIntent. */
@@ -107,6 +109,8 @@ export async function ensurePaymentContext(
     },
   });
 
+  const settings = await getAppSettingsAdmin();
+
   return {
     clientSecret: setupIntent.client_secret!,
     publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
@@ -118,5 +122,6 @@ export async function ensurePaymentContext(
       rate_num: quote.rate_num,
     },
     ragioneSociale: client.ragione_sociale,
+    statementDescriptor: settings.statement_descriptor,
   };
 }
