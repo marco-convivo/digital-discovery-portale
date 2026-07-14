@@ -3,13 +3,12 @@ import { redirect } from "next/navigation";
 import { getPortalClient } from "@/lib/portale/client";
 import { getPortaleHomeData } from "@/lib/portale/home";
 import { getInsolutiCliente } from "@/lib/portale/insoluti";
-import { getVetrinaPubblica } from "@/lib/catalogo/queries";
+import { getVetrinaPubblica, getUltimiLavori } from "@/lib/catalogo/queries";
 import { ServiziCarosello } from "@/components/portale/servizi-carosello";
 import { ServiziAttivi } from "@/components/portale/servizi-attivi";
 import { InsolutoClienteBanner } from "@/components/portale/insoluto-cliente";
+import { UltimiLavori } from "@/components/portale/ultimi-lavori";
 import { euro, dataIt, conIva } from "@/lib/format";
-
-const MAILTO = "mailto:info@digital-discovery.it";
 
 export default async function PortaleHome() {
   const client = await getPortalClient();
@@ -18,6 +17,7 @@ export default async function PortaleHome() {
   const data = await getPortaleHomeData(client.owner_id);
   const insoluti = await getInsolutiCliente(client.id);
   const vetrina = await getVetrinaPubblica();
+  const lavori = await getUltimiLavori(2);
   const consigliati = vetrina.filter(
     (v) => !data.serviceKeysAttivi.includes(v.row.chiave),
   );
@@ -29,7 +29,7 @@ export default async function PortaleHome() {
   const nome = client.referente || client.ragione_sociale;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <header>
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-balance text-text">
           Ciao, {nome} 👋
@@ -41,100 +41,139 @@ export default async function PortaleHome() {
 
       <InsolutoClienteBanner data={insoluti} />
 
-      {/* Prossimo addebito — pannello commerciale */}
-      <section className="overflow-hidden rounded-card bg-ink p-6 text-on-ink shadow-card sm:p-7">
-        <p className="text-[13px] font-semibold text-on-ink/60">
-          Prossimo addebito
-        </p>
-        {data.prossimaRata ? (
-          <>
-            <div className="mt-1.5 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <div className="flex items-end gap-2">
-                  <span className="text-5xl font-extrabold tracking-[-0.03em]">
-                    {euro(data.prossimaRata.importo)}
+      {/* Layout 65 / 35 */}
+      <div className="grid gap-6 lg:grid-cols-[1.85fr_1fr]">
+        {/* ---- Colonna principale (sinistra) ---- */}
+        <div className="flex flex-col gap-6">
+          {/* Prossimo addebito */}
+          <section className="overflow-hidden rounded-card bg-ink p-6 text-on-ink shadow-card sm:p-7">
+            <p className="text-[13px] font-semibold text-on-ink/60">
+              Prossimo addebito
+            </p>
+            {data.prossimaRata ? (
+              <>
+                <div className="mt-1.5 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <span className="text-5xl font-extrabold tracking-[-0.03em]">
+                      {euro(data.prossimaRata.importo)}
+                    </span>
+                    <p className="mt-1 text-[13px] text-on-ink/55">
+                      {euro(conIva(data.prossimaRata.importo))} IVA inclusa
+                    </p>
+                    <p className="mt-1 text-[14px] text-on-ink/70">
+                      Rata {data.prossimaRata.numero_rata} · in scadenza il{" "}
+                      {dataIt(data.prossimaRata.scadenza)}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-pill bg-mint-soft px-3 py-1.5 text-[13px] font-bold text-on-mint">
+                    <span aria-hidden>✓</span> Addebito automatico SDD
                   </span>
                 </div>
-                <p className="mt-1 text-[13px] text-on-ink/55">
-                  {euro(conIva(data.prossimaRata.importo))} IVA inclusa
-                </p>
+                <div className="mt-5 border-t border-on-ink/15 pt-4">
+                  <div className="flex items-center justify-between text-[13px] text-on-ink/70">
+                    <span>Piano pagamenti</span>
+                    <span className="tnum">
+                      {data.ratePagate} di {data.rateTotali} rate
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-pill bg-on-ink/15">
+                    <div
+                      className="h-full rounded-pill bg-mint"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="mt-2">
+                <p className="text-xl font-extrabold">Tutto in regola ✨</p>
                 <p className="mt-1 text-[14px] text-on-ink/70">
-                  Rata {data.prossimaRata.numero_rata} · in scadenza il{" "}
-                  {dataIt(data.prossimaRata.scadenza)}
+                  Nessuna rata in scadenza. Ci pensiamo noi.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-pill bg-mint-soft px-3 py-1.5 text-[13px] font-bold text-on-mint">
-                <span aria-hidden>✓</span> Addebito automatico SDD
-              </span>
-            </div>
-            {/* progresso del piano */}
-            <div className="mt-5 border-t border-on-ink/15 pt-4">
-              <div className="flex items-center justify-between text-[13px] text-on-ink/70">
-                <span>Piano pagamenti</span>
-                <span className="tnum">
-                  {data.ratePagate} di {data.rateTotali} rate
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-pill bg-on-ink/15">
-                <div
-                  className="h-full rounded-pill bg-mint"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="mt-2">
-            <p className="text-xl font-extrabold">Tutto in regola ✨</p>
-            <p className="mt-1 text-[14px] text-on-ink/70">
-              Nessuna rata in scadenza. Ci pensiamo noi.
-            </p>
-          </div>
-        )}
-      </section>
+            )}
+          </section>
 
-      {/* Stat rapide */}
-      <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          href="/portale/pagamenti"
-          title="Piano pagamenti"
-          value={`${pct}%`}
-          sub={`${data.ratePagate}/${data.rateTotali} rate saldate`}
-          progress={pct}
-        />
-        <StatCard
-          href="/portale/servizi"
-          title="Servizi attivi"
-          value={String(data.serviziAttivi.length)}
-          sub="gestiti da noi"
-        />
-        <StatCard
-          href="/portale/contratti"
-          title="Contratti"
-          value={String(data.contrattiCount)}
-          sub="firmati · documenti"
-        />
-      </section>
+          {/* Servizi attivi */}
+          {data.serviziAttivi.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-[17px] font-bold tracking-[-0.01em] text-text">
+                  I tuoi servizi attivi
+                </h2>
+                <Link
+                  href="/portale/servizi"
+                  className="text-[13px] font-semibold text-violet hover:underline"
+                >
+                  Vedi tutti →
+                </Link>
+              </div>
+              <ServiziAttivi servizi={data.serviziAttivi.slice(0, 4)} />
+            </section>
+          )}
 
-      {/* Servizi attivi */}
-      {data.serviziAttivi.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[17px] font-bold tracking-[-0.01em] text-text">
-              I tuoi servizi attivi
+          {/* Ultimi lavori — anteprima magazine */}
+          {lavori.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-[17px] font-bold tracking-[-0.01em] text-text">
+                  Ultimi lavori
+                </h2>
+                <Link
+                  href="/portale/lavori"
+                  className="text-[13px] font-semibold text-violet hover:underline"
+                >
+                  Vedi tutti →
+                </Link>
+              </div>
+              <UltimiLavori lavori={lavori} />
+            </section>
+          )}
+        </div>
+
+        {/* ---- Colonna info (destra) ---- */}
+        <aside className="flex flex-col gap-4">
+          <StatCard
+            href="/portale/pagamenti"
+            title="Piano pagamenti"
+            value={`${pct}%`}
+            sub={`${data.ratePagate}/${data.rateTotali} rate saldate`}
+            progress={pct}
+          />
+          <StatCard
+            href="/portale/servizi"
+            title="Servizi attivi"
+            value={String(data.serviziAttivi.length)}
+            sub="gestiti da noi"
+          />
+          <StatCard
+            href="/portale/contratti"
+            title="Contratti"
+            value={String(data.contrattiCount)}
+            sub="firmati · documenti"
+          />
+
+          {/* Assistenza */}
+          <div className="rounded-card border border-line/60 bg-card-2/60 p-5">
+            <h2 className="text-[15px] font-bold text-text">
+              {data.referente
+                ? `${data.referente}, il tuo referente`
+                : "Hai un referente dedicato"}
             </h2>
+            <p className="mt-1 text-[13.5px] leading-relaxed text-text-2">
+              Modifiche, nuove idee o domande: scrivici, ti rispondiamo noi.
+            </p>
             <Link
-              href="/portale/servizi"
-              className="text-[13px] font-semibold text-violet hover:underline"
+              href="/portale/assistenza"
+              className="mt-3 inline-flex rounded-pill bg-ink px-5 py-2.5 text-[13.5px] font-semibold text-on-ink transition-opacity hover:opacity-90"
             >
-              Vedi tutti →
+              Scrivici
             </Link>
           </div>
-          <ServiziAttivi servizi={data.serviziAttivi.slice(0, 4)} />
-        </section>
-      )}
+        </aside>
+      </div>
 
-      {/* Cross-sell — vetrina in carosello */}
+      {/* Cross-sell — vetrina a tutta larghezza */}
       {consigliati.length > 0 && (
         <section>
           <div className="mb-1 flex items-center justify-between">
@@ -154,27 +193,6 @@ export default async function PortaleHome() {
           <ServiziCarosello servizi={consigliati} basePath="/portale/catalogo" />
         </section>
       )}
-
-      {/* Customer care — referente dedicato */}
-      <section className="flex flex-col items-start justify-between gap-4 rounded-card border border-line/60 bg-card-2/60 p-6 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-[16px] font-bold text-text">
-            {data.referente
-              ? `${data.referente} è il tuo referente dedicato`
-              : "Hai un referente dedicato"}
-          </h2>
-          <p className="mt-1 max-w-[52ch] text-[13.5px] text-text-2">
-            Un unico contatto per ogni esigenza: modifiche, nuove idee o
-            semplici domande. Ti rispondiamo noi.
-          </p>
-        </div>
-        <a
-          href={MAILTO}
-          className="flex-none rounded-pill bg-ink px-5 py-2.5 text-[14px] font-semibold text-on-ink transition-opacity hover:opacity-90"
-        >
-          Scrivici
-        </a>
-      </section>
     </div>
   );
 }

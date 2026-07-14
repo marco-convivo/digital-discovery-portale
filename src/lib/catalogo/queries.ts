@@ -64,6 +64,57 @@ export async function listServiziInterni(): Promise<ServiceCatalogRow[]> {
   return (data ?? []) as unknown as ServiceCatalogRow[];
 }
 
+export interface LavoroItem {
+  id: string;
+  titolo: string;
+  cliente: string | null;
+  settore: string | null;
+  descrizione: string | null;
+  risultato: string | null;
+  immagine_url: string | null;
+  link_url: string | null;
+  servizioChiave: string | null;
+  servizioTitolo: string | null;
+}
+
+/** Ultimi lavori (portfolio) dai servizi attivi — per il magazine del portale. */
+export async function getUltimiLavori(limit = 12): Promise<LavoroItem[]> {
+  const db = createAdminClient();
+  const { data } = await db
+    .from("portfolio_items")
+    .select(
+      "id, titolo, cliente, settore, descrizione, risultato, immagine_url, link_url, created_at, service:service_catalog!portfolio_items_service_id_fkey(chiave, titolo, attivo)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit * 2); // margine per filtrare i servizi non attivi
+  const rows = (data ?? []) as unknown as Array<{
+    id: string;
+    titolo: string;
+    cliente: string | null;
+    settore: string | null;
+    descrizione: string | null;
+    risultato: string | null;
+    immagine_url: string | null;
+    link_url: string | null;
+    service: { chiave: string; titolo: string; attivo: boolean } | null;
+  }>;
+  return rows
+    .filter((r) => r.service?.attivo)
+    .slice(0, limit)
+    .map((r) => ({
+      id: r.id,
+      titolo: r.titolo,
+      cliente: r.cliente,
+      settore: r.settore,
+      descrizione: r.descrizione,
+      risultato: r.risultato,
+      immagine_url: r.immagine_url,
+      link_url: r.link_url,
+      servizioChiave: r.service?.chiave ?? null,
+      servizioTitolo: r.service?.titolo ?? null,
+    }));
+}
+
 /** Mappa chiave→prezzo_base per precompilare l'editor preventivo. */
 export async function getPrezziBase(): Promise<Record<string, number | null>> {
   const supabase = await createClient();

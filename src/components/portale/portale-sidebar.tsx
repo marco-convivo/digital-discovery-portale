@@ -14,6 +14,8 @@ const NAV = [
   { href: "/portale/servizi", label: "Servizi" },
   { href: "/portale/contratti", label: "Contratti" },
   { href: "/portale/catalogo", label: "Catalogo" },
+  { href: "/portale/lavori", label: "Lavori" },
+  { href: "/portale/assistenza", label: "Assistenza" },
 ];
 
 export function PortaleSidebar({ ragioneSociale }: { ragioneSociale: string }) {

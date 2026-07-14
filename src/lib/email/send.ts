@@ -9,17 +9,23 @@ export async function sendEmail(input: {
   to: string | string[];
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
   try {
+    const { replyTo, ...rest } = input;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: FROM, ...input }),
+      body: JSON.stringify({
+        from: FROM,
+        ...rest,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      }),
     });
     return res.ok;
   } catch {
