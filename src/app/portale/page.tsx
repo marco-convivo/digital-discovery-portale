@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPortalClient } from "@/lib/portale/client";
 import { getPortaleHomeData } from "@/lib/portale/home";
+import { getInsolutiCliente } from "@/lib/portale/insoluti";
 import { getVetrinaPubblica } from "@/lib/catalogo/queries";
 import { ServiziCarosello } from "@/components/portale/servizi-carosello";
 import { ServiziAttivi } from "@/components/portale/servizi-attivi";
+import { InsolutoClienteBanner } from "@/components/portale/insoluto-cliente";
 import { euro, dataIt, conIva } from "@/lib/format";
 
 const MAILTO = "mailto:info@digital-discovery.it";
@@ -14,6 +16,7 @@ export default async function PortaleHome() {
   if (!client) redirect("/accedi");
 
   const data = await getPortaleHomeData(client.owner_id);
+  const insoluti = await getInsolutiCliente(client.id);
   const vetrina = await getVetrinaPubblica();
   const consigliati = vetrina.filter(
     (v) => !data.serviceKeysAttivi.includes(v.row.chiave),
@@ -35,6 +38,8 @@ export default async function PortaleHome() {
           La tua presenza digitale, gestita da noi — sempre sotto controllo.
         </p>
       </header>
+
+      <InsolutoClienteBanner data={insoluti} />
 
       {/* Prossimo addebito — pannello commerciale */}
       <section className="overflow-hidden rounded-card bg-ink p-6 text-on-ink shadow-card sm:p-7">

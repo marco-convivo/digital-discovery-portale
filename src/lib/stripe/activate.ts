@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import { motivoInsoluto } from "@/lib/stripe/insoluti-reason";
 import { inviaAlertInsoluto } from "@/lib/insoluti/alert";
+import { inviaAvvisoInsolutoCliente } from "@/lib/insoluti/cliente-email";
 import { inviaConfermaMandato } from "@/lib/pagamenti/mandato";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { ALIQUOTA_IVA, conIva } from "@/lib/format";
@@ -291,6 +292,7 @@ export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void
     .eq("id", rata.id);
 
   await inviaAlertInsoluto(rata.id);
+  await inviaAvvisoInsolutoCliente(rata.id);
 }
 
 /** payment_intent.succeeded: recupero carta andato a buon fine → rata pagata. */
@@ -365,6 +367,7 @@ export async function handleChargeDispute(dispute: Stripe.Dispute): Promise<void
     .eq("id", rataId);
 
   await inviaAlertInsoluto(rataId);
+  await inviaAvvisoInsolutoCliente(rataId);
 }
 
 /** customer.subscription.deleted: il cliente cessa. */

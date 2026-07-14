@@ -21,7 +21,12 @@ export interface InsolutoRow {
 }
 
 // Gli insoluti "aperti" da lavorare: falliti e non ancora recuperati/annullati.
-const APERTI: RecoveryStato[] = ["da_recuperare", "link_inviato", "nuovo_mandato"];
+const APERTI: RecoveryStato[] = [
+  "da_recuperare",
+  "link_inviato",
+  "nuovo_mandato",
+  "bonifico_in_verifica",
+];
 
 const COLS =
   "id, numero_rata, importo, scadenza, failure_code, failure_reason, failed_at, attempts, recovery_stato, recovery_url, maggiorazione, contract_id, client:clients!payments_client_id_fkey(id, ragione_sociale)";

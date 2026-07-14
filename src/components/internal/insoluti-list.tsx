@@ -20,6 +20,7 @@ const RECOVERY: Record<string, { tone: Tone; label: string }> = {
   da_recuperare: { tone: "wait", label: "Da recuperare" },
   link_inviato: { tone: "info", label: "Link inviato" },
   nuovo_mandato: { tone: "info", label: "Nuovo mandato" },
+  bonifico_in_verifica: { tone: "wait", label: "Bonifico da verificare" },
 };
 
 function Riga({
