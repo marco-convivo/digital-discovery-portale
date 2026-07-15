@@ -493,9 +493,11 @@ export type Database = {
           importo_totale: number | null
           numero: string | null
           ordine: Json | null
+          prezzi: Json | null
           public_token: string
           rata_mensile: number | null
           rate_num: number | null
+          sconto: number
           stato: Database["public"]["Enums"]["quote_stato"]
           tipo: Database["public"]["Enums"]["quote_tipo"]
           valido_fino: string | null
@@ -509,9 +511,11 @@ export type Database = {
           importo_totale?: number | null
           numero?: string | null
           ordine?: Json | null
+          prezzi?: Json | null
           public_token?: string
           rata_mensile?: number | null
           rate_num?: number | null
+          sconto?: number
           stato?: Database["public"]["Enums"]["quote_stato"]
           tipo: Database["public"]["Enums"]["quote_tipo"]
           valido_fino?: string | null
@@ -525,9 +529,11 @@ export type Database = {
           importo_totale?: number | null
           numero?: string | null
           ordine?: Json | null
+          prezzi?: Json | null
           public_token?: string
           rata_mensile?: number | null
           rate_num?: number | null
+          sconto?: number
           stato?: Database["public"]["Enums"]["quote_stato"]
           tipo?: Database["public"]["Enums"]["quote_tipo"]
           valido_fino?: string | null

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import {
   createQuote,
+  updateQuote,
   type CreateQuoteInput,
 } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { CATALOG, type OrdineSelezione, type CatalogService } from "@/lib/catalog";
@@ -14,20 +15,45 @@ import { cn } from "@/lib/utils";
 type Tipo = CreateQuoteInput["tipo"];
 type Sel = OrdineSelezione[string];
 
+export interface QuoteInitial {
+  quoteId: string;
+  ordine: OrdineSelezione;
+  prezzi: Record<string, number>;
+  sconto: number;
+  tipo: Tipo;
+  rateNum: number | null;
+  validoFino: string | null;
+}
+
 export function CreateQuoteForm({
   clientId,
   prezziBase,
+  initial,
 }: {
   clientId: string;
   prezziBase: Record<string, number | null>;
+  initial?: QuoteInitial;
 }) {
-  const [sel, setSel] = useState<OrdineSelezione>({});
-  const [prezzi, setPrezzi] = useState<Record<string, string>>({});
-  const [sconto, setSconto] = useState("");
-  const [tipo, setTipo] = useState<Tipo>("ricorrente");
-  const [rateNum, setRateNum] = useState("");
-  const [rateTouched, setRateTouched] = useState(false);
-  const [validoFino, setValidoFino] = useState("");
+  const editing = !!initial;
+  const [sel, setSel] = useState<OrdineSelezione>(initial?.ordine ?? {});
+  const [prezzi, setPrezzi] = useState<Record<string, string>>(() =>
+    initial
+      ? Object.fromEntries(
+          Object.entries(initial.prezzi).map(([k, v]) => [k, String(v)]),
+        )
+      : {},
+  );
+  const [sconto, setSconto] = useState(
+    initial?.sconto ? String(initial.sconto) : "",
+  );
+  const [tipo, setTipo] = useState<Tipo>(initial?.tipo ?? "ricorrente");
+  const [rateNum, setRateNum] = useState(
+    initial?.rateNum != null ? String(initial.rateNum) : "",
+  );
+  const [rateTouched, setRateTouched] = useState(
+    initial?.rateNum != null,
+  );
+  const [validoFino, setValidoFino] = useState(initial?.validoFino ?? "");
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -94,11 +120,11 @@ export function CreateQuoteForm({
   function submit() {
     setError(null);
     start(async () => {
+      // Salviamo i prezzi MENSILI (il contributo lo calcola l'azione).
       const prezziObj = Object.fromEntries(
-        selectedServices.map((c) => [c.key, contributo(c)]),
+        selectedServices.map((c) => [c.key, prezzoNum(c.key)]),
       );
-      const res = await createQuote({
-        clientId,
+      const payload = {
         tipo,
         rataMensile: ricorrente ? rata : null,
         rateNum: ricorrente ? rateN : null,
@@ -107,7 +133,10 @@ export function CreateQuoteForm({
         ordine: sel,
         prezzi: prezziObj,
         sconto: scontoNum,
-      });
+      };
+      const res = initial
+        ? await updateQuote({ quoteId: initial.quoteId, ...payload })
+        : await createQuote({ clientId, ...payload });
       if (res.ok) setLink(`${location.origin}/preventivo/${res.token}`);
       else setError(res.error);
     });
@@ -116,8 +145,14 @@ export function CreateQuoteForm({
   if (link) {
     return (
       <div className="rounded-md bg-mint-soft p-4">
-        <p className="font-bold text-on-mint">Preventivo creato ✓</p>
-        <p className="mt-1 text-sm text-text-2">Link pubblico da inviare al cliente:</p>
+        <p className="font-bold text-on-mint">
+          {editing ? "Preventivo aggiornato ✓" : "Preventivo creato ✓"}
+        </p>
+        <p className="mt-1 text-sm text-text-2">
+          {editing
+            ? "Il link resta lo stesso; il cliente vedrà la versione aggiornata:"
+            : "Link pubblico da inviare al cliente:"}
+        </p>
         <div className="mt-2 flex gap-2">
           <input
             readOnly
@@ -360,7 +395,13 @@ export function CreateQuoteForm({
       )}
 
       <Button onClick={submit} disabled={pending} className="self-start">
-        {pending ? "Creazione…" : "Crea preventivo"}
+        {pending
+          ? editing
+            ? "Salvataggio…"
+            : "Creazione…"
+          : editing
+            ? "Salva modifiche"
+            : "Crea preventivo"}
       </Button>
     </div>
   );

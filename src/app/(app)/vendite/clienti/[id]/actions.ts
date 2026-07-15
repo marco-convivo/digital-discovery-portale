@@ -18,6 +18,52 @@ export interface AnagraficaInput {
 
 export type UpdateResult = { ok: true } | { ok: false; error: string };
 
+// Contributo al totale contratto per un servizio, dal prezzo MENSILE salvato:
+// ricorrente = mensile × mesi (durata); una tantum/progetto = prezzo una volta.
+function contributoDaMensile(
+  key: string,
+  mensile: number,
+  ordine: OrdineSelezione,
+): number {
+  const svc = CATALOG.find((c) => c.key === key);
+  if (svc?.ricorrente) return mensile * (ordine[key]?.durata ?? 12);
+  return mensile;
+}
+
+// Righe preventivo (un servizio per riga, col valore di contratto) + sconto.
+function buildQuoteItems(
+  quoteId: string,
+  ordine: OrdineSelezione,
+  descrizioni: string[],
+  prezziMensili: Record<string, number> | undefined,
+  sconto: number,
+) {
+  const selectedKeys = CATALOG.filter((c) => ordine[c.key]?.selected).map(
+    (c) => c.key,
+  );
+  const items = descrizioni.map((d, i) => ({
+    quote_id: quoteId,
+    descrizione: d,
+    quantita: 1,
+    prezzo_unitario: contributoDaMensile(
+      selectedKeys[i],
+      prezziMensili?.[selectedKeys[i]] ?? 0,
+      ordine,
+    ),
+  }));
+  if (sconto > 0) {
+    items.push({
+      quote_id: quoteId,
+      descrizione: "Sconto",
+      quantita: 1,
+      prezzo_unitario: -sconto,
+    });
+  }
+  return items;
+}
+
+const QUOTE_EDITABILI = ["bozza", "inviato", "visto"];
+
 export async function updateCliente(
   clientId: string,
   input: AnagraficaInput,
@@ -104,6 +150,8 @@ export async function createQuote(
       valido_fino: input.validoFino || null,
       stato: "inviato",
       ordine: input.ordine,
+      prezzi: input.prezzi ?? {},
+      sconto: input.sconto ?? 0,
     })
     .select("id, public_token")
     .single();
@@ -112,25 +160,13 @@ export async function createQuote(
     return { ok: false, error: error?.message ?? "Errore creazione preventivo." };
   }
 
-  // Righe = un servizio per riga col suo prezzo (dal catalogo, modificabile).
-  // `descrizioni` e le chiavi selezionate seguono lo stesso ordine di CATALOG.
-  const selectedKeys = CATALOG.filter(
-    (c) => input.ordine[c.key]?.selected,
-  ).map((c) => c.key);
-  const items = descrizioni.map((d, i) => ({
-    quote_id: quote.id,
-    descrizione: d,
-    quantita: 1,
-    prezzo_unitario: input.prezzi?.[selectedKeys[i]] ?? 0,
-  }));
-  if (input.sconto && input.sconto > 0) {
-    items.push({
-      quote_id: quote.id,
-      descrizione: "Sconto",
-      quantita: 1,
-      prezzo_unitario: -input.sconto,
-    });
-  }
+  const items = buildQuoteItems(
+    quote.id,
+    input.ordine,
+    descrizioni,
+    input.prezzi,
+    input.sconto ?? 0,
+  );
   await supabase.from("quote_items").insert(items);
 
   await supabase
@@ -142,4 +178,84 @@ export async function createQuote(
   revalidatePath(`/vendite/clienti/${input.clientId}`);
   revalidatePath("/vendite");
   return { ok: true, token: quote.public_token };
+}
+
+export interface UpdateQuoteInput {
+  quoteId: string;
+  tipo: "ricorrente" | "una_tantum" | "acconto";
+  rataMensile?: number | null;
+  rateNum?: number | null;
+  importoTotale?: number | null;
+  validoFino?: string | null;
+  ordine: OrdineSelezione;
+  prezzi?: Record<string, number>;
+  sconto?: number;
+}
+
+/** Modifica un preventivo esistente — consentito finché NON è accettato/chiuso. */
+export async function updateQuote(
+  input: UpdateQuoteInput,
+): Promise<CreateQuoteResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessione scaduta." };
+
+  const { data: existing } = await supabase
+    .from("quotes")
+    .select("id, stato, client_id, public_token")
+    .eq("id", input.quoteId)
+    .maybeSingle();
+  if (!existing) return { ok: false, error: "Preventivo non trovato." };
+  const q = existing as {
+    id: string;
+    stato: string;
+    client_id: string;
+    public_token: string;
+  };
+  if (!QUOTE_EDITABILI.includes(q.stato)) {
+    return {
+      ok: false,
+      error:
+        "Il preventivo è già stato accettato o chiuso: non è più modificabile.",
+    };
+  }
+
+  const descrizioni = serviziDaOrdine(input.ordine);
+  if (descrizioni.length === 0)
+    return { ok: false, error: "Seleziona almeno un servizio." };
+  const ricorrente = input.tipo === "ricorrente";
+  const importoTotale = Number(input.importoTotale ?? 0);
+  if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
+
+  const { error: upErr } = await supabase
+    .from("quotes")
+    .update({
+      tipo: input.tipo,
+      importo_totale: importoTotale,
+      rata_mensile: ricorrente ? input.rataMensile : null,
+      rate_num: ricorrente ? input.rateNum : null,
+      valido_fino: input.validoFino || null,
+      ordine: input.ordine,
+      prezzi: input.prezzi ?? {},
+      sconto: input.sconto ?? 0,
+    })
+    .eq("id", q.id);
+  if (upErr) return { ok: false, error: upErr.message };
+
+  // Rigenera le righe (l'importo per servizio può essere cambiato).
+  await supabase.from("quote_items").delete().eq("quote_id", q.id);
+  const items = buildQuoteItems(
+    q.id,
+    input.ordine,
+    descrizioni,
+    input.prezzi,
+    input.sconto ?? 0,
+  );
+  await supabase.from("quote_items").insert(items);
+
+  revalidatePath(`/vendite/clienti/${q.client_id}`);
+  revalidatePath(`/vendite/preventivi/${q.id}`);
+  return { ok: true, token: q.public_token };
 }
