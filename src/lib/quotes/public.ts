@@ -117,7 +117,10 @@ async function buildServizi(
         prezzo: priceByKey.get(key) ?? 0,
       };
     });
-    if (servizi.length) return servizi;
+    // Con `ordine` presente ritorniamo sempre i servizi di catalogo (anche
+    // vuoti): gli addon vengono aggiunti dal chiamante da q.addons. Evita il
+    // doppione quando il preventivo ha SOLO addon.
+    return servizi;
   }
   // Fallback (preventivi vecchi senza `ordine`): solo etichetta + prezzo.
   return items
