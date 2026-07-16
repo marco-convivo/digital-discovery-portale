@@ -247,7 +247,60 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> 
     .eq("id", rata.id);
 }
 
-/** invoice.payment_failed: marca insoluta la rata dell'invoice, salva motivo, avvisa. */
+// Stato reale del pagamento della fattura + motivo. Per SEPA il PaymentIntent
+// resta 'processing' (in elaborazione, NON fallito). Best-effort su più
+// versioni API (invoice.payment_intent vecchie, invoice.payments nuove).
+async function invoicePaymentState(
+  invoice: Stripe.Invoice,
+): Promise<{ status: string | null; reasonCode: string | null }> {
+  const anyInv = invoice as unknown as {
+    id?: string;
+    payment_intent?: string | { id?: string } | null;
+  };
+  let piId: string | null =
+    typeof anyInv.payment_intent === "string"
+      ? anyInv.payment_intent
+      : (anyInv.payment_intent?.id ?? null);
+  if (!piId && anyInv.id) {
+    try {
+      const full = (await getStripe().invoices.retrieve(anyInv.id, {
+        expand: ["payments"],
+      })) as unknown as {
+        payment_intent?: string | null;
+        payments?: {
+          data?: Array<{
+            payment_intent?: string | null;
+            payment?: { payment_intent?: string | null };
+          }>;
+        };
+      };
+      const p = full.payments?.data?.[0];
+      piId =
+        (typeof full.payment_intent === "string" ? full.payment_intent : null) ??
+        p?.payment?.payment_intent ??
+        p?.payment_intent ??
+        null;
+    } catch {
+      // best-effort
+    }
+  }
+  if (!piId) return { status: null, reasonCode: null };
+  try {
+    const pi = await getStripe().paymentIntents.retrieve(piId);
+    const reasonCode =
+      pi.last_payment_error?.code ?? pi.last_payment_error?.decline_code ?? null;
+    return { status: pi.status, reasonCode };
+  } catch {
+    return { status: null, reasonCode: null };
+  }
+}
+
+/**
+ * invoice.payment_failed: per i pagamenti asincroni (SEPA) Stripe invia questo
+ * evento anche quando il pagamento è solo IN ELABORAZIONE (PaymentIntent
+ * 'processing') → NON è un insoluto. Marchiamo insoluto solo su un fallimento
+ * reale; altrimenti la rata resta 'pending' (si chiude con invoice.paid).
+ */
 export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void> {
   const subId = subIdFromInvoice(invoice);
   if (!subId || !invoice.id) return;
@@ -255,23 +308,20 @@ export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void
   const rata = await rataPerInvoice(db, subId, invoice.id);
   if (!rata) return;
 
-  // reason: dal charge collegato o da last_finalization_error
-  let code: string | null = null;
-  const anyInv = invoice as unknown as {
-    last_finalization_error?: { code?: string } | null;
-    charge?: string | null;
-  };
-  if (anyInv.charge) {
-    try {
-      const ch = await getStripe().charges.retrieve(anyInv.charge);
-      code = ch.failure_code ?? ch.outcome?.reason ?? null;
-    } catch {
-      // ignora: usiamo il fallback sotto
-    }
-  }
-  code = code ?? anyInv.last_finalization_error?.code ?? null;
-  const { code: c, reason } = motivoInsoluto(code);
+  const { status, reasonCode } = await invoicePaymentState(invoice);
+  const isFirst =
+    (invoice as unknown as { billing_reason?: string }).billing_reason ===
+    "subscription_create";
 
+  // Pagamento ancora in corso (SEPA) → in elaborazione, non insoluto.
+  // Fallback prudente: primo addebito con stato non determinabile → pending
+  // (evita falsi insoluti + email di sollecito su SEPA in elaborazione).
+  if (status === "processing" || (!status && isFirst)) {
+    await db.from("payments").update({ stato: "pending" }).eq("id", rata.id);
+    return;
+  }
+
+  const { code: c, reason } = motivoInsoluto(reasonCode);
   const { data: cur } = await db
     .from("payments")
     .select("attempts")
