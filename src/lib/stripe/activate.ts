@@ -36,13 +36,72 @@ function scadenzaMese(base: Date, mesiAvanti: number): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-async function metodoFromSetupIntent(si: Stripe.SetupIntent): Promise<PaymentMetodo | null> {
-  const pmId = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
+async function metodoFromPmId(pmId: string | null): Promise<PaymentMetodo | null> {
   if (!pmId) return null;
   const pm = await getStripe().paymentMethods.retrieve(pmId);
   if (pm.type === "sepa_debit") return "sdd";
   if (pm.type === "card") return "carta";
   return null;
+}
+
+async function metodoFromSetupIntent(si: Stripe.SetupIntent): Promise<PaymentMetodo | null> {
+  return metodoFromPmId(
+    typeof si.payment_method === "string" ? si.payment_method : (si.payment_method?.id ?? null),
+  );
+}
+
+async function metodoFromSubscription(sub: Stripe.Subscription): Promise<PaymentMetodo | null> {
+  const pm = sub.default_payment_method;
+  return metodoFromPmId(typeof pm === "string" ? pm : (pm?.id ?? null));
+}
+
+async function metodoFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<PaymentMetodo | null> {
+  const pm = pi.payment_method;
+  return metodoFromPmId(typeof pm === "string" ? pm : (pm?.id ?? null));
+}
+
+/**
+ * Porta il cliente a `pagamento_attivo` al PRIMO incasso e invia gli avvisi
+ * (accesso portale + conferma mandato SEPA). La transizione di stato è ATOMICA
+ * (solo il primo evento che vince l'UPDATE manda le email): così invoice.paid,
+ * customer.subscription.updated e payment_intent.succeeded sono idempotenti tra
+ * loro e non duplicano le email.
+ */
+async function attivaClientePagamento(
+  db: ReturnType<typeof createAdminClient>,
+  opts: { clientId: string; quoteId?: string | null; metodo?: PaymentMetodo | null },
+): Promise<void> {
+  const { data: upd } = await db
+    .from("clients")
+    .update({ stato: "pagamento_attivo" })
+    .eq("id", opts.clientId)
+    .not("stato", "in", "(pagamento_attivo,cliente_attivo,cessato)")
+    .select("email, ragione_sociale");
+  const cli = (upd ?? [])[0] as
+    | { email: string | null; ragione_sociale: string }
+    | undefined;
+  if (!cli) return; // già attivato da un altro evento
+
+  await inviaAccessoPortale(cli.email);
+
+  // Conferma mandato SEPA per i piani ricorrenti pagati con addebito diretto.
+  if (opts.metodo === "sdd" && opts.quoteId) {
+    const { data: q } = await db
+      .from("quotes")
+      .select("tipo, rata_mensile, rate_num")
+      .eq("id", opts.quoteId)
+      .maybeSingle();
+    if (q && q.tipo === "ricorrente") {
+      const { statement_descriptor } = await getAppSettingsAdmin();
+      await inviaConfermaMandato({
+        email: cli.email,
+        ragioneSociale: cli.ragione_sociale,
+        rataLorda: conIva(Number(q.rata_mensile ?? 0)),
+        rateNum: q.rate_num ?? 12,
+        descriptor: statement_descriptor,
+      });
+    }
+  }
 }
 
 /**
@@ -228,23 +287,75 @@ async function rataPerInvoice(
   return { id };
 }
 
-/** invoice.paid: segna pagata la rata di quell'invoice (idempotente; chiude un eventuale recupero). */
+/**
+ * invoice.paid: segna pagata la rata di quell'invoice (idempotente; chiude un
+ * eventuale recupero). Al PRIMO incasso (subscription_create) attiva anche il
+ * cliente e invia gli avvisi — nel flusso on-session la subscription nasce
+ * `default_incomplete` e si attiva solo quando la prima fattura è pagata.
+ */
 export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   const subId = subIdFromInvoice(invoice);
   if (!subId || !invoice.id) return;
   const db = createAdminClient();
+
   const rata = await rataPerInvoice(db, subId, invoice.id);
-  if (!rata) return;
+  if (rata) {
+    await db
+      .from("payments")
+      .update({
+        stato: "paid",
+        paid_at: new Date().toISOString(),
+        recovery_stato: "nessuno",
+        failure_code: null,
+        failure_reason: null,
+      })
+      .eq("id", rata.id);
+  }
+
+  const isFirst =
+    (invoice as unknown as { billing_reason?: string }).billing_reason ===
+    "subscription_create";
+  if (!isFirst) return;
+
+  const sub = await getStripe().subscriptions.retrieve(subId, {
+    expand: ["default_payment_method"],
+  });
+  const clientId = sub.metadata?.client_id;
+  if (!clientId) return;
+  const metodo = await metodoFromSubscription(sub);
   await db
-    .from("payments")
-    .update({
-      stato: "paid",
-      paid_at: new Date().toISOString(),
-      recovery_stato: "nessuno",
-      failure_code: null,
-      failure_reason: null,
-    })
-    .eq("id", rata.id);
+    .from("payment_setups")
+    .update({ metodo, stato: "active" })
+    .eq("stripe_subscription_id", subId);
+  await attivaClientePagamento(db, {
+    clientId,
+    quoteId: sub.metadata?.quote_id ?? null,
+    metodo,
+  });
+}
+
+/**
+ * customer.subscription.updated: per l'addebito SEPA la subscription può passare
+ * ad `active` quando la banca conferma (giorni dopo la firma). Attiva il cliente
+ * anche da qui — idempotente con invoice.paid grazie all'UPDATE atomico.
+ */
+export async function handleSubscriptionUpdated(
+  sub: Stripe.Subscription,
+): Promise<void> {
+  if (sub.status !== "active" && sub.status !== "trialing") return;
+  const clientId = sub.metadata?.client_id;
+  if (!clientId) return;
+  const db = createAdminClient();
+  const metodo = await metodoFromSubscription(sub);
+  await db
+    .from("payment_setups")
+    .update({ metodo, stato: "active" })
+    .eq("stripe_subscription_id", sub.id);
+  await attivaClientePagamento(db, {
+    clientId,
+    quoteId: sub.metadata?.quote_id ?? null,
+    metodo,
+  });
 }
 
 // Stato reale del pagamento della fattura + motivo. Per SEPA il PaymentIntent
@@ -353,21 +464,53 @@ export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void
   await inviaAvvisoInsolutoCliente(rata.id);
 }
 
-/** payment_intent.succeeded: recupero carta andato a buon fine → rata pagata. */
-export async function handleRecoveryPaid(
+/**
+ * payment_intent.succeeded. Due casi, distinti dal metadata `tipo`:
+ *  - "recupero": recupero carta di un insoluto → rata pagata;
+ *  - "iniziale": primo (e unico) incasso di un piano una tantum → rata pagata +
+ *    cliente attivato + avvisi.
+ */
+export async function handlePaymentIntentSucceeded(
   pi: Stripe.PaymentIntent,
 ): Promise<void> {
-  const paymentId = pi.metadata?.payment_id;
-  if (!paymentId || pi.metadata?.tipo !== "recupero") return;
   const db = createAdminClient();
-  await db
-    .from("payments")
-    .update({
-      stato: "paid",
-      paid_at: new Date().toISOString(),
-      recovery_stato: "recuperato",
-    })
-    .eq("id", paymentId);
+
+  if (pi.metadata?.tipo === "recupero") {
+    const paymentId = pi.metadata?.payment_id;
+    if (!paymentId) return;
+    await db
+      .from("payments")
+      .update({
+        stato: "paid",
+        paid_at: new Date().toISOString(),
+        recovery_stato: "recuperato",
+      })
+      .eq("id", paymentId);
+    return;
+  }
+
+  if (pi.metadata?.tipo === "iniziale") {
+    await db
+      .from("payments")
+      .update({ stato: "paid", paid_at: new Date().toISOString() })
+      .eq("stripe_payment_intent_id", pi.id);
+    const clientId = pi.metadata?.client_id;
+    if (!clientId) return;
+    const contractId = pi.metadata?.contract_id || null;
+    const metodo = await metodoFromPaymentIntent(pi);
+    const psUpd = db
+      .from("payment_setups")
+      .update({ metodo, stato: "active" })
+      .eq("client_id", clientId);
+    await (contractId
+      ? psUpd.eq("contract_id", contractId)
+      : psUpd.is("contract_id", null));
+    await attivaClientePagamento(db, {
+      clientId,
+      quoteId: pi.metadata?.quote_id ?? null,
+      metodo,
+    });
+  }
 }
 
 /**

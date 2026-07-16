@@ -26,11 +26,6 @@ function euro(n: number | null): string {
 }
 
 export function PaymentSetup(props: Props) {
-  const stripePromise = useMemo(
-    () => loadStripe(props.publishableKey),
-    [props.publishableKey],
-  );
-
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
       <div className="mb-6 flex items-center gap-3">
@@ -43,74 +38,100 @@ export function PaymentSetup(props: Props) {
 
       <FlowStepper current={4} />
 
-      <div className="rounded-card border border-line/60 bg-card p-6 shadow-card">
-        <h1 className="text-lg font-extrabold tracking-[-0.01em] text-text">
-          {props.ragioneSociale}
-        </h1>
-        <p className="mt-0.5 text-sm text-text-2">
-          Preventivo {props.quote.numero ?? "—"}
-        </p>
-
-        <dl className="mt-4 grid grid-cols-3 gap-3 rounded-md bg-card-2 p-4">
-          <div>
-            <dt className="text-[11px] uppercase tracking-wide text-text-3">Rata</dt>
-            <dd className="text-[15px] font-bold text-text">
-              {euro(props.quote.rata_mensile)}
-              <span className="text-[12px] font-medium text-text-3">/mese</span>
-            </dd>
-            <div className="mt-0.5 text-[11px] text-text-3">
-              {euro(conIva(props.quote.rata_mensile))} IVA incl.
-            </div>
-          </div>
-          <div>
-            <dt className="text-[11px] uppercase tracking-wide text-text-3">Durata</dt>
-            <dd className="text-[15px] font-bold text-text">
-              {props.quote.rate_num ?? "—"} mesi
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[11px] uppercase tracking-wide text-text-3">Totale</dt>
-            <dd className="text-[15px] font-bold text-text">
-              {euro(props.quote.importo_totale)}
-            </dd>
-            <div className="mt-0.5 text-[11px] text-text-3">
-              {euro(conIva(props.quote.importo_totale))} IVA incl.
-            </div>
-          </div>
-        </dl>
-
-        <Elements
-          stripe={stripePromise}
-          options={{
-            clientSecret: props.clientSecret,
-            appearance: {
-              theme: "flat",
-              variables: {
-                colorPrimary: "#222222",
-                colorBackground: "#ffffff",
-                colorText: "#1e1e22",
-                borderRadius: "12px",
-                fontFamily: "Fustat, system-ui, sans-serif",
-              },
-            },
-          }}
-        >
-          <SetupForm
-            token={props.token}
-            descrittore={props.statementDescriptor}
-          />
-        </Elements>
-
-        <p className="mt-4 text-[12px] leading-relaxed text-text-3">
-          L&apos;IBAN è gestito direttamente da Stripe: Digital Discovery non lo
-          vede né lo conserva. Il mandato è revocabile in ogni momento.
-        </p>
-      </div>
+      {props.giaPagato || !props.clientSecret ? (
+        <div className="rounded-card border border-line/60 bg-card p-8 text-center shadow-card">
+          <h1 className="text-lg font-extrabold tracking-[-0.01em] text-text">
+            Pagamento già impostato
+          </h1>
+          <p className="mt-2 text-sm text-text-2">
+            Il pagamento per {props.ragioneSociale} risulta già attivo o in
+            elaborazione. Trovi rate, servizi e contratti nel tuo portale.
+          </p>
+          <a
+            href="/accedi"
+            className="mt-5 inline-block rounded-pill bg-ink px-5 py-2.5 text-[14px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+          >
+            Accedi al tuo portale
+          </a>
+        </div>
+      ) : (
+        <PaymentBody {...props} clientSecret={props.clientSecret} />
+      )}
     </main>
   );
 }
 
-function SetupForm({
+function PaymentBody(props: Props & { clientSecret: string }) {
+  const stripePromise = useMemo(
+    () => loadStripe(props.publishableKey),
+    [props.publishableKey],
+  );
+
+  return (
+    <div className="rounded-card border border-line/60 bg-card p-6 shadow-card">
+      <h1 className="text-lg font-extrabold tracking-[-0.01em] text-text">
+        {props.ragioneSociale}
+      </h1>
+      <p className="mt-0.5 text-sm text-text-2">
+        Preventivo {props.quote.numero ?? "—"}
+      </p>
+
+      <dl className="mt-4 grid grid-cols-3 gap-3 rounded-md bg-card-2 p-4">
+        <div>
+          <dt className="text-[11px] uppercase tracking-wide text-text-3">Rata</dt>
+          <dd className="text-[15px] font-bold text-text">
+            {euro(props.quote.rata_mensile)}
+            <span className="text-[12px] font-medium text-text-3">/mese</span>
+          </dd>
+          <div className="mt-0.5 text-[11px] text-text-3">
+            {euro(conIva(props.quote.rata_mensile))} IVA incl.
+          </div>
+        </div>
+        <div>
+          <dt className="text-[11px] uppercase tracking-wide text-text-3">Durata</dt>
+          <dd className="text-[15px] font-bold text-text">
+            {props.quote.rate_num ?? "—"} mesi
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] uppercase tracking-wide text-text-3">Totale</dt>
+          <dd className="text-[15px] font-bold text-text">
+            {euro(props.quote.importo_totale)}
+          </dd>
+          <div className="mt-0.5 text-[11px] text-text-3">
+            {euro(conIva(props.quote.importo_totale))} IVA incl.
+          </div>
+        </div>
+      </dl>
+
+      <Elements
+        stripe={stripePromise}
+        options={{
+          clientSecret: props.clientSecret,
+          appearance: {
+            theme: "flat",
+            variables: {
+              colorPrimary: "#222222",
+              colorBackground: "#ffffff",
+              colorText: "#1e1e22",
+              borderRadius: "12px",
+              fontFamily: "Fustat, system-ui, sans-serif",
+            },
+          },
+        }}
+      >
+        <PayForm token={props.token} descrittore={props.statementDescriptor} />
+      </Elements>
+
+      <p className="mt-4 text-[12px] leading-relaxed text-text-3">
+        L&apos;IBAN è gestito direttamente da Stripe: Digital Discovery non lo
+        vede né lo conserva. Il mandato è revocabile in ogni momento.
+      </p>
+    </div>
+  );
+}
+
+function PayForm({
   token,
   descrittore,
 }: {
@@ -129,7 +150,9 @@ function SetupForm({
     setPending(true);
     setError(null);
 
-    const { error } = await stripe.confirmSetup({
+    // Conferma ON-SESSION del primo addebito: per le carte l'eventuale 3D Secure
+    // avviene ora, col cliente presente (off-session fallirebbe).
+    const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
         return_url: `${location.origin}/paga/${token}/ok`,
@@ -137,7 +160,7 @@ function SetupForm({
     });
     // Se non c'è redirect, l'errore è immediato (validazione/carta rifiutata).
     if (error) {
-      setError(error.message ?? "Errore durante la conferma.");
+      setError(error.message ?? "Errore durante il pagamento.");
       setPending(false);
     }
   }
@@ -152,7 +175,7 @@ function SetupForm({
         </p>
       )}
       <Button type="submit" disabled={!stripe || pending} className="mt-5 w-full">
-        {pending ? "Attivazione…" : "Attiva il pagamento"}
+        {pending ? "Conferma in corso…" : "Conferma e paga"}
       </Button>
     </form>
   );

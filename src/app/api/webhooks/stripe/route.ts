@@ -5,8 +5,9 @@ import {
   handleSetupSucceeded,
   handleInvoicePaid,
   handleInvoiceFailed,
+  handleSubscriptionUpdated,
   handleSubscriptionDeleted,
-  handleRecoveryPaid,
+  handlePaymentIntentSucceeded,
   handleChargeDispute,
 } from "@/lib/stripe/activate";
 
@@ -40,11 +41,16 @@ export async function POST(req: Request) {
       case "invoice.payment_failed":
         await handleInvoiceFailed(event.data.object as Stripe.Invoice);
         break;
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       case "payment_intent.succeeded":
-        await handleRecoveryPaid(event.data.object as Stripe.PaymentIntent);
+        await handlePaymentIntentSucceeded(
+          event.data.object as Stripe.PaymentIntent,
+        );
         break;
       case "charge.dispute.created":
         await handleChargeDispute(event.data.object as Stripe.Dispute);
