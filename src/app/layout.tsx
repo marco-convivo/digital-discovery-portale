@@ -9,10 +9,26 @@ const fustat = Fustat({
   display: "swap",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Digital Discovery — Portale",
-  description:
-    "CRM vendite interno e portale cliente di Digital Discovery S.r.l.",
+  description: "La tua presenza digitale, gestita da noi.",
+  openGraph: {
+    title: "Digital Discovery",
+    description: "La tua presenza digitale, gestita da noi.",
+    siteName: "Digital Discovery",
+    url: SITE_URL,
+    locale: "it_IT",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Digital Discovery",
+    description: "La tua presenza digitale, gestita da noi.",
+  },
 };
 
 export default function RootLayout({

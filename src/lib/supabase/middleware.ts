@@ -16,6 +16,8 @@ const PUBLIC_PATHS = [
   "/recupero",
   // vetrina pubblica del catalogo (condivisibile senza login)
   "/catalogo",
+  // immagine anteprima Open Graph (deve essere pubblica per WhatsApp/social)
+  "/opengraph-image",
 ];
 
 /**
