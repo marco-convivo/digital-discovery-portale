@@ -7,6 +7,14 @@ import {
   type OrdineSelezione,
 } from "@/lib/catalog";
 import { scadenzeServizi, giorniAllaScadenza } from "@/lib/servizi";
+import { parseAddons } from "@/lib/addon";
+
+// signed_at + N mesi → data ISO (scadenza addon ricorrenti).
+function addMesiIso(iso: string, mesi: number): string {
+  const d = new Date(iso);
+  d.setMonth(d.getMonth() + mesi);
+  return d.toISOString().slice(0, 10);
+}
 
 export interface ServizioAttivo {
   chiave: string;
@@ -35,7 +43,7 @@ export interface PortaleHomeData {
 
 interface ContrRow {
   signed_at: string | null;
-  quote: { ordine: OrdineSelezione | null } | null;
+  quote: { ordine: OrdineSelezione | null; addons: unknown } | null;
 }
 
 interface CatContenuto {
@@ -77,7 +85,7 @@ export async function getPortaleHomeData(
       .eq("stato", "firmato"),
     supabase
       .from("contracts")
-      .select("signed_at, quote:quotes!contracts_quote_id_fkey(ordine)")
+      .select("signed_at, quote:quotes!contracts_quote_id_fkey(ordine, addons)")
       .eq("stato", "firmato"),
     supabase
       .from("service_catalog")
@@ -90,7 +98,26 @@ export async function getPortaleHomeData(
 
   // servizi attivi arricchiti (dai contratti firmati → ordine + catalogo)
   const byKey = new Map<string, ServizioAttivo>();
+  const addonServizi: ServizioAttivo[] = [];
   for (const c of (contrData ?? []) as unknown as ContrRow[]) {
+    // Servizi aggiuntivi (addon, fuori catalogo)
+    for (const a of parseAddons(c.quote?.addons)) {
+      const scadenzaIso =
+        a.tipo === "ricorrente" && c.signed_at
+          ? addMesiIso(c.signed_at, a.durata ?? 12)
+          : null;
+      addonServizi.push({
+        chiave: `addon-${addonServizi.length}`,
+        titolo: a.descrizione,
+        dettaglio:
+          a.tipo === "ricorrente" ? `${a.durata ?? 12} mesi` : "Una tantum",
+        descrizione: null,
+        attivita: [],
+        unaTantum: a.tipo === "una_tantum",
+        scadenzaIso,
+        giorni: scadenzaIso ? giorniAllaScadenza(scadenzaIso) : null,
+      });
+    }
     const ordine = c.quote?.ordine ?? null;
     if (!ordine) continue;
     const labels = serviziDaOrdine(ordine); // allineato a CATALOG selezionati
@@ -126,7 +153,8 @@ export async function getPortaleHomeData(
       }
     }
   }
-  const serviziAttivi = [...byKey.values()];
+  const serviziAttivi = [...byKey.values(), ...addonServizi];
+  const serviceKeysCatalogo = [...byKey.keys()];
 
   // referente (owner) — via service role: il cliente non legge profiles
   let referente: string | null = null;
@@ -147,7 +175,7 @@ export async function getPortaleHomeData(
     rateTotali: rateTotali ?? 0,
     contrattiCount: contrattiCount ?? 0,
     serviziAttivi,
-    serviceKeysAttivi: serviziAttivi.map((s) => s.chiave),
+    serviceKeysAttivi: serviceKeysCatalogo,
     referente,
   };
 }

@@ -8,6 +8,7 @@ import {
   type PrefillField,
 } from "@/lib/docuseal/server";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
+import { parseAddons, addonText, type Addon } from "@/lib/addon";
 
 export interface FirmaMeta {
   ip: string;
@@ -23,6 +24,7 @@ export interface ContrattoHeader {
   rateNum: number | null;
   servizi: string[]; // etichette leggibili
   serviceKeys: string[]; // chiavi catalogo (per Condizioni Particolari)
+  addons: Addon[]; // servizi aggiuntivi a testo libero
 }
 
 // Flusso firma pubblico (anon): admin client scoping sul token del preventivo.
@@ -92,6 +94,7 @@ interface QuoteRow {
   rate_num: number | null;
   rata_mensile: number | null;
   ordine: OrdineSelezione | null;
+  addons: unknown;
   client: {
     id: string;
     ragione_sociale: string;
@@ -110,7 +113,7 @@ async function loadQuote(token: string): Promise<QuoteRow | null> {
   const { data } = await db
     .from("quotes")
     .select(
-      "id, numero, importo_totale, rate_num, rata_mensile, ordine, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato, codice_sdi, indirizzo, p_iva, pec, referente)",
+      "id, numero, importo_totale, rate_num, rata_mensile, ordine, addons, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, stato, codice_sdi, indirizzo, p_iva, pec, referente)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -156,6 +159,7 @@ export async function getContractView(token: string): Promise<ContractView> {
       rateNum: q.rate_num,
       servizi: serviziDaOrdine(q.ordine),
       serviceKeys,
+      addons: parseAddons(q.addons),
     },
   };
 }
@@ -200,9 +204,12 @@ export async function signContract(
     })
     .eq("id", q.client.id);
 
+  const addons = parseAddons(q.addons);
+
   const candidates: Record<string, string> = {
     numero_ordine: q.numero ?? "",
     importo: num(q.importo_totale),
+    addon: addons.length ? addonText(addons) : "",
     importo_rata: num(q.rata_mensile),
     rate: String(q.rate_num ?? ""),
     scadenza_prima_rata: oggiIt(),

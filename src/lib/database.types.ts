@@ -487,6 +487,7 @@ export type Database = {
       quotes: {
         Row: {
           accepted_at: string | null
+          addons: Json
           client_id: string
           created_at: string
           id: string
@@ -505,6 +506,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          addons?: Json
           client_id: string
           created_at?: string
           id?: string
@@ -523,6 +525,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          addons?: Json
           client_id?: string
           created_at?: string
           id?: string

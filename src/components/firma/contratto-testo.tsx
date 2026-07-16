@@ -1,5 +1,6 @@
 import { euro } from "@/lib/format";
 import { ContrattoLegale } from "@/components/firma/contratto-legale";
+import type { Addon } from "@/lib/addon";
 
 export function ContrattoTesto({
   numero,
@@ -8,6 +9,7 @@ export function ContrattoTesto({
   rateNum,
   servizi,
   serviceKeys,
+  addons = [],
 }: {
   numero: string | null;
   importo: number | null;
@@ -15,6 +17,7 @@ export function ContrattoTesto({
   rateNum: number | null;
   servizi: string[];
   serviceKeys: string[];
+  addons?: Addon[];
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -48,6 +51,26 @@ export function ContrattoTesto({
               {servizi.map((s, i) => (
                 <li key={i} className="text-[12.5px] font-medium text-text-2">
                   {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {addons.length > 0 && (
+          <div className="mt-3 border-t border-line pt-2.5">
+            <dt className="text-[12px] text-text-3">Servizi aggiuntivi</dt>
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {addons.map((a, i) => (
+                <li key={i} className="text-[12.5px] font-medium text-text-2">
+                  {a.descrizione}
+                  <span className="font-normal text-text-3">
+                    {" "}
+                    —{" "}
+                    {a.tipo === "ricorrente"
+                      ? `${euro(a.prezzo)}/mese · ${a.durata ?? 12} mesi`
+                      : `${euro(a.prezzo)} una tantum`}
+                  </span>
                 </li>
               ))}
             </ul>

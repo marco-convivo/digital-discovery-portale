@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
+import { parseAddons, addonContributo } from "@/lib/addon";
 
 // Il preventivo pubblico gira in contesto anon: admin client scoping sul token.
 
@@ -45,6 +46,7 @@ interface RawQuote {
   viewed_at: string | null;
   created_at: string;
   ordine: unknown;
+  addons: unknown;
   items: PublicQuote["items"] | null;
   client: { id: string; ragione_sociale: string; stato: string } | null;
 }
@@ -54,7 +56,7 @@ async function loadRaw(token: string): Promise<RawQuote | null> {
   const { data } = await db
     .from("quotes")
     .select(
-      "id, client_id, numero, tipo, stato, importo_totale, rata_mensile, rate_num, valido_fino, viewed_at, created_at, ordine, items:quote_items(descrizione, quantita, prezzo_unitario), client:clients!quotes_client_id_fkey(id, ragione_sociale, stato)",
+      "id, client_id, numero, tipo, stato, importo_totale, rata_mensile, rate_num, valido_fino, viewed_at, created_at, ordine, addons, items:quote_items(descrizione, quantita, prezzo_unitario), client:clients!quotes_client_id_fkey(id, ragione_sociale, stato)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -162,6 +164,18 @@ export async function getPublicQuote(token: string): Promise<PublicQuote | null>
     (q.items as unknown as PublicQuote["items"] | null)?.slice() ?? [];
 
   const servizi = await buildServizi(q.ordine, items);
+  for (const a of parseAddons(q.addons)) {
+    servizi.push({
+      titolo: a.descrizione,
+      meta:
+        a.tipo === "ricorrente"
+          ? `Aggiuntivo · ${a.durata ?? 12} mesi`
+          : "Aggiuntivo · una tantum",
+      descrizione: null,
+      attivita: [],
+      prezzo: addonContributo(a),
+    });
+  }
   const scontoItem = items.find((it) => it.descrizione === "Sconto");
   const sconto = scontoItem ? Math.abs(scontoItem.prezzo_unitario) : 0;
 

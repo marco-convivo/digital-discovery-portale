@@ -130,6 +130,7 @@ export function FirmaFlow({
               rateNum={contratto.rateNum}
               servizi={contratto.servizi}
               serviceKeys={contratto.serviceKeys}
+              addons={contratto.addons}
             />
           </div>
 

@@ -7,6 +7,7 @@ import {
   type CreateQuoteInput,
 } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { CATALOG, type OrdineSelezione, type CatalogService } from "@/lib/catalog";
+import { addonContributo, type Addon } from "@/lib/addon";
 import { euro } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export interface QuoteInitial {
   tipo: Tipo;
   rateNum: number | null;
   validoFino: string | null;
+  addons: Addon[];
 }
 
 export function CreateQuoteForm({
@@ -54,6 +56,7 @@ export function CreateQuoteForm({
     initial?.rateNum != null,
   );
   const [validoFino, setValidoFino] = useState(initial?.validoFino ?? "");
+  const [addons, setAddons] = useState<Addon[]>(initial?.addons ?? []);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -101,17 +104,18 @@ export function CreateQuoteForm({
     c.ricorrente ? prezzoNum(c.key) * durataOf(c) : prezzoNum(c.key);
 
   const selectedServices = CATALOG.filter((c) => sel[c.key]?.selected);
-  const totaleServizi = selectedServices.reduce((s, c) => s + contributo(c), 0);
+  const totaleAddon = addons.reduce((s, a) => s + addonContributo(a), 0);
+  const totaleServizi =
+    selectedServices.reduce((s, c) => s + contributo(c), 0) + totaleAddon;
   const scontoNum = Math.max(0, Number(sconto) || 0);
   const totaleContratto = Math.max(0, totaleServizi - scontoNum);
 
-  // N. rate: default = durata più lunga tra i servizi ricorrenti; poi editabile.
-  const durateRicorrenti = selectedServices
-    .filter((c) => c.ricorrente)
-    .map(durataOf);
-  const mesiContratto = durateRicorrenti.length
-    ? Math.max(...durateRicorrenti)
-    : 12;
+  // N. rate: default = durata più lunga tra i ricorrenti (servizi + addon).
+  const durate = [
+    ...selectedServices.filter((c) => c.ricorrente).map(durataOf),
+    ...addons.filter((a) => a.tipo === "ricorrente").map((a) => a.durata ?? 12),
+  ];
+  const mesiContratto = durate.length ? Math.max(...durate) : 12;
   const rateN = rateTouched
     ? Math.max(1, Math.trunc(Number(rateNum) || 0))
     : mesiContratto;
@@ -133,6 +137,7 @@ export function CreateQuoteForm({
         ordine: sel,
         prezzi: prezziObj,
         sconto: scontoNum,
+        addons,
       };
       const res = initial
         ? await updateQuote({ quoteId: initial.quoteId, ...payload })
@@ -314,6 +319,136 @@ export function CreateQuoteForm({
         </div>
       </div>
 
+      {/* Servizi aggiuntivi (addon) — fuori catalogo */}
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-semibold text-text-2">
+            Servizi aggiuntivi (addon)
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setAddons((a) => [
+                ...a,
+                { descrizione: "", prezzo: 0, tipo: "ricorrente", durata: 12 },
+              ])
+            }
+            className="text-[13px] font-semibold text-violet hover:underline"
+          >
+            + Aggiungi
+          </button>
+        </div>
+        <p className="mt-0.5 text-[12px] text-text-3">
+          Fuori catalogo (rinnovi, interventi mirati): finiscono nel contratto e
+          nel piano rate.
+        </p>
+        {addons.length > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            {addons.map((ad, i) => (
+              <div key={i} className="rounded-md border border-line p-2.5">
+                <div className="flex items-start gap-2">
+                  <input
+                    value={ad.descrizione}
+                    onChange={(e) =>
+                      setAddons((a) =>
+                        a.map((x, j) =>
+                          j === i ? { ...x, descrizione: e.target.value } : x,
+                        ),
+                      )
+                    }
+                    placeholder="Descrizione (es. Mantenimento dominio + hosting)"
+                    className="min-w-0 flex-1 rounded-sm border border-line bg-card px-2.5 py-1.5 text-[13px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAddons((a) => a.filter((_, j) => j !== i))
+                    }
+                    className="px-1 text-text-3 hover:text-fail-tx"
+                    aria-label="Rimuovi addon"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-text-2">
+                  <select
+                    value={ad.tipo}
+                    onChange={(e) =>
+                      setAddons((a) =>
+                        a.map((x, j) =>
+                          j === i
+                            ? {
+                                ...x,
+                                tipo: e.target.value as Addon["tipo"],
+                                durata:
+                                  e.target.value === "ricorrente"
+                                    ? (x.durata ?? 12)
+                                    : undefined,
+                              }
+                            : x,
+                        ),
+                      )
+                    }
+                    className="rounded-sm border border-line bg-card px-2 py-1 text-[12px]"
+                  >
+                    <option value="ricorrente">Ricorrente</option>
+                    <option value="una_tantum">Una tantum</option>
+                  </select>
+                  {ad.tipo === "ricorrente" && (
+                    <span className="flex items-center gap-1">
+                      Durata:
+                      {[3, 6, 9, 12].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() =>
+                            setAddons((a) =>
+                              a.map((x, j) =>
+                                j === i ? { ...x, durata: m } : x,
+                              ),
+                            )
+                          }
+                          className={cn(
+                            "rounded-pill px-2 py-0.5 font-semibold",
+                            (ad.durata ?? 12) === m
+                              ? "bg-ink text-on-ink"
+                              : "bg-card-2 text-text-2",
+                          )}
+                        >
+                          {m}m
+                        </button>
+                      ))}
+                    </span>
+                  )}
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      value={ad.prezzo || ""}
+                      onChange={(e) =>
+                        setAddons((a) =>
+                          a.map((x, j) =>
+                            j === i
+                              ? { ...x, prezzo: Number(e.target.value) }
+                              : x,
+                          ),
+                        )
+                      }
+                      placeholder={ad.tipo === "ricorrente" ? "€/mese" : "€"}
+                      className="w-24 rounded-sm border border-line bg-card px-2 py-1 text-right text-[12px] tnum"
+                    />
+                    {ad.tipo === "ricorrente" && (ad.prezzo || 0) > 0 && (
+                      <span className="text-text-3 tnum">
+                        = {euro(addonContributo(ad))}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <label className="flex flex-col gap-1.5">
         <span className="text-[13px] font-semibold text-text-2">Formula</span>
         <select
@@ -328,7 +463,7 @@ export function CreateQuoteForm({
       </label>
 
       {/* Riepilogo economico: contributi al totale contratto → rata mensile */}
-      {selectedServices.length > 0 && (
+      {(selectedServices.length > 0 || addons.length > 0) && (
         <div className="flex flex-col gap-2.5 rounded-md border border-line bg-card-2/60 p-3.5">
           <div className="flex items-center justify-between text-[13px] text-text-2">
             <span>Subtotale servizi</span>

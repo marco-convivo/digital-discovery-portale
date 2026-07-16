@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
+import { addonContributo, type Addon } from "@/lib/addon";
+import type { Json } from "@/lib/database.types";
 
 export interface AnagraficaInput {
   ragione_sociale: string;
@@ -37,6 +39,7 @@ function buildQuoteItems(
   descrizioni: string[],
   prezziMensili: Record<string, number> | undefined,
   sconto: number,
+  addons: Addon[] = [],
 ) {
   const selectedKeys = CATALOG.filter((c) => ordine[c.key]?.selected).map(
     (c) => c.key,
@@ -51,6 +54,15 @@ function buildQuoteItems(
       ordine,
     ),
   }));
+  // Righe addon (servizi aggiuntivi a testo libero).
+  for (const a of addons) {
+    items.push({
+      quote_id: quoteId,
+      descrizione: a.descrizione,
+      quantita: 1,
+      prezzo_unitario: addonContributo(a),
+    });
+  }
   if (sconto > 0) {
     items.push({
       quote_id: quoteId,
@@ -107,6 +119,8 @@ export interface CreateQuoteInput {
   prezzi?: Record<string, number>;
   // sconto in € (sulla rata se ricorrente, sull'importo altrimenti)
   sconto?: number;
+  // servizi aggiuntivi a testo libero (fuori catalogo)
+  addons?: Addon[];
 }
 
 export type CreateQuoteResult =
@@ -123,8 +137,8 @@ export async function createQuote(
   if (!user) return { ok: false, error: "Sessione scaduta." };
 
   const descrizioni = serviziDaOrdine(input.ordine);
-  if (descrizioni.length === 0) {
-    return { ok: false, error: "Seleziona almeno un servizio." };
+  if (descrizioni.length === 0 && (input.addons ?? []).length === 0) {
+    return { ok: false, error: "Seleziona almeno un servizio o aggiungi un addon." };
   }
 
   const ricorrente = input.tipo === "ricorrente";
@@ -152,6 +166,7 @@ export async function createQuote(
       ordine: input.ordine,
       prezzi: input.prezzi ?? {},
       sconto: input.sconto ?? 0,
+      addons: (input.addons ?? []) as unknown as Json,
     })
     .select("id, public_token")
     .single();
@@ -166,6 +181,7 @@ export async function createQuote(
     descrizioni,
     input.prezzi,
     input.sconto ?? 0,
+    input.addons ?? [],
   );
   await supabase.from("quote_items").insert(items);
 
@@ -190,6 +206,7 @@ export interface UpdateQuoteInput {
   ordine: OrdineSelezione;
   prezzi?: Record<string, number>;
   sconto?: number;
+  addons?: Addon[];
 }
 
 /** Modifica un preventivo esistente — consentito finché NON è accettato/chiuso. */
@@ -223,8 +240,8 @@ export async function updateQuote(
   }
 
   const descrizioni = serviziDaOrdine(input.ordine);
-  if (descrizioni.length === 0)
-    return { ok: false, error: "Seleziona almeno un servizio." };
+  if (descrizioni.length === 0 && (input.addons ?? []).length === 0)
+    return { ok: false, error: "Seleziona almeno un servizio o aggiungi un addon." };
   const ricorrente = input.tipo === "ricorrente";
   const importoTotale = Number(input.importoTotale ?? 0);
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
@@ -240,6 +257,7 @@ export async function updateQuote(
       ordine: input.ordine,
       prezzi: input.prezzi ?? {},
       sconto: input.sconto ?? 0,
+      addons: (input.addons ?? []) as unknown as Json,
     })
     .eq("id", q.id);
   if (upErr) return { ok: false, error: upErr.message };
@@ -252,6 +270,7 @@ export async function updateQuote(
     descrizioni,
     input.prezzi,
     input.sconto ?? 0,
+    input.addons ?? [],
   );
   await supabase.from("quote_items").insert(items);
 

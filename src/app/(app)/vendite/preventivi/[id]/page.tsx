@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
 import { getPrezziBase } from "@/lib/catalogo/queries";
+import { parseAddons } from "@/lib/addon";
 import type { OrdineSelezione } from "@/lib/catalog";
 
 const EDITABILI = ["bozza", "inviato", "visto"];
@@ -19,6 +20,7 @@ interface QuoteRow {
   ordine: OrdineSelezione | null;
   prezzi: Record<string, number> | null;
   sconto: number | null;
+  addons: unknown;
 }
 
 export default async function ModificaPreventivoPage({
@@ -31,7 +33,7 @@ export default async function ModificaPreventivoPage({
   const { data } = await supabase
     .from("quotes")
     .select(
-      "id, client_id, numero, stato, tipo, rate_num, valido_fino, ordine, prezzi, sconto",
+      "id, client_id, numero, stato, tipo, rate_num, valido_fino, ordine, prezzi, sconto, addons",
     )
     .eq("id", id)
     .maybeSingle();
@@ -74,6 +76,7 @@ export default async function ModificaPreventivoPage({
               tipo: q.tipo,
               rateNum: q.rate_num,
               validoFino: q.valido_fino,
+              addons: parseAddons(q.addons),
             }}
           />
         </Card>
