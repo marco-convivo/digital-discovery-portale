@@ -313,11 +313,19 @@ export async function handleInvoiceFailed(invoice: Stripe.Invoice): Promise<void
     (invoice as unknown as { billing_reason?: string }).billing_reason ===
     "subscription_create";
 
-  // Pagamento ancora in corso (SEPA) → in elaborazione, non insoluto.
-  // Fallback prudente: primo addebito con stato non determinabile → pending
-  // (evita falsi insoluti + email di sollecito su SEPA in elaborazione).
-  if (status === "processing" || (!status && isFirst)) {
+  // Pagamento asincrono ancora in corso (SEPA) → in elaborazione, non insoluto.
+  if (status === "processing") {
     await db.from("payments").update({ stato: "pending" }).eq("id", rata.id);
+    return;
+  }
+
+  // PRIMO addebito non completato (carta da autenticare/rifiutata, SEPA non
+  // ancora partito): il cliente deve COMPLETARE la fattura (o rifare /paga),
+  // non è un insoluto da recuperare con link maggiorato. La rata resta
+  // 'pending', avvisiamo solo lo staff (niente email di sollecito al cliente).
+  if (isFirst) {
+    await db.from("payments").update({ stato: "pending" }).eq("id", rata.id);
+    await inviaAlertInsoluto(rata.id);
     return;
   }
 
