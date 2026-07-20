@@ -9,6 +9,7 @@ import { CreateQuoteForm } from "@/components/internal/create-quote-form";
 import { PreventiviList, type PreventivoItem } from "@/components/internal/preventivi-list";
 import { type RataRow } from "@/components/internal/piano-pagamenti";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
+import { FattureCliente, type FatturaRow } from "@/components/internal/fatture-cliente";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META } from "@/lib/stati";
 import { getPrezziBase } from "@/lib/catalogo/queries";
@@ -51,29 +52,39 @@ export default async function ClientePage({
 
   const prezziBase = await getPrezziBase();
 
-  const [{ data: quotesData }, { data: payData }, { data: contrData }] =
-    await Promise.all([
-      supabase
-        .from("quotes")
-        .select("id, numero, stato, importo_totale, public_token, created_at")
-        .eq("client_id", id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("payments")
-        .select("id, numero_rata, importo, scadenza, stato, contract_id, subscription_id")
-        .eq("client_id", id)
-        .order("numero_rata", { ascending: true }),
-      supabase
-        .from("contracts")
-        .select(
-          "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(ordine)",
-        )
-        .eq("client_id", id)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [
+    { data: quotesData },
+    { data: payData },
+    { data: contrData },
+    { data: invData },
+  ] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select("id, numero, stato, importo_totale, public_token, created_at")
+      .eq("client_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("payments")
+      .select("id, numero_rata, importo, scadenza, stato, contract_id, subscription_id")
+      .eq("client_id", id)
+      .order("numero_rata", { ascending: true }),
+    supabase
+      .from("contracts")
+      .select(
+        "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(ordine)",
+      )
+      .eq("client_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select("id, numero, data, importo, pdf_url")
+      .eq("client_id", id)
+      .order("data", { ascending: false }),
+  ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
   const contratti = (contrData ?? []) as unknown as ContractRow[];
+  const fatture = (invData ?? []) as unknown as FatturaRow[];
 
   // Raggruppa le rate per contratto (più contratti = più piani distinti).
   const pays = (payData ?? []) as unknown as (RataRow & {
@@ -226,6 +237,13 @@ export default async function ClientePage({
                 })}
               </div>
             )}
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Fatture</CardTitle>
+            </CardHeader>
+            <FattureCliente clientId={c.id} fatture={fatture} />
           </Card>
         </div>
 
