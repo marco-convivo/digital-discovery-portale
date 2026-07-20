@@ -61,11 +61,12 @@ async function metodoFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<Paymen
 }
 
 /**
- * Porta il cliente a `pagamento_attivo` al PRIMO incasso e invia gli avvisi
- * (accesso portale + conferma mandato SEPA). La transizione di stato è ATOMICA
- * (solo il primo evento che vince l'UPDATE manda le email): così invoice.paid,
- * customer.subscription.updated e payment_intent.succeeded sono idempotenti tra
- * loro e non duplicano le email.
+ * Porta il cliente a `cliente_attivo` al PRIMO incasso e invia gli avvisi
+ * (accesso portale + conferma mandato SEPA). Scelta: al primo pagamento il
+ * cliente diventa subito attivo (niente sosta su `pagamento_attivo`). La
+ * transizione di stato è ATOMICA (solo il primo evento che vince l'UPDATE manda
+ * le email): così invoice.paid, customer.subscription.updated e
+ * payment_intent.succeeded sono idempotenti tra loro e non duplicano le email.
  */
 async function attivaClientePagamento(
   db: ReturnType<typeof createAdminClient>,
@@ -73,9 +74,9 @@ async function attivaClientePagamento(
 ): Promise<void> {
   const { data: upd } = await db
     .from("clients")
-    .update({ stato: "pagamento_attivo" })
+    .update({ stato: "cliente_attivo" })
     .eq("id", opts.clientId)
-    .not("stato", "in", "(pagamento_attivo,cliente_attivo,cessato)")
+    .not("stato", "in", "(cliente_attivo,cessato)")
     .select("email, ragione_sociale");
   const cli = (upd ?? [])[0] as
     | { email: string | null; ragione_sociale: string }
@@ -107,7 +108,7 @@ async function attivaClientePagamento(
 /**
  * setup_intent.succeeded: il mandato SDD / la carta sono salvati.
  * Crea la subscription (ricorrente) o incassa una tantum, pre-genera le rate,
- * porta il cliente a `pagamento_attivo`. Idempotente sul payment_setup.
+ * porta il cliente a `cliente_attivo`. Idempotente sul payment_setup.
  */
 export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void> {
   const quoteId = si.metadata?.quote_id;
@@ -234,7 +235,11 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
       .eq("id", ps.id);
   }
 
-  await db.from("clients").update({ stato: "pagamento_attivo" }).eq("id", clientId);
+  await db
+    .from("clients")
+    .update({ stato: "cliente_attivo" })
+    .eq("id", clientId)
+    .not("stato", "in", "(cliente_attivo,cessato)");
 
   // Invito di accesso al portale (magic link) — best-effort, non blocca il flusso.
   const { data: cli } = await db
