@@ -4,6 +4,7 @@ import {
   type ClientePagamenti,
 } from "@/components/internal/master-detail-pagamenti";
 import { type RataRow } from "@/components/internal/piano-pagamenti";
+import { type FatturaRow } from "@/components/internal/fatture-cliente";
 import { dataIt } from "@/lib/format";
 import type { Database } from "@/lib/database.types";
 
@@ -18,6 +19,10 @@ interface Row {
   client: { id: string; ragione_sociale: string } | null;
 }
 
+interface InvoiceRow extends FatturaRow {
+  client_id: string;
+}
+
 export default async function PagamentiPage({
   searchParams,
 }: {
@@ -25,15 +30,20 @@ export default async function PagamentiPage({
 }) {
   const { cliente } = await searchParams;
   const supabase = await createClient();
-  const [{ data: payData }, { data: contrData }] = await Promise.all([
-    supabase
-      .from("payments")
-      .select(
-        "numero_rata, importo, scadenza, stato, contract_id, client:clients!payments_client_id_fkey(id, ragione_sociale)",
-      )
-      .order("numero_rata", { ascending: true }),
-    supabase.from("contracts").select("id, signed_at"),
-  ]);
+  const [{ data: payData }, { data: contrData }, { data: invData }] =
+    await Promise.all([
+      supabase
+        .from("payments")
+        .select(
+          "numero_rata, importo, scadenza, stato, contract_id, client:clients!payments_client_id_fkey(id, ragione_sociale)",
+        )
+        .order("numero_rata", { ascending: true }),
+      supabase.from("contracts").select("id, signed_at"),
+      supabase
+        .from("invoices")
+        .select("id, numero, data, importo, pdf_url, client_id")
+        .order("data", { ascending: false }),
+    ]);
 
   const firmato = new Map(
     ((contrData ?? []) as { id: string; signed_at: string | null }[]).map((c) => [
@@ -41,6 +51,19 @@ export default async function PagamentiPage({
       c.signed_at,
     ]),
   );
+
+  const fattureByClient = new Map<string, FatturaRow[]>();
+  for (const inv of (invData ?? []) as unknown as InvoiceRow[]) {
+    const arr = fattureByClient.get(inv.client_id) ?? [];
+    arr.push({
+      id: inv.id,
+      numero: inv.numero,
+      data: inv.data,
+      importo: inv.importo,
+      pdf_url: inv.pdf_url,
+    });
+    fattureByClient.set(inv.client_id, arr);
+  }
 
   const byClient = new Map<string, ClientePagamenti>();
   for (const p of (payData ?? []) as unknown as Row[]) {
@@ -51,6 +74,7 @@ export default async function PagamentiPage({
         id: p.client.id,
         ragione_sociale: p.client.ragione_sociale,
         piani: [],
+        fatture: fattureByClient.get(p.client.id) ?? [],
       };
       byClient.set(p.client.id, cliente);
     }

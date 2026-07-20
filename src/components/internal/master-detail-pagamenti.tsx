@@ -8,11 +8,16 @@ import {
   PianiPagamento,
   type PianoGruppo,
 } from "@/components/internal/piani-pagamento";
+import {
+  FattureCliente,
+  type FatturaRow,
+} from "@/components/internal/fatture-cliente";
 
 export interface ClientePagamenti {
   id: string;
   ragione_sociale: string;
   piani: PianoGruppo[]; // un gruppo per contratto
+  fatture: FatturaRow[];
 }
 
 export function MasterDetailPagamenti({
@@ -52,18 +57,33 @@ export function MasterDetailPagamenti({
             />
           </Card>
         ) : (
-          <Card>
-            <div className="mb-4 flex items-baseline justify-between gap-3">
-              <h2 className="text-lg font-extrabold tracking-[-0.01em] text-text">
-                {current.ragione_sociale}
-              </h2>
-              <span className="text-[12.5px] text-text-3">
-                {current.piani.length}{" "}
-                {current.piani.length === 1 ? "contratto" : "contratti"}
-              </span>
-            </div>
-            <PianiPagamento groups={current.piani} />
-          </Card>
+          <div className="flex flex-col gap-5">
+            <Card>
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h2 className="text-lg font-extrabold tracking-[-0.01em] text-text">
+                  {current.ragione_sociale}
+                </h2>
+                <span className="text-[12.5px] text-text-3">
+                  {current.piani.length}{" "}
+                  {current.piani.length === 1 ? "contratto" : "contratti"}
+                </span>
+              </div>
+              <PianiPagamento groups={current.piani} />
+            </Card>
+
+            <Card>
+              <div className="mb-4">
+                <h3 className="text-lg font-extrabold tracking-[-0.01em] text-text">
+                  Fatture
+                </h3>
+              </div>
+              <FattureCliente
+                key={current.id}
+                clientId={current.id}
+                fatture={current.fatture}
+              />
+            </Card>
+          </div>
         )}
       </div>
     </div>
