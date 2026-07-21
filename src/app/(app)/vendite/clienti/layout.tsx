@@ -1,15 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ClientiList, type ClienteItem } from "@/components/internal/clienti-list";
-import type { ClientStato } from "@/lib/types";
-
-// "Acquisito" = pratica dal contratto firmato in poi.
-const ACQUISITI: ClientStato[] = [
-  "contratto_firmato",
-  "pagamento_setup",
-  "pagamento_attivo",
-  "cliente_attivo",
-];
 
 interface Row {
   id: string;
@@ -36,7 +27,6 @@ export default async function ClientiLayout({
     .select(
       "id, ragione_sociale, p_iva, referente, email, telefono, stato, owner:profiles!owner_id(full_name)",
     )
-    .in("stato", ACQUISITI)
     .order("ragione_sociale", { ascending: true });
 
   const rows = (data ?? []) as unknown as Row[];
@@ -80,7 +70,7 @@ export default async function ClientiLayout({
             Clienti
           </h1>
           <p className="mt-0.5 text-sm text-text-2">
-            I clienti acquisiti — contratto firmato. Seleziona per aprire la
+            Tutti i clienti — lead, trattative e attivi. Seleziona per aprire la
             scheda a destra.
           </p>
         </div>

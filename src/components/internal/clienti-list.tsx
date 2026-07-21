@@ -74,7 +74,7 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
           hint={
             q
               ? "Nessun cliente corrisponde a nome o partita IVA."
-              : "I clienti compaiono qui quando firmano il contratto."
+              : "Aggiungi un lead dalla Pipeline o un cliente esistente."
           }
         />
       ) : (
