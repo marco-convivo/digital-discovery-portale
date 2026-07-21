@@ -11,7 +11,8 @@ import { Logo } from "@/components/ui/logo";
 // In FASE 1 solo "Pipeline" è collegata; le altre voci restano visibili ma
 // disabilitate (i pattern esistono nei mockup, le pagine arrivano dopo).
 const NAV = [
-  { href: "/vendite", label: "Pipeline", icon: PipelineIcon, ready: true },
+  { href: "/vendite", label: "Home", icon: HomeIcon, ready: true },
+  { href: "/vendite/pipeline", label: "Pipeline", icon: PipelineIcon, ready: true },
   { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: true },
   { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: true },
   { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: true },
@@ -179,6 +180,14 @@ export function Sidebar({
 
 /* --- icone (stroke, coerenti coi mockup) --- */
 const svg = "size-[19px] flex-none";
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+    </svg>
+  );
+}
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-6">
