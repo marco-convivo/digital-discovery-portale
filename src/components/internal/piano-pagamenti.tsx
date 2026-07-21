@@ -45,7 +45,7 @@ function AzioniManuali({ r }: { r: RataRow }) {
       type="button"
       disabled={pending}
       onClick={() => run(segnaRataPagata(r.id!))}
-      className="rounded-pill bg-ink px-2.5 py-1 text-[12px] font-bold text-on-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+      className="whitespace-nowrap rounded-pill bg-ink px-2.5 py-1 text-[12px] font-bold text-on-ink transition-opacity hover:opacity-90 disabled:opacity-50"
     >
       {pending ? "…" : "Segna pagato"}
     </button>
@@ -65,8 +65,8 @@ function RigaRata({
 }) {
   const meta = PAYMENT_STATO_META[r.stato];
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <div className="min-w-0">
         <div className="text-[14px] font-bold text-text">
           Rata {r.numero_rata ?? i + 1}
           <span className="font-medium text-text-3"> di {tot}</span>
@@ -75,8 +75,8 @@ function RigaRata({
           Scadenza {dataIt(r.scadenza)}
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="tnum text-[14px] font-bold text-text">
+      <div className="flex flex-none items-center gap-2.5">
+        <span className="tnum whitespace-nowrap text-[14px] font-bold text-text">
           {euro(r.importo)}
         </span>
         <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
