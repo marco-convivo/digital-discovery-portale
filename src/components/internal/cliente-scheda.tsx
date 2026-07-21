@@ -175,13 +175,13 @@ export function ClienteScheda({
       </header>
 
       {layout === "drawer" ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 xl:grid xl:grid-cols-2 xl:items-start">
           {anagrafica}
           {pagamenti}
           {contrattiCard}
           {fattureCard}
-          {preventiviInviati}
           {nuovoPreventivo}
+          {preventiviInviati}
         </div>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-3">

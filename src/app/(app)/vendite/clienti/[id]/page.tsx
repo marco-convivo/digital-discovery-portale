@@ -13,16 +13,14 @@ export default async function ClientePage({
   if (!data) notFound();
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div>
       <Link
         href="/vendite/clienti"
-        className="text-[13px] font-semibold text-text-2 hover:text-text"
+        className="mb-3 inline-block text-[13px] font-semibold text-text-2 hover:text-text lg:hidden"
       >
         ← Clienti
       </Link>
-      <div className="mt-3">
-        <ClienteScheda data={data} layout="page" />
-      </div>
+      <ClienteScheda data={data} layout="drawer" />
     </div>
   );
 }
