@@ -82,6 +82,36 @@ export type Database = {
         }
         Relationships: []
       }
+      avviso_stato: {
+        Row: {
+          chiave: string
+          created_at: string
+          created_by: string | null
+          id: string
+          snooze_until: string | null
+          stato: string
+          updated_at: string
+        }
+        Insert: {
+          chiave: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snooze_until?: string | null
+          stato: string
+          updated_at?: string
+        }
+        Update: {
+          chiave?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snooze_until?: string | null
+          stato?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           auth_user_id: string | null
