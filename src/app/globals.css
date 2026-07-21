@@ -75,6 +75,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Scroll senza barra visibile (liste con overflow interno) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Accessibilità: rispetta la preferenza di movimento ridotto */
 @media (prefers-reduced-motion: reduce) {
   *,

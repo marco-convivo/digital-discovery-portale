@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { StatusPill } from "@/components/ui/status-pill";
+import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
-import { STATO_META } from "@/lib/stati";
+import { STATO_META, PIPELINE_COLUMNS, columnForStato } from "@/lib/stati";
 import { cn } from "@/lib/utils";
 import type { ClientStato } from "@/lib/types";
 
@@ -22,19 +22,34 @@ export interface ClienteItem {
   insolutoPaymentId: string | null;
 }
 
+const DOT: Record<Tone, string> = {
+  paid: "bg-paid-dot",
+  info: "bg-info-dot",
+  wait: "bg-wait-dot",
+  fail: "bg-fail-dot",
+  draft: "bg-draft-dot",
+};
+const CHIP_ACTIVE: Record<Tone, string> = {
+  paid: "bg-paid-bg text-paid-tx",
+  info: "bg-info-bg text-info-tx",
+  wait: "bg-wait-bg text-wait-tx",
+  fail: "bg-fail-bg text-fail-tx",
+  draft: "bg-draft-bg text-draft-tx",
+};
+
 function norm(s: string) {
   return s.toLowerCase().trim();
 }
 
 export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
   const [q, setQ] = useState("");
+  const [filtro, setFiltro] = useState<string>("all"); // "all" | column key
   const pathname = usePathname();
 
-  // Cliente selezionato dall'URL (/vendite/clienti/<id>, escluso "nuovo").
   const m = pathname.match(/^\/vendite\/clienti\/([^/]+)/);
   const selectedId = m && m[1] !== "nuovo" ? m[1] : null;
 
-  const filtrati = useMemo(() => {
+  const bySearch = useMemo(() => {
     const query = norm(q);
     if (!query) return clienti;
     return clienti.filter(
@@ -44,33 +59,62 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
     );
   }, [q, clienti]);
 
+  // Gruppi (colonne pipeline) presenti nei risultati, con conteggio.
+  const gruppi = PIPELINE_COLUMNS.map((col) => ({
+    key: col.key,
+    label: col.label,
+    tone: col.tone,
+    count: bySearch.filter((c) => columnForStato(c.stato) === col.key).length,
+  })).filter((g) => g.count > 0);
+
+  const filtrati =
+    filtro === "all"
+      ? bySearch
+      : bySearch.filter((c) => columnForStato(c.stato) === filtro);
+
   return (
     <div
       className={cn(
-        "rounded-card border border-line bg-card p-4",
+        "no-scrollbar rounded-card border border-line bg-card p-4",
         "lg:max-h-[calc(100dvh-8.5rem)] lg:overflow-y-auto",
-        // su mobile, quando una scheda è aperta, la lista lascia spazio
         selectedId && "hidden lg:block",
       )}
     >
-      <div className="relative mb-4">
-        <SearchIcon />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Cerca cliente o P.IVA…"
-          className="w-full rounded-md border border-line bg-card py-2.5 pl-10 pr-3.5 text-sm text-text placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet"
-        />
-      </div>
+      {/* Header fisso: ricerca + filtri di stato */}
+      <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-2 bg-card px-4 pb-2.5 pt-4">
+        <div className="relative">
+          <SearchIcon />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cerca cliente o P.IVA…"
+            className="w-full rounded-md border border-line bg-card py-2.5 pl-10 pr-3.5 text-sm text-text placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet"
+          />
+        </div>
 
-      <div className="mb-2 px-1 text-[12.5px] text-text-3">
-        {filtrati.length} {filtrati.length === 1 ? "cliente" : "clienti"}
-        {q && ` su ${clienti.length}`}
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          <Chip
+            label="Tutti"
+            n={bySearch.length}
+            active={filtro === "all"}
+            onClick={() => setFiltro("all")}
+          />
+          {gruppi.map((g) => (
+            <Chip
+              key={g.key}
+              label={g.label}
+              n={g.count}
+              tone={g.tone}
+              active={filtro === g.key}
+              onClick={() => setFiltro(g.key)}
+            />
+          ))}
+        </div>
       </div>
 
       {filtrati.length === 0 ? (
         <EmptyState
-          title={q ? "Nessun cliente trovato" : "Ancora nessun cliente"}
+          title={q ? "Nessun cliente trovato" : "Nessun cliente"}
           hint={
             q
               ? "Nessun cliente corrisponde a nome o partita IVA."
@@ -84,7 +128,7 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
             const insoluto = c.insolutoCount > 0;
             const active = c.id === selectedId;
             return (
-              <li key={c.id} className="relative">
+              <li key={c.id}>
                 <Link
                   href={`/vendite/clienti/${c.id}`}
                   className={cn(
@@ -116,6 +160,41 @@ export function ClientiList({ clienti }: { clienti: ClienteItem[] }) {
         </ul>
       )}
     </div>
+  );
+}
+
+function Chip({
+  label,
+  n,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  n: number;
+  tone?: Tone;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[12px] font-bold transition-colors",
+        active
+          ? tone
+            ? CHIP_ACTIVE[tone]
+            : "bg-ink text-on-ink"
+          : "bg-card-2 text-text-2 hover:bg-line/60",
+      )}
+    >
+      {tone && (
+        <span className={cn("size-1.5 rounded-full", DOT[tone])} />
+      )}
+      {label}
+      <span className={active ? "opacity-60" : "text-text-3"}>{n}</span>
+    </button>
   );
 }
 
