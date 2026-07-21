@@ -11,7 +11,7 @@ export function FocusTiles({ focus }: { focus: HomeFocus }) {
           <span className="size-[7px] rounded-full bg-white" />
           Da recuperare
         </div>
-        <div className="tnum mt-3 text-[34px] font-extrabold leading-none tracking-[-0.035em]">
+        <div className="mt-3 text-[34px] font-extrabold leading-none tracking-[-0.02em] [word-spacing:-0.06em]">
           {euro(focus.daRecuperare)}
         </div>
         <div className="mt-3.5 flex items-center justify-between">
@@ -61,7 +61,7 @@ function FlatTile({
         <span className={`size-[7px] rounded-full ${dot}`} />
         {label}
       </div>
-      <div className="tnum mt-3 text-[34px] font-extrabold leading-none tracking-[-0.035em] text-text">
+      <div className="mt-3 text-[34px] font-extrabold leading-none tracking-[-0.02em] text-text">
         {value}
       </div>
       <div className="mt-3.5 text-[12.5px] font-semibold text-text-2">{foot}</div>

@@ -101,7 +101,7 @@ export default async function HomePage() {
                   href="/vendite/pipeline"
                   className="min-w-[104px] flex-1 rounded-md bg-card-2 p-3.5 transition-colors hover:bg-line/50"
                 >
-                  <div className="tnum text-[26px] font-extrabold leading-none tracking-[-0.03em] text-text">
+                  <div className="text-[26px] font-extrabold leading-none tracking-[-0.02em] text-text">
                     {col.count}
                   </div>
                   <div className="mt-2.5 flex items-center gap-1.5 text-[12.5px] font-bold text-text-2">
@@ -139,7 +139,7 @@ export default async function HomePage() {
                         {p.ctx}
                       </span>
                     </Link>
-                    <span className="tnum flex-none text-[12.5px] font-bold text-text-2">
+                    <span className="flex-none text-[12.5px] font-bold text-text-2">
                       {p.importo != null ? euro(p.importo) : "—"}
                     </span>
                   </li>

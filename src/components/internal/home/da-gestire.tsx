@@ -90,7 +90,7 @@ export function DaGestire({ tasks }: { tasks: HomeTask[] }) {
         </div>
 
         <div className="text-[15px] font-bold text-text-2">{t.cliente}</div>
-        <div className="tnum mt-1 text-[44px] font-extrabold leading-none tracking-[-0.04em] text-text">
+        <div className="mt-1 text-[42px] font-extrabold leading-none tracking-[-0.02em] [word-spacing:-0.06em] text-text">
           {t.hero}
         </div>
         <p className={cn("mt-3 text-[13.5px] font-semibold", tone.tx)}>
