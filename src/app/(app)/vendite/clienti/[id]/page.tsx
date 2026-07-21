@@ -20,7 +20,7 @@ export default async function ClientePage({
       >
         ← Clienti
       </Link>
-      <ClienteScheda data={data} layout="drawer" />
+      <ClienteScheda data={data} />
     </div>
   );
 }

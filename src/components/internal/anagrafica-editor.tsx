@@ -7,9 +7,10 @@ import {
 } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
-const FIELDS: { key: keyof AnagraficaInput; label: string }[] = [
-  { key: "ragione_sociale", label: "Ragione sociale" },
+const FIELDS: { key: keyof AnagraficaInput; label: string; wide?: boolean }[] = [
+  { key: "ragione_sociale", label: "Ragione sociale", wide: true },
   { key: "referente", label: "Referente" },
   { key: "email", label: "Email" },
   { key: "telefono", label: "Telefono" },
@@ -17,7 +18,7 @@ const FIELDS: { key: keyof AnagraficaInput; label: string }[] = [
   { key: "codice_fiscale", label: "Cod. fiscale" },
   { key: "codice_sdi", label: "Codice SDI" },
   { key: "pec", label: "PEC" },
-  { key: "indirizzo", label: "Indirizzo" },
+  { key: "indirizzo", label: "Indirizzo", wide: true },
 ];
 
 export function AnagraficaEditor({
@@ -62,9 +63,9 @@ export function AnagraficaEditor({
             Modifica
           </button>
         </div>
-        <dl className="flex flex-col gap-2 text-sm">
+        <dl className="grid grid-cols-1 gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
           {FIELDS.filter((f) => f.key !== "ragione_sociale").map((f) => (
-            <div key={f.key} className="flex justify-between gap-3">
+            <div key={f.key} className="flex min-w-0 justify-between gap-3">
               <dt className="flex-none text-text-3">{f.label}</dt>
               <dd className="truncate text-right font-medium text-text">
                 {data[f.key] || "—"}
@@ -79,35 +80,36 @@ export function AnagraficaEditor({
   return (
     <div>
       <h3 className="mb-3 text-[15px] font-bold text-text">Modifica anagrafica</h3>
-      <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {FIELDS.map((f) => (
-          <Input
-            key={f.key}
-            label={f.label}
-            value={draft[f.key] ?? ""}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, [f.key]: e.target.value }))
-            }
-          />
+          <div key={f.key} className={cn(f.wide && "sm:col-span-2")}>
+            <Input
+              label={f.label}
+              value={draft[f.key] ?? ""}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, [f.key]: e.target.value }))
+              }
+            />
+          </div>
         ))}
-        {error && (
-          <p className="rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
-            {error}
-          </p>
-        )}
-        <div className="mt-1 flex gap-2">
-          <Button size="sm" onClick={save} disabled={pending}>
-            {pending ? "Salvataggio…" : "Salva"}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditing(false)}
-            disabled={pending}
-          >
-            Annulla
-          </Button>
-        </div>
+      </div>
+      {error && (
+        <p className="mt-3 rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
+          {error}
+        </p>
+      )}
+      <div className="mt-3 flex gap-2">
+        <Button size="sm" onClick={save} disabled={pending}>
+          {pending ? "Salvataggio…" : "Salva"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setEditing(false)}
+          disabled={pending}
+        >
+          Annulla
+        </Button>
       </div>
     </div>
   );
