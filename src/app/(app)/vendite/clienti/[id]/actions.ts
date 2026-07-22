@@ -88,7 +88,7 @@ export async function updateCliente(
     const t = (v ?? "").trim();
     return t === "" ? null : t;
   };
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("clients")
     .update({
       ragione_sociale: input.ragione_sociale.trim(),
@@ -101,8 +101,12 @@ export async function updateCliente(
       pec: clean(input.pec),
       indirizzo: clean(input.indirizzo),
     })
-    .eq("id", clientId);
+    .eq("id", clientId)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  // Nessuna riga aggiornata = permessi insufficienti (RLS) → non fingere ok.
+  if (!data || data.length === 0)
+    return { ok: false, error: "Modifica non salvata: permessi insufficienti." };
   revalidatePath(`/vendite/clienti/${clientId}`);
   return { ok: true };
 }
@@ -246,7 +250,7 @@ export async function updateQuote(
   const importoTotale = Number(input.importoTotale ?? 0);
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
-  const { error: upErr } = await supabase
+  const { data: upRows, error: upErr } = await supabase
     .from("quotes")
     .update({
       tipo: input.tipo,
@@ -259,8 +263,11 @@ export async function updateQuote(
       sconto: input.sconto ?? 0,
       addons: (input.addons ?? []) as unknown as Json,
     })
-    .eq("id", q.id);
+    .eq("id", q.id)
+    .select("id");
   if (upErr) return { ok: false, error: upErr.message };
+  if (!upRows || upRows.length === 0)
+    return { ok: false, error: "Modifica non salvata: permessi insufficienti." };
 
   // Rigenera le righe (l'importo per servizio può essere cambiato).
   await supabase.from("quote_items").delete().eq("quote_id", q.id);

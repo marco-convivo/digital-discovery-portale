@@ -41,7 +41,7 @@ Il collante è **un'unica macchina a stati per pratica**, fatta avanzare da **we
 
 - **RLS su tutte le tabelle**, costruita su helper SQL **security-definer** nello schema **`private`** (non esposto da PostgREST, per non triggerare gli advisor): `private.is_staff()`, `private.is_admin()`, `private.owns_client(uuid)`, `private.is_client_member(uuid)`. Devono restare eseguibili da `authenticated` (le usa la valutazione RLS): revocare l'EXECUTE le rompe. Policy:
   - `admin`: accesso completo.
-  - `commerciale`: **default team-read** — legge tutti i clienti, modifica solo i propri (`owner_id = auth.uid()`). Se serve più stretto ("vede solo i propri"), si cambia la condizione di SELECT. (Punto ancora da confermare, §9 spec.)
+  - `commerciale`: **team-read + team-write** — legge **e modifica** tutti i clienti/preventivi/contratti/rate/fatture/servizi (qualsiasi staff attivo = `is_staff()`, migration 0021/0022). La **cancellazione clienti resta admin**. Nota storica: prima era owner-only (`owns_client`), ma un operatore non titolare salvava "a vuoto" (RLS scartava la riga senza errore).
   - `cliente`: solo le righe dove `auth_user_id = auth.uid()`; per le tabelle figlie, `client_id in (select id from clients where auth_user_id = auth.uid())`. **Mai** accesso alle tabelle interne di pipeline.
 
 - **Enum = contratto della macchina a stati.** Non rinominare/riordinare i valori a cuor leggero:
