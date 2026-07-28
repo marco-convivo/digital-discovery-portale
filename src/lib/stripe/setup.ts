@@ -88,7 +88,7 @@ export async function ensurePaymentContext(
   const { data: quote } = await db
     .from("quotes")
     .select(
-      "id, numero, tipo, importo_totale, rata_mensile, rate_num, client:clients!quotes_client_id_fkey(id, ragione_sociale, email)",
+      "id, numero, tipo, importo_totale, rata_mensile, rate_num, client:clients!quotes_client_id_fkey(id, ragione_sociale, email, indirizzo, telefono)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -98,6 +98,8 @@ export async function ensurePaymentContext(
     id: string;
     ragione_sociale: string;
     email: string | null;
+    indirizzo: string | null;
+    telefono: string | null;
   };
 
   // Contratto (firmato) di QUESTO preventivo: il piano va legato al contratto,
@@ -129,6 +131,11 @@ export async function ensurePaymentContext(
     const customer = await stripe.customers.create({
       name: client.ragione_sociale,
       email: client.email ?? undefined,
+      phone: client.telefono ?? undefined,
+      // Più segnali per Radar (riduce i blocchi "unknown_risk_level").
+      address: client.indirizzo
+        ? { line1: client.indirizzo, country: "IT" }
+        : undefined,
       metadata: {
         client_id: client.id,
         quote_id: quote.id,
