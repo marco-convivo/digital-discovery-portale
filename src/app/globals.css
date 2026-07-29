@@ -84,6 +84,22 @@ body {
   display: none;
 }
 
+/* Stampa / Salva come PDF (usato dalla pagina preventivo) */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #ffffff;
+  }
+  /* Mantieni gli sfondi colorati (piano scuro, pill) anche in stampa */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* Accessibilità: rispetta la preferenza di movimento ridotto */
 @media (prefers-reduced-motion: reduce) {
   *,

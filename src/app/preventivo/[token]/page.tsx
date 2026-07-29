@@ -4,6 +4,7 @@ import { AcceptPanel } from "@/components/quote/accept-panel";
 import { euro, dataIt, conIva } from "@/lib/format";
 import { Logo } from "@/components/ui/logo";
 import { FlowStepper } from "@/components/flow/flow-stepper";
+import { StampaButton } from "@/components/quote/stampa-button";
 
 export default async function PreventivoPage({
   params,
@@ -17,13 +18,18 @@ export default async function PreventivoPage({
   const ricorrente = q.tipo === "ricorrente";
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <div className="mb-8 flex items-center gap-3">
-        <Logo />
-        <div className="font-bold">Digital Discovery</div>
+    <main className="mx-auto max-w-2xl px-6 py-12 print:px-0 print:py-0">
+      <div className="mb-8 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Logo />
+          <div className="font-bold">Digital Discovery</div>
+        </div>
+        <StampaButton />
       </div>
 
-      <FlowStepper current={1} />
+      <div className="print:hidden">
+        <FlowStepper current={1} />
+      </div>
 
       <header className="mb-8">
         <p className="text-[13px] font-semibold uppercase tracking-wide text-text-3">
@@ -154,7 +160,9 @@ export default async function PreventivoPage({
         )}
       </section>
 
-      <AcceptPanel token={token} alreadyAccepted={q.stato === "accettato"} />
+      <div className="print:hidden">
+        <AcceptPanel token={token} alreadyAccepted={q.stato === "accettato"} />
+      </div>
 
       <footer className="mt-10 text-center text-[12px] text-text-3">
         Digital Discovery S.r.l. · Firma online, nessun cartaceo
