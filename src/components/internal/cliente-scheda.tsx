@@ -21,8 +21,15 @@ const CONTRACT_TONE: Record<string, Tone> = {
 };
 
 export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
-  const { client: c, prezziBase, quotes, contratti, fatture, gruppiPagamenti } =
-    data;
+  const {
+    client: c,
+    prezziBase,
+    serviziExtra,
+    quotes,
+    contratti,
+    fatture,
+    gruppiPagamenti,
+  } = data;
   const meta = STATO_META[c.stato as ClientStato];
 
   return (
@@ -37,7 +44,11 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
         <div className="flex flex-none flex-col items-end gap-2">
           <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
           <div className="flex items-center gap-2">
-            <NuovoPreventivoDialog clientId={c.id} prezziBase={prezziBase} />
+            <NuovoPreventivoDialog
+              clientId={c.id}
+              prezziBase={prezziBase}
+              serviziExtra={serviziExtra}
+            />
             <InviaAccessoButton clientId={c.id} />
           </div>
         </div>

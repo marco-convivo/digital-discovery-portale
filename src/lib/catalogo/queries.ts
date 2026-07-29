@@ -9,7 +9,34 @@ import type {
 } from "@/lib/catalogo/types";
 
 const SERVICE_COLS =
-  "id, chiave, titolo, sottotitolo, descrizione, attivita_incluse, condizioni, attivita_escluse, prezzo_base, immagine_url, ordine, attivo, updated_at";
+  "id, chiave, titolo, sottotitolo, descrizione, attivita_incluse, condizioni, attivita_escluse, prezzo_base, ricorrente, durata_mesi, immagine_url, ordine, attivo, updated_at";
+
+/** Servizio del catalogo aggiungibile al preventivo (diverso dai 9 core). */
+export interface ServizioExtra {
+  chiave: string;
+  titolo: string;
+  prezzo_base: number | null;
+  ricorrente: boolean;
+  durata_mesi: number;
+}
+
+/**
+ * Servizi del catalogo NON core (chiave fuori dai 9 fissi): compaiono nel
+ * costruttore preventivo come "aggiungi con un clic" (pre-compilano un addon).
+ * Solo attivi.
+ */
+export async function getServiziExtra(): Promise<ServizioExtra[]> {
+  const supabase = await createClient();
+  const coreKeys = new Set(CATALOG.map((c) => c.key));
+  const { data } = await supabase
+    .from("service_catalog")
+    .select("chiave, titolo, prezzo_base, ricorrente, durata_mesi")
+    .eq("attivo", true)
+    .order("ordine", { ascending: true });
+  return ((data ?? []) as unknown as ServizioExtra[]).filter(
+    (s) => !coreKeys.has(s.chiave),
+  );
+}
 const PORTFOLIO_COLS =
   "id, service_id, titolo, cliente, settore, descrizione, risultato, immagine_url, link_url, ordine";
 

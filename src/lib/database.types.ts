@@ -594,6 +594,8 @@ export type Database = {
           immagine_url: string | null
           ordine: number
           prezzo_base: number | null
+          ricorrente: boolean
+          durata_mesi: number
           sottotitolo: string | null
           titolo: string
           updated_at: string
@@ -609,6 +611,8 @@ export type Database = {
           immagine_url?: string | null
           ordine?: number
           prezzo_base?: number | null
+          ricorrente?: boolean
+          durata_mesi?: number
           sottotitolo?: string | null
           titolo: string
           updated_at?: string
@@ -624,6 +628,8 @@ export type Database = {
           immagine_url?: string | null
           ordine?: number
           prezzo_base?: number | null
+          ricorrente?: boolean
+          durata_mesi?: number
           sottotitolo?: string | null
           titolo?: string
           updated_at?: string

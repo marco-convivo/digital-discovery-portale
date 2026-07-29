@@ -118,6 +118,16 @@ export function CatalogoEditor({
         <Input label="Ordine" type="number" value={d.ordine}
           onChange={(e) => set("ordine", Number(e.target.value))} />
       </div>
+      <div className="grid grid-cols-2 items-end gap-3">
+        <label className="flex items-center gap-2 text-[14px] text-text-2">
+          <input type="checkbox" checked={d.ricorrente} onChange={(e) => set("ricorrente", e.target.checked)} />
+          Servizio ricorrente (mensile)
+        </label>
+        {d.ricorrente && (
+          <Input label="Durata (mesi)" type="number" value={d.durata_mesi}
+            onChange={(e) => set("durata_mesi", Number(e.target.value))} />
+        )}
+      </div>
       <label className="flex items-center gap-2 text-[14px] text-text-2">
         <input type="checkbox" checked={d.attivo} onChange={(e) => set("attivo", e.target.checked)} />
         Visibile nella vetrina

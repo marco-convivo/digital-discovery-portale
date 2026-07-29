@@ -11,6 +11,8 @@ export interface ServiceCatalogRow {
   condizioni: string[];
   attivita_escluse: string[];
   prezzo_base: number | null;
+  ricorrente: boolean;
+  durata_mesi: number;
   immagine_url: string | null;
   ordine: number;
   attivo: boolean;

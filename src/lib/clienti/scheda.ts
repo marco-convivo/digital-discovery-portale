@@ -1,6 +1,10 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { getPrezziBase } from "@/lib/catalogo/queries";
+import {
+  getPrezziBase,
+  getServiziExtra,
+  type ServizioExtra,
+} from "@/lib/catalogo/queries";
 import { dataIt } from "@/lib/format";
 import type { PreventivoItem } from "@/components/internal/preventivi-list";
 import type { FatturaRow } from "@/components/internal/fatture-cliente";
@@ -21,6 +25,7 @@ export interface ContractRow {
 export interface ClienteSchedaData {
   client: Client;
   prezziBase: Awaited<ReturnType<typeof getPrezziBase>>;
+  serviziExtra: ServizioExtra[];
   quotes: PreventivoItem[];
   contratti: ContractRow[];
   fatture: FatturaRow[];
@@ -41,7 +46,10 @@ export async function getClienteScheda(
   if (!client) return null;
   const c = client as Client;
 
-  const prezziBase = await getPrezziBase();
+  const [prezziBase, serviziExtra] = await Promise.all([
+    getPrezziBase(),
+    getServiziExtra(),
+  ]);
 
   const [
     { data: quotesData },
@@ -107,5 +115,13 @@ export async function getClienteScheda(
     return { key: k, label, rate: g.rate, manuale: g.manuale };
   });
 
-  return { client: c, prezziBase, quotes, contratti, fatture, gruppiPagamenti };
+  return {
+    client: c,
+    prezziBase,
+    serviziExtra,
+    quotes,
+    contratti,
+    fatture,
+    gruppiPagamenti,
+  };
 }

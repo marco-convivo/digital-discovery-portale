@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { CATALOG, type OrdineSelezione, type CatalogService } from "@/lib/catalog";
 import { addonContributo, type Addon } from "@/lib/addon";
+import type { ServizioExtra } from "@/lib/catalogo/queries";
 import { euro } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,10 +31,12 @@ export interface QuoteInitial {
 export function CreateQuoteForm({
   clientId,
   prezziBase,
+  serviziExtra = [],
   initial,
 }: {
   clientId: string;
   prezziBase: Record<string, number | null>;
+  serviziExtra?: ServizioExtra[];
   initial?: QuoteInitial;
 }) {
   const editing = !!initial;
@@ -342,6 +345,43 @@ export function CreateQuoteForm({
           Fuori catalogo (rinnovi, interventi mirati): finiscono nel contratto e
           nel piano rate.
         </p>
+
+        {serviziExtra.length > 0 && (
+          <div className="mt-2">
+            <div className="mb-1 text-[12px] font-semibold text-text-3">
+              Dai tuoi servizi a catalogo:
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {serviziExtra.map((s) => (
+                <button
+                  key={s.chiave}
+                  type="button"
+                  onClick={() =>
+                    setAddons((a) => [
+                      ...a,
+                      {
+                        descrizione: s.titolo,
+                        prezzo: s.prezzo_base ?? 0,
+                        tipo: s.ricorrente ? "ricorrente" : "una_tantum",
+                        durata: s.ricorrente ? s.durata_mesi : undefined,
+                      },
+                    ])
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-pill border border-line bg-card-2 px-3 py-1.5 text-[12.5px] font-semibold text-text transition-colors hover:bg-line/60"
+                >
+                  + {s.titolo}
+                  {s.prezzo_base != null && (
+                    <span className="text-text-3">
+                      {euro(s.prezzo_base)}
+                      {s.ricorrente ? "/mese" : ""}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {addons.length > 0 && (
           <div className="mt-2 flex flex-col gap-2">
             {addons.map((ad, i) => (

@@ -36,6 +36,8 @@ export default async function CatalogoEditPage({
               condizioni: row.condizioni.join("\n"),
               attivita_escluse: row.attivita_escluse.join("\n"),
               prezzo_base: row.prezzo_base,
+              ricorrente: row.ricorrente,
+              durata_mesi: row.durata_mesi,
               ordine: row.ordine,
               attivo: row.attivo,
             }}

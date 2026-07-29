@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
-import { getPrezziBase } from "@/lib/catalogo/queries";
+import { getPrezziBase, getServiziExtra } from "@/lib/catalogo/queries";
 import { parseAddons } from "@/lib/addon";
 import type { OrdineSelezione } from "@/lib/catalog";
 
@@ -39,7 +39,10 @@ export default async function ModificaPreventivoPage({
     .maybeSingle();
   if (!data) notFound();
   const q = data as unknown as QuoteRow;
-  const prezziBase = await getPrezziBase();
+  const [prezziBase, serviziExtra] = await Promise.all([
+    getPrezziBase(),
+    getServiziExtra(),
+  ]);
   const editabile = EDITABILI.includes(q.stato);
 
   return (
@@ -68,6 +71,7 @@ export default async function ModificaPreventivoPage({
           <CreateQuoteForm
             clientId={q.client_id}
             prezziBase={prezziBase}
+            serviziExtra={serviziExtra}
             initial={{
               quoteId: q.id,
               ordine: q.ordine ?? {},

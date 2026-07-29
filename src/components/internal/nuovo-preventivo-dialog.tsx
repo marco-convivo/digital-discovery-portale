@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreateQuoteForm } from "@/components/internal/create-quote-form";
+import type { ServizioExtra } from "@/lib/catalogo/queries";
 
 export function NuovoPreventivoDialog({
   clientId,
   prezziBase,
+  serviziExtra,
 }: {
   clientId: string;
   prezziBase: Record<string, number | null>;
+  serviziExtra: ServizioExtra[];
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -71,7 +74,11 @@ export function NuovoPreventivoDialog({
               </button>
             </div>
             <div className="p-6">
-              <CreateQuoteForm clientId={clientId} prezziBase={prezziBase} />
+              <CreateQuoteForm
+                clientId={clientId}
+                prezziBase={prezziBase}
+                serviziExtra={serviziExtra}
+              />
             </div>
           </div>
         </div>

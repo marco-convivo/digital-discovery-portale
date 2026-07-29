@@ -40,6 +40,8 @@ export interface ServizioContenuto {
   condizioni: string;
   attivita_escluse: string;
   prezzo_base: number | null;
+  ricorrente: boolean;
+  durata_mesi: number;
   ordine: number;
   attivo: boolean;
 }
@@ -63,6 +65,8 @@ export async function updateServizio(
       condizioni: toList(input.condizioni),
       attivita_escluse: toList(input.attivita_escluse),
       prezzo_base: input.prezzo_base,
+      ricorrente: input.ricorrente,
+      durata_mesi: input.durata_mesi,
       ordine: input.ordine,
       attivo: input.attivo,
       updated_at: new Date().toISOString(),
