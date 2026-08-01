@@ -582,6 +582,57 @@ export type Database = {
           },
         ]
       }
+      sepa_mandates: {
+        Row: {
+          accettato_at: string
+          bic: string | null
+          client_id: string
+          contract_id: string | null
+          created_at: string
+          creditor_id: string
+          email: string | null
+          iban: string
+          id: string
+          indirizzo: string | null
+          intestatario: string
+          quote_id: string | null
+          riferimento: string
+          stato: string
+        }
+        Insert: {
+          accettato_at?: string
+          bic?: string | null
+          client_id: string
+          contract_id?: string | null
+          created_at?: string
+          creditor_id: string
+          email?: string | null
+          iban: string
+          id?: string
+          indirizzo?: string | null
+          intestatario: string
+          quote_id?: string | null
+          riferimento: string
+          stato?: string
+        }
+        Update: {
+          accettato_at?: string
+          bic?: string | null
+          client_id?: string
+          contract_id?: string | null
+          created_at?: string
+          creditor_id?: string
+          email?: string | null
+          iban?: string
+          id?: string
+          indirizzo?: string | null
+          intestatario?: string
+          quote_id?: string | null
+          riferimento?: string
+          stato?: string
+        }
+        Relationships: []
+      }
       service_catalog: {
         Row: {
           attivita_escluse: string[]

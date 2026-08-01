@@ -214,7 +214,7 @@ export async function ensurePaymentContext(
       customer: customerId,
       amount: lordo(importo), // LORDO (IVA inclusa)
       currency: "eur",
-      payment_method_types: ["card", "sepa_debit"],
+      payment_method_types: ["card"],
       metadata: { ...metadata, tipo: "iniziale" },
     });
 
@@ -281,7 +281,7 @@ export async function ensurePaymentContext(
     // browser (confirmPayment) → il 3D Secure avviene on-session.
     payment_behavior: "default_incomplete",
     payment_settings: {
-      payment_method_types: ["card", "sepa_debit"],
+      payment_method_types: ["card"],
       // il metodo confermato diventa il default per le rate successive.
       save_default_payment_method: "on_subscription",
     },
