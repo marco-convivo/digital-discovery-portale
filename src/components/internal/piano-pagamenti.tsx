@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { PAYMENT_STATO_META } from "@/lib/stati";
 import { euro, dataIt } from "@/lib/format";
 import { segnaRataPagata, annullaRataPagata } from "@/lib/pagamenti/actions";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/lib/database.types";
 
 type PaymentStato = Database["public"]["Enums"]["payment_stato"];
@@ -65,7 +66,13 @@ function RigaRata({
 }) {
   const meta = PAYMENT_STATO_META[r.stato];
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-3 gap-y-2",
+        // Riga evidenziata quando l'addebito è fallito (nessuna barra laterale).
+        r.stato === "failed" && "rounded-md bg-fail-bg px-3 py-2",
+      )}
+    >
       <div className="min-w-0">
         <div className="text-[14px] font-bold text-text">
           Rata {r.numero_rata ?? i + 1}
@@ -75,12 +82,85 @@ function RigaRata({
           Scadenza {dataIt(r.scadenza)}
         </div>
       </div>
-      <div className="flex flex-none items-center gap-2.5">
+      <div className="ml-auto flex flex-none items-center gap-2.5">
         <span className="tnum whitespace-nowrap text-[14px] font-bold text-text">
           {euro(r.importo)}
         </span>
         <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
         {manuale && <AzioniManuali r={r} />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Variante "esteso" (3b, portale): mostra fino a 6 rate, collassando le più
+ * vecchie dietro un toggle; banner per gli addebiti falliti + righe evidenziate.
+ */
+function PianoEsteso({ rate, manuale }: { rate: RataRow[]; manuale: boolean }) {
+  const [mostraVecchie, setMostraVecchie] = useState(false);
+  const tot = rate.length;
+  const totale = rate.reduce((s, r) => s + Number(r.importo ?? 0), 0);
+  const pagate = rate.filter((r) => r.stato === "paid").length;
+  const fallite = rate.filter((r) => r.stato === "failed");
+
+  const VISIBILI = 6;
+  const nascoste = Math.max(0, tot - VISIBILI);
+  const vecchie = rate.slice(0, nascoste);
+  const recenti = rate.slice(nascoste);
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[13px] text-text-2">
+          {pagate} di {tot} rate pagate
+        </span>
+        <span className="tnum text-[15px] font-extrabold text-text">
+          {euro(totale)}
+          <span className="ml-1 text-[12px] font-medium text-text-3">totale</span>
+        </span>
+      </div>
+
+      {fallite.length > 0 && (
+        <div className="mb-3 flex items-center gap-2.5 rounded-md bg-fail-bg px-3.5 py-3">
+          <AlertIcon className="size-5 flex-none text-fail-tx" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-bold text-fail-tx">
+              {fallite.length === 1
+                ? "Un addebito non è andato a buon fine"
+                : `${fallite.length} addebiti non andati a buon fine`}
+            </div>
+            <div className="truncate text-[12px] text-fail-tx/80">
+              Rata {fallite.map((r) => r.numero_rata ?? "—").join(", ")} · ti
+              ricontatteremo per sistemarlo
+            </div>
+          </div>
+        </div>
+      )}
+
+      {nascoste > 0 && (
+        <button
+          type="button"
+          onClick={() => setMostraVecchie((v) => !v)}
+          className="mb-1 text-[12.5px] font-bold text-link hover:underline"
+        >
+          {mostraVecchie
+            ? "Nascondi le rate precedenti"
+            : `Mostra le ${nascoste} rate precedenti`}
+        </button>
+      )}
+
+      <div className="flex flex-col divide-y divide-line">
+        {(mostraVecchie ? vecchie : []).map((r, i) => (
+          <div key={r.id ?? `v${i}`} className="py-2.5">
+            <RigaRata r={r} i={i} tot={tot} manuale={manuale} />
+          </div>
+        ))}
+        {recenti.map((r, i) => (
+          <div key={r.id ?? `r${i}`} className="py-2.5">
+            <RigaRata r={r} i={nascoste + i} tot={tot} manuale={manuale} />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -94,9 +174,12 @@ function RigaRata({
 export function PianoPagamenti({
   rate,
   manuale = false,
+  variant = "compatto",
 }: {
   rate: RataRow[];
   manuale?: boolean;
+  /** `compatto` (CRM): solo prossima rata + toggle. `esteso` (portale): 6 rate. */
+  variant?: "compatto" | "esteso";
 }) {
   const [aperto, setAperto] = useState(false);
 
@@ -107,6 +190,9 @@ export function PianoPagamenti({
       </p>
     );
   }
+
+  if (variant === "esteso")
+    return <PianoEsteso rate={rate} manuale={manuale} />;
 
   const tot = rate.length;
   const totale = rate.reduce((s, r) => s + Number(r.importo ?? 0), 0);

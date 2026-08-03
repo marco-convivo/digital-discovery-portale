@@ -10,10 +10,22 @@ export interface PianoGruppo {
 
 // Uno o più piani pagamento. Con più piani (multi-contratto) diventano sezioni
 // collassabili (toggle), così non è pesante sfogliarle: la prima è aperta.
-export function PianiPagamento({ groups }: { groups: PianoGruppo[] }) {
-  if (groups.length === 0) return <PianoPagamenti rate={[]} />;
+export function PianiPagamento({
+  groups,
+  variant = "compatto",
+}: {
+  groups: PianoGruppo[];
+  variant?: "compatto" | "esteso";
+}) {
+  if (groups.length === 0) return <PianoPagamenti rate={[]} variant={variant} />;
   if (groups.length === 1)
-    return <PianoPagamenti rate={groups[0].rate} manuale={groups[0].manuale} />;
+    return (
+      <PianoPagamenti
+        rate={groups[0].rate}
+        manuale={groups[0].manuale}
+        variant={variant}
+      />
+    );
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -36,7 +48,7 @@ export function PianiPagamento({ groups }: { groups: PianoGruppo[] }) {
               </span>
             </summary>
             <div className="border-t border-line px-3.5 pb-3 pt-1">
-              <PianoPagamenti rate={g.rate} manuale={g.manuale} />
+              <PianoPagamenti rate={g.rate} manuale={g.manuale} variant={variant} />
             </div>
           </details>
         );
