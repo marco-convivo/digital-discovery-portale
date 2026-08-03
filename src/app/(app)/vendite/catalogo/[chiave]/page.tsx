@@ -15,7 +15,7 @@ export default async function CatalogoEditPage({
   if (!v) notFound();
   const { row, portfolio } = v;
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <Link href="/vendite/catalogo" className="text-[13px] font-semibold text-text-2 hover:text-text">
         ← Catalogo
       </Link>
@@ -23,26 +23,23 @@ export default async function CatalogoEditPage({
         {row.titolo}
       </h1>
       <div className="flex flex-col gap-5">
-        <Card>
-          <CardHeader><CardTitle>Contenuti e prezzo</CardTitle></CardHeader>
-          <CatalogoEditor
-            chiave={chiave}
-            immagineUrl={row.immagine_url}
-            initial={{
-              titolo: row.titolo,
-              sottotitolo: row.sottotitolo ?? "",
-              descrizione: row.descrizione ?? "",
-              attivita_incluse: row.attivita_incluse.join("\n"),
-              condizioni: row.condizioni.join("\n"),
-              attivita_escluse: row.attivita_escluse.join("\n"),
-              prezzo_base: row.prezzo_base,
-              ricorrente: row.ricorrente,
-              durata_mesi: row.durata_mesi,
-              ordine: row.ordine,
-              attivo: row.attivo,
-            }}
-          />
-        </Card>
+        <CatalogoEditor
+          chiave={chiave}
+          immagineUrl={row.immagine_url}
+          initial={{
+            titolo: row.titolo,
+            sottotitolo: row.sottotitolo ?? "",
+            descrizione: row.descrizione ?? "",
+            attivita_incluse: row.attivita_incluse.join("\n"),
+            condizioni: row.condizioni.join("\n"),
+            attivita_escluse: row.attivita_escluse.join("\n"),
+            prezzo_base: row.prezzo_base,
+            ricorrente: row.ricorrente,
+            durata_mesi: row.durata_mesi,
+            ordine: row.ordine,
+            attivo: row.attivo,
+          }}
+        />
         <Card>
           <CardHeader><CardTitle>Portfolio</CardTitle></CardHeader>
           <PortfolioManager serviceId={row.id} initial={portfolio} />
