@@ -31,7 +31,8 @@ interface EditorState {
   ricorrente: boolean;
   durata_mesi: number;
   ordine: number;
-  attivo: boolean;
+  in_vetrina: boolean;
+  vendibile: boolean;
 }
 
 function Area({ label, value, onChange, hint }: {
@@ -140,7 +141,8 @@ export function CatalogoEditor({
     ricorrente: initial.ricorrente,
     durata_mesi: initial.durata_mesi,
     ordine: initial.ordine,
-    attivo: initial.attivo,
+    in_vetrina: initial.in_vetrina,
+    vendibile: initial.vendibile,
   });
   const [img, setImg] = useState<string | null>(immagineUrl);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +167,8 @@ export function CatalogoEditor({
       ricorrente: d.ricorrente,
       durata_mesi: d.durata_mesi,
       ordine: d.ordine,
-      attivo: d.attivo,
+      in_vetrina: d.in_vetrina,
+      vendibile: d.vendibile,
     };
     start(async () => {
       const res = await updateServizio(chiave, payload);
@@ -250,10 +253,16 @@ export function CatalogoEditor({
                   onChange={(e) => set("durata_mesi", Number(e.target.value))} />
               )}
             </div>
-            <label className="mt-3 flex items-center gap-2 text-[13.5px] text-text-2">
-              <input type="checkbox" className="size-4 accent-ink" checked={d.attivo} onChange={(e) => set("attivo", e.target.checked)} />
-              Visibile nella vetrina
-            </label>
+            <div className="mt-3 flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-[13.5px] text-text-2">
+                <input type="checkbox" className="size-4 accent-ink" checked={d.in_vetrina} onChange={(e) => set("in_vetrina", e.target.checked)} />
+                In vetrina <span className="text-text-3">— i clienti lo vedono</span>
+              </label>
+              <label className="flex items-center gap-2 text-[13.5px] text-text-2">
+                <input type="checkbox" className="size-4 accent-ink" checked={d.vendibile} onChange={(e) => set("vendibile", e.target.checked)} />
+                Vendibile <span className="text-text-3">— inseribile nei preventivi</span>
+              </label>
+            </div>
           </div>
 
           {error && <p className="rounded-field bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">{error}</p>}
@@ -313,7 +322,7 @@ export function CatalogoEditor({
               <h3 className="text-[16px] font-bold tracking-[-0.01em] text-text">
                 {d.titolo || "Titolo servizio"}
               </h3>
-              {!d.attivo && (
+              {!d.in_vetrina && (
                 <span className="flex-none rounded-badge bg-bg-2 px-2 py-0.5 text-[11px] font-semibold text-text-3">
                   nascosto
                 </span>

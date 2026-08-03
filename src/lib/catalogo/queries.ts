@@ -9,7 +9,7 @@ import type {
 } from "@/lib/catalogo/types";
 
 const SERVICE_COLS =
-  "id, chiave, titolo, sottotitolo, descrizione, attivita_incluse, condizioni, attivita_escluse, prezzo_base, ricorrente, durata_mesi, immagine_url, ordine, attivo, updated_at";
+  "id, chiave, titolo, sottotitolo, descrizione, attivita_incluse, condizioni, attivita_escluse, prezzo_base, ricorrente, durata_mesi, immagine_url, ordine, attivo, in_vetrina, vendibile, updated_at";
 
 /** Servizio del catalogo aggiungibile al preventivo (diverso dai 9 core). */
 export interface ServizioExtra {
@@ -31,7 +31,7 @@ export async function getServiziExtra(): Promise<ServizioExtra[]> {
   const { data } = await supabase
     .from("service_catalog")
     .select("chiave, titolo, prezzo_base, ricorrente, durata_mesi")
-    .eq("attivo", true)
+    .eq("vendibile", true) // vendibile = inseribile in preventivo (non "in vetrina")
     .order("ordine", { ascending: true });
   return ((data ?? []) as unknown as ServizioExtra[]).filter(
     (s) => !coreKeys.has(s.chiave),
@@ -50,7 +50,7 @@ export async function getVetrinaPubblica(): Promise<VetrinaServizio[]> {
   const { data } = await db
     .from("service_catalog")
     .select(SERVICE_COLS)
-    .eq("attivo", true)
+    .eq("in_vetrina", true)
     .order("ordine", { ascending: true });
   const rows = (data ?? []) as unknown as ServiceCatalogRow[];
   return rows.map((row) => ({ row, service: svc(row.chiave), portfolio: [] }));
@@ -65,7 +65,7 @@ export async function getServizioPubblico(
     .from("service_catalog")
     .select(SERVICE_COLS)
     .eq("chiave", chiave)
-    .eq("attivo", true)
+    .eq("in_vetrina", true)
     .maybeSingle();
   const row = data as unknown as ServiceCatalogRow | null;
   if (!row) return null;
@@ -110,7 +110,7 @@ export async function getUltimiLavori(limit = 12): Promise<LavoroItem[]> {
   const { data } = await db
     .from("portfolio_items")
     .select(
-      "id, titolo, cliente, settore, descrizione, risultato, immagine_url, link_url, created_at, service:service_catalog!portfolio_items_service_id_fkey(chiave, titolo, attivo)",
+      "id, titolo, cliente, settore, descrizione, risultato, immagine_url, link_url, created_at, service:service_catalog!portfolio_items_service_id_fkey(chiave, titolo, in_vetrina)",
     )
     .order("created_at", { ascending: false })
     .limit(limit * 2); // margine per filtrare i servizi non attivi
@@ -123,10 +123,10 @@ export async function getUltimiLavori(limit = 12): Promise<LavoroItem[]> {
     risultato: string | null;
     immagine_url: string | null;
     link_url: string | null;
-    service: { chiave: string; titolo: string; attivo: boolean } | null;
+    service: { chiave: string; titolo: string; in_vetrina: boolean } | null;
   }>;
   return rows
-    .filter((r) => r.service?.attivo)
+    .filter((r) => r.service?.in_vetrina)
     .slice(0, limit)
     .map((r) => ({
       id: r.id,

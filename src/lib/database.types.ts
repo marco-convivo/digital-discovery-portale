@@ -649,6 +649,7 @@ export type Database = {
           descrizione: string | null
           id: string
           immagine_url: string | null
+          in_vetrina: boolean
           ordine: number
           prezzo_base: number | null
           ricorrente: boolean
@@ -656,6 +657,7 @@ export type Database = {
           sottotitolo: string | null
           titolo: string
           updated_at: string
+          vendibile: boolean
         }
         Insert: {
           attivita_escluse?: string[]
@@ -666,6 +668,7 @@ export type Database = {
           descrizione?: string | null
           id?: string
           immagine_url?: string | null
+          in_vetrina?: boolean
           ordine?: number
           prezzo_base?: number | null
           ricorrente?: boolean
@@ -673,6 +676,7 @@ export type Database = {
           sottotitolo?: string | null
           titolo: string
           updated_at?: string
+          vendibile?: boolean
         }
         Update: {
           attivita_escluse?: string[]
@@ -683,6 +687,7 @@ export type Database = {
           descrizione?: string | null
           id?: string
           immagine_url?: string | null
+          in_vetrina?: boolean
           ordine?: number
           prezzo_base?: number | null
           ricorrente?: boolean
@@ -690,6 +695,7 @@ export type Database = {
           sottotitolo?: string | null
           titolo?: string
           updated_at?: string
+          vendibile?: boolean
         }
         Relationships: []
       }

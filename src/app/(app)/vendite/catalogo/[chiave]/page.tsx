@@ -37,7 +37,8 @@ export default async function CatalogoEditPage({
             ricorrente: row.ricorrente,
             durata_mesi: row.durata_mesi,
             ordine: row.ordine,
-            attivo: row.attivo,
+            in_vetrina: row.in_vetrina,
+            vendibile: row.vendibile,
           }}
         />
         <Card>

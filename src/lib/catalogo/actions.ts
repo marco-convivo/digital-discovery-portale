@@ -43,7 +43,8 @@ export interface ServizioContenuto {
   ricorrente: boolean;
   durata_mesi: number;
   ordine: number;
-  attivo: boolean;
+  in_vetrina: boolean; // visibile ai clienti nella vetrina
+  vendibile: boolean; // inseribile nei preventivi
 }
 
 /** Aggiorna i contenuti di un servizio (per chiave). */
@@ -68,7 +69,9 @@ export async function updateServizio(
       ricorrente: input.ricorrente,
       durata_mesi: input.durata_mesi,
       ordine: input.ordine,
-      attivo: input.attivo,
+      in_vetrina: input.in_vetrina,
+      vendibile: input.vendibile,
+      attivo: input.in_vetrina, // legacy: allineato a in_vetrina
       updated_at: new Date().toISOString(),
     })
     .eq("chiave", chiave);
@@ -205,7 +208,10 @@ export async function createServizio(
     chiave,
     titolo: t,
     ordine,
-    attivo: false, // bozza: si pubblica dall'editor quando è pronta
+    // bozza: nascosto e non vendibile finché non lo si pubblica dall'editor
+    attivo: false,
+    in_vetrina: false,
+    vendibile: false,
   });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/vendite/catalogo");

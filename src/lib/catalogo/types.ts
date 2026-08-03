@@ -16,6 +16,8 @@ export interface ServiceCatalogRow {
   immagine_url: string | null;
   ordine: number;
   attivo: boolean;
+  in_vetrina: boolean;
+  vendibile: boolean;
   updated_at: string;
 }
 
