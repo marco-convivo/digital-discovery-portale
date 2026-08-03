@@ -520,8 +520,10 @@ export type Database = {
           addons: Json
           client_id: string
           created_at: string
+          data_prima_rata: string | null
           id: string
           importo_totale: number | null
+          motivo_sconto: string | null
           numero: string | null
           ordine: Json | null
           prezzi: Json | null
@@ -539,8 +541,10 @@ export type Database = {
           addons?: Json
           client_id: string
           created_at?: string
+          data_prima_rata?: string | null
           id?: string
           importo_totale?: number | null
+          motivo_sconto?: string | null
           numero?: string | null
           ordine?: Json | null
           prezzi?: Json | null
@@ -558,8 +562,10 @@ export type Database = {
           addons?: Json
           client_id?: string
           created_at?: string
+          data_prima_rata?: string | null
           id?: string
           importo_totale?: number | null
+          motivo_sconto?: string | null
           numero?: string | null
           ordine?: Json | null
           prezzi?: Json | null

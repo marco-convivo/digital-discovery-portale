@@ -47,7 +47,7 @@ export async function registraMandatoSepa(
   const { data: quote } = await db
     .from("quotes")
     .select(
-      "id, tipo, importo_totale, rata_mensile, rate_num, client:clients!quotes_client_id_fkey(id, ragione_sociale, email)",
+      "id, tipo, importo_totale, rata_mensile, rate_num, data_prima_rata, client:clients!quotes_client_id_fkey(id, ragione_sociale, email)",
     )
     .eq("public_token", token)
     .maybeSingle();
@@ -96,6 +96,7 @@ export async function registraMandatoSepa(
     importoTotale: quote.importo_totale,
     rataMensile: quote.rata_mensile,
     rateNum: quote.rate_num,
+    primaScadenza: quote.data_prima_rata, // addebiti manuali: onora la data scelta
   }).map((r) => ({
     client_id: client.id,
     contract_id: contractId,

@@ -123,6 +123,10 @@ export interface CreateQuoteInput {
   prezzi?: Record<string, number>;
   // sconto in € (sulla rata se ricorrente, sull'importo altrimenti)
   sconto?: number;
+  // motivazione dello sconto (finisce sul documento del cliente)
+  motivoSconto?: string | null;
+  // data della prima rata (onorata dai piani manuali/SDD; indicativa su Stripe)
+  dataPrimaRata?: string | null;
   // servizi aggiuntivi a testo libero (fuori catalogo)
   addons?: Addon[];
 }
@@ -166,6 +170,8 @@ export async function createQuote(
       rata_mensile: ricorrente ? input.rataMensile : null,
       rate_num: ricorrente ? input.rateNum : null,
       valido_fino: input.validoFino || null,
+      data_prima_rata: input.dataPrimaRata || null,
+      motivo_sconto: input.motivoSconto?.trim() || null,
       stato: "inviato",
       ordine: input.ordine,
       prezzi: input.prezzi ?? {},
@@ -210,6 +216,8 @@ export interface UpdateQuoteInput {
   ordine: OrdineSelezione;
   prezzi?: Record<string, number>;
   sconto?: number;
+  motivoSconto?: string | null;
+  dataPrimaRata?: string | null;
   addons?: Addon[];
 }
 
@@ -258,6 +266,8 @@ export async function updateQuote(
       rata_mensile: ricorrente ? input.rataMensile : null,
       rate_num: ricorrente ? input.rateNum : null,
       valido_fino: input.validoFino || null,
+      data_prima_rata: input.dataPrimaRata || null,
+      motivo_sconto: input.motivoSconto?.trim() || null,
       ordine: input.ordine,
       prezzi: input.prezzi ?? {},
       sconto: input.sconto ?? 0,
