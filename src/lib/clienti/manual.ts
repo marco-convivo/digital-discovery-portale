@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import type { OrdineSelezione } from "@/lib/catalog";
+import { generaRate } from "@/lib/preventivi/genera-rate";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -21,12 +22,6 @@ async function currentStaffId(): Promise<string | null> {
     .maybeSingle();
   if (!data || !(data as { active: boolean }).active) return null;
   return user.id;
-}
-
-function addMonths(iso: string, m: number): string {
-  const d = new Date(iso + "T00:00:00Z");
-  d.setUTCMonth(d.getUTCMonth() + m);
-  return d.toISOString().slice(0, 10);
 }
 
 /** Upload del PDF del contratto firmato (bucket pubblico `contratti`). Solo staff. */
@@ -187,13 +182,19 @@ export async function creaClienteEsistente(
     stato: "manuale",
   });
 
-  // 5) Rate mensili "scheduled" — nessuna subscription
-  const rows = Array.from({ length: rateNum }, (_, i) => ({
+  // 5) Rate mensili "scheduled" — nessuna subscription, generatore condiviso
+  const rows = generaRate({
+    tipo: "ricorrente",
+    importoTotale: importoTotale,
+    rataMensile: rata,
+    rateNum,
+    primaScadenza: input.primaScadenza,
+  }).map((r) => ({
     client_id: clientId,
     contract_id: contractId,
-    numero_rata: i + 1,
-    importo: rata,
-    scadenza: addMonths(input.primaScadenza, i),
+    numero_rata: r.numero_rata,
+    importo: r.importo,
+    scadenza: r.scadenza,
     stato: "scheduled" as const,
   }));
   await db.from("payments").insert(rows);

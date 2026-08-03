@@ -9,6 +9,7 @@ import { inviaAvvisoInsolutoCliente } from "@/lib/insoluti/cliente-email";
 import { inviaConfermaMandato } from "@/lib/pagamenti/mandato";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { ALIQUOTA_IVA, conIva } from "@/lib/format";
+import { generaRate, oggiIso } from "@/lib/preventivi/genera-rate";
 import type { Database } from "@/lib/database.types";
 
 type PaymentMetodo = Database["public"]["Enums"]["payment_metodo"];
@@ -28,12 +29,6 @@ function subIdFromInvoice(inv: Stripe.Invoice): string | null {
     anyInv.lines?.data?.find((l) => l.subscription)?.subscription ??
     null
   );
-}
-
-function scadenzaMese(base: Date, mesiAvanti: number): string {
-  const d = new Date(base);
-  d.setMonth(d.getMonth() + mesiAvanti);
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
 async function metodoFromPmId(pmId: string | null): Promise<PaymentMetodo | null> {
@@ -192,14 +187,19 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
     });
 
     // Pre-genera le N rate come "scheduled" (il piano che il cliente vedrà),
-    // legate al contratto.
-    const rows = Array.from({ length: rate }, (_, i) => ({
+    // legate al contratto — generatore condiviso.
+    const rows = generaRate({
+      tipo: "ricorrente",
+      importoTotale: quote.importo_totale,
+      rataMensile: quote.rata_mensile,
+      rateNum: quote.rate_num,
+    }).map((r) => ({
       client_id: clientId,
       contract_id: contractId,
       subscription_id: sub.id,
-      numero_rata: i + 1,
-      importo: rata,
-      scadenza: scadenzaMese(oggi, i),
+      numero_rata: r.numero_rata,
+      importo: r.importo,
+      scadenza: r.scadenza,
       stato: "scheduled" as const,
     }));
     await db.from("payments").insert(rows);
@@ -224,7 +224,7 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
       contract_id: contractId,
       numero_rata: 1,
       importo,
-      scadenza: scadenzaMese(oggi, 0),
+      scadenza: oggiIso(),
       stato: pi.status === "succeeded" ? "paid" : "pending",
       stripe_payment_intent_id: pi.id,
       paid_at: pi.status === "succeeded" ? new Date().toISOString() : null,

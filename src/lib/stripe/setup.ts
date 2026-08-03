@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { ALIQUOTA_IVA } from "@/lib/format";
+import { generaRate, oggiIso } from "@/lib/preventivi/genera-rate";
 
 // Il flusso pagamento pubblico gira in contesto anon: usiamo l'admin client
 // (service role) MA sempre filtrato per public_token — il token è la capability.
@@ -29,12 +30,6 @@ export interface PaymentContext {
 
 function lordo(netto: number): number {
   return Math.round(netto * (1 + ALIQUOTA_IVA) * 100); // centesimi, IVA inclusa
-}
-
-function scadenzaMese(base: Date, mesiAvanti: number): string {
-  const d = new Date(base);
-  d.setMonth(d.getMonth() + mesiAvanti);
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
 // client_secret con cui confermare l'invoice della subscription lato browser.
@@ -229,7 +224,7 @@ export async function ensurePaymentContext(
         contract_id: contractId,
         numero_rata: 1,
         importo,
-        scadenza: scadenzaMese(new Date(), 0),
+        scadenza: oggiIso(),
         stato: "pending",
         stripe_payment_intent_id: pi.id,
       });
@@ -295,14 +290,19 @@ export async function ensurePaymentContext(
   });
 
   // Pre-genera le N rate come "scheduled" (il piano che il cliente vedrà),
-  // legate al contratto e alla subscription.
-  const rows = Array.from({ length: rateNum }, (_, i) => ({
+  // legate al contratto e alla subscription — generatore condiviso.
+  const rows = generaRate({
+    tipo: "ricorrente",
+    importoTotale: quote.importo_totale,
+    rataMensile: quote.rata_mensile,
+    rateNum: quote.rate_num,
+  }).map((r) => ({
     client_id: client.id,
     contract_id: contractId,
     subscription_id: sub.id,
-    numero_rata: i + 1,
-    importo: rataNetta,
-    scadenza: scadenzaMese(oggi, i),
+    numero_rata: r.numero_rata,
+    importo: r.importo,
+    scadenza: r.scadenza,
     stato: "scheduled" as const,
   }));
   await db.from("payments").insert(rows);

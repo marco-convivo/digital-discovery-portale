@@ -6,6 +6,7 @@ import { emailBrand } from "@/lib/email/templates";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import { euro } from "@/lib/format";
 import { SEPA_CREDITORE, isValidIban, normalizeIban } from "@/lib/sepa/config";
+import { generaRate } from "@/lib/preventivi/genera-rate";
 
 const ADMIN = "marco@convivostudio.it";
 const SITE =
@@ -20,12 +21,6 @@ export interface MandatoInput {
   indirizzo?: string | null;
   email?: string | null;
   consenso: boolean;
-}
-
-function scadenzaMese(mesiAvanti: number): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() + mesiAvanti);
-  return d.toISOString().slice(0, 10);
 }
 
 /**
@@ -95,21 +90,26 @@ export async function registraMandatoSepa(
   });
   if (insErr) return { ok: false, error: insErr.message };
 
-  // Piano rate MANUALE (nessuna subscription Stripe).
-  const ricorrente = quote.tipo === "ricorrente";
-  const rateNum = ricorrente ? (quote.rate_num ?? 12) : 1;
-  const rataImporto = ricorrente
-    ? Number(quote.rata_mensile ?? 0)
-    : Number(quote.importo_totale ?? 0);
-  const rows = Array.from({ length: rateNum }, (_, i) => ({
+  // Piano rate MANUALE (nessuna subscription Stripe) — generatore condiviso.
+  const rows = generaRate({
+    tipo: quote.tipo,
+    importoTotale: quote.importo_totale,
+    rataMensile: quote.rata_mensile,
+    rateNum: quote.rate_num,
+  }).map((r) => ({
     client_id: client.id,
     contract_id: contractId,
-    numero_rata: i + 1,
-    importo: rataImporto,
-    scadenza: scadenzaMese(i),
+    numero_rata: r.numero_rata,
+    importo: r.importo,
+    scadenza: r.scadenza,
     stato: "scheduled" as const,
   }));
   await db.from("payments").insert(rows);
+
+  // Scalari per l'avviso allo staff (Sella), derivati dal piano generato.
+  const ricorrente = quote.tipo === "ricorrente";
+  const rateNum = rows.length;
+  const rataImporto = rows[0]?.importo ?? 0;
 
   // payment_setup manuale (upsert per cliente+contratto).
   const psSel = db
