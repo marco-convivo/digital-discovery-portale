@@ -22,6 +22,14 @@ export interface ContractRow {
   quote: { ordine: OrdineSelezione | null } | null;
 }
 
+export interface AttivitaRow {
+  id: string;
+  azione: string;
+  da_stato: string | null;
+  a_stato: string | null;
+  created_at: string;
+}
+
 export interface ClienteSchedaData {
   client: Client;
   prezziBase: Awaited<ReturnType<typeof getPrezziBase>>;
@@ -30,6 +38,7 @@ export interface ClienteSchedaData {
   contratti: ContractRow[];
   fatture: FatturaRow[];
   gruppiPagamenti: PianoGruppo[];
+  attivita: AttivitaRow[];
 }
 
 /** Dati completi della scheda cliente, condivisi tra pagina intera e pannello. */
@@ -56,6 +65,7 @@ export async function getClienteScheda(
     { data: payData },
     { data: contrData },
     { data: invData },
+    { data: logData },
   ] = await Promise.all([
     supabase
       .from("quotes")
@@ -79,11 +89,17 @@ export async function getClienteScheda(
       .select("id, numero, data, importo, pdf_url")
       .eq("client_id", id)
       .order("data", { ascending: false }),
+    supabase
+      .from("activity_log")
+      .select("id, azione, da_stato, a_stato, created_at")
+      .eq("client_id", id)
+      .order("created_at", { ascending: true }),
   ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
   const contratti = (contrData ?? []) as unknown as ContractRow[];
   const fatture = (invData ?? []) as unknown as FatturaRow[];
+  const attivita = (logData ?? []) as unknown as AttivitaRow[];
 
   const pays = (payData ?? []) as unknown as (RataRow & {
     contract_id: string | null;
@@ -123,5 +139,6 @@ export async function getClienteScheda(
     contratti,
     fatture,
     gruppiPagamenti,
+    attivita,
   };
 }

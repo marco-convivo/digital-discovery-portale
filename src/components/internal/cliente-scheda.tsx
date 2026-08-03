@@ -6,6 +6,7 @@ import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
 import { PreventiviList } from "@/components/internal/preventivi-list";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
 import { FattureCliente } from "@/components/internal/fatture-cliente";
+import { AttivitaLog } from "@/components/internal/attivita-log";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META } from "@/lib/stati";
 import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
@@ -26,6 +27,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     contratti,
     fatture,
     gruppiPagamenti,
+    attivita,
   } = data;
   const meta = STATO_META[c.stato as ClientStato];
 
@@ -53,6 +55,14 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
       </header>
 
       <div className="flex flex-col gap-5">
+        {/* Barra log attività: la storia della pratica, dalla prima all'ultima */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cronologia</CardTitle>
+          </CardHeader>
+          <AttivitaLog attivita={attivita} />
+        </Card>
+
         {/* Anagrafica: full-width, campi su due colonne */}
         <Card>
           <AnagraficaEditor
