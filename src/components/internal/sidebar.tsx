@@ -10,13 +10,12 @@ import { Logo } from "@/components/ui/logo";
 
 // In FASE 1 solo "Pipeline" è collegata; le altre voci restano visibili ma
 // disabilitate (i pattern esistono nei mockup, le pagine arrivano dopo).
+// Nav CRM v0.4: 5 voci (+Team). Landing = Pipeline su /vendite.
 const NAV = [
-  { href: "/vendite", label: "Home", icon: HomeIcon, ready: true },
-  { href: "/vendite/pipeline", label: "Pipeline", icon: PipelineIcon, ready: true },
+  { href: "/vendite", label: "Pipeline", icon: PipelineIcon, ready: true },
   { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: true },
   { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: true },
   { href: "/vendite/insoluti", label: "Insoluti", icon: AlertIcon, ready: true },
-  { href: "/vendite/scadenze", label: "Scadenze", icon: ClockIcon, ready: true },
   { href: "/vendite/catalogo", label: "Catalogo", icon: GridIcon, ready: true, adminOnly: true },
   { href: "/vendite/utenti", label: "Utenti", icon: ShieldIcon, ready: true, adminOnly: true },
 ];
@@ -178,14 +177,6 @@ export function Sidebar({
 
 /* --- icone (stroke, coerenti coi mockup) --- */
 const svg = "size-[19px] flex-none";
-function HomeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 9.5V21h14V9.5" />
-    </svg>
-  );
-}
 function MenuIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-6">
@@ -223,14 +214,6 @@ function CardIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M2 10h20" />
-    </svg>
-  );
-}
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
     </svg>
   );
 }
