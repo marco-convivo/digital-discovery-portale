@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PIPELINE_COLUMNS, columnForStato } from "@/lib/stati";
 import { LeadCard } from "@/components/internal/lead-card";
-import { AddLeadDialog } from "@/components/internal/add-lead-dialog";
+import { ClienteNuovoDrawer } from "@/components/internal/cliente-nuovo-drawer";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/components/ui/status-pill";
 import type { ClientWithOwner } from "@/lib/types";
@@ -37,7 +37,7 @@ export default async function PipelinePage() {
             Le trattative in corso, per fase.
           </p>
         </div>
-        <AddLeadDialog />
+        <ClienteNuovoDrawer />
       </header>
 
       <div className="flex flex-1 gap-4 overflow-x-auto pb-2">

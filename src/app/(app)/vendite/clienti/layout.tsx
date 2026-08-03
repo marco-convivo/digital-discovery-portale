@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ClientiList, type ClienteItem } from "@/components/internal/clienti-list";
+import { ClienteNuovoDrawer } from "@/components/internal/cliente-nuovo-drawer";
 
 interface Row {
   id: string;
@@ -74,12 +75,15 @@ export default async function ClientiLayout({
             scheda a destra.
           </p>
         </div>
-        <Link
-          href="/vendite/clienti/nuovo"
-          className="inline-flex flex-none rounded-pill bg-ink px-4 py-2 text-[13.5px] font-semibold text-on-ink transition-opacity hover:opacity-90"
-        >
-          + Cliente esistente
-        </Link>
+        <div className="flex flex-none items-center gap-2">
+          <Link
+            href="/vendite/clienti/nuovo"
+            className="inline-flex rounded-btn border border-line-strong px-3.5 py-2 text-[13.5px] font-semibold text-text-2 transition-colors hover:text-text"
+          >
+            Cliente esistente
+          </Link>
+          <ClienteNuovoDrawer />
+        </div>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,30%)_1fr] lg:items-start">
