@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
 import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
-import { NuovoPreventivoDialog } from "@/components/internal/nuovo-preventivo-dialog";
 import { PreventiviList } from "@/components/internal/preventivi-list";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
 import { FattureCliente } from "@/components/internal/fatture-cliente";
@@ -23,8 +22,6 @@ const CONTRACT_TONE: Record<string, Tone> = {
 export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
   const {
     client: c,
-    prezziBase,
-    serviziExtra,
     quotes,
     contratti,
     fatture,
@@ -44,11 +41,12 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
         <div className="flex flex-none flex-col items-end gap-2">
           <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
           <div className="flex items-center gap-2">
-            <NuovoPreventivoDialog
-              clientId={c.id}
-              prezziBase={prezziBase}
-              serviziExtra={serviziExtra}
-            />
+            <Link
+              href={`/vendite/preventivo/${c.id}`}
+              className="inline-flex items-center gap-1.5 rounded-btn bg-ink px-4 py-2 text-[13.5px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+            >
+              + Nuovo preventivo
+            </Link>
             <InviaAccessoButton clientId={c.id} />
           </div>
         </div>

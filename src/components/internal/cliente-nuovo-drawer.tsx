@@ -78,7 +78,7 @@ export function ClienteNuovoDrawer({
       const id = res.clientId;
       setOpen(false);
       reset();
-      if (poi === "preventivo") router.push(`/vendite/clienti/${id}`);
+      if (poi === "preventivo") router.push(`/vendite/preventivo/${id}`);
       else router.refresh();
     });
   }
