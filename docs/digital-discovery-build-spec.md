@@ -2,7 +2,9 @@
 
 > Documento di consegna per lo sviluppo (da usare come contesto in Claude Code).
 > Progetto: **Digital Discovery S.r.l.** — entità e brand distinti da Convivo/Syllex.
-> Stack: **Next.js + Supabase + Vercel**. Ultimo aggiornamento: luglio 2026.
+> Stack: **Next.js 16 (App Router, TS, `src/`) + Tailwind v4 + Supabase (SSR) + Vercel**.
+> Ultimo aggiornamento: **agosto 2026** — allineato al design system **v0.4**.
+> Stato: Fasi 1–3 in TEST; restyling v0.4 (nav 5 voci, 7a/7b, 6a/6b, 3a/3b/4a/4b) applicato.
 
 ---
 
@@ -21,11 +23,12 @@ Modello di ricavo servito: pagamento **ricorrente** a rata mensile su 12 mesi (p
 
 ## 2. Decisioni tecniche (già prese)
 
-**Pagamenti — Stripe.**
-- Addebito ricorrente via **SEPA Direct Debit schema CORE** (non B2B: Stripe non lo supporta; per la clientela MPI il CORE è lo standard).
-- Mandato SDD raccolto online + **Stripe Billing/Subscriptions** per le 12 rate.
-- Una tantum/acconto: **carta** o **bonifico**.
-- Ogni evento (incasso, fallimento, revoca mandato) arriva via **webhook** e aggiorna lo stato.
+**Pagamenti — carta su Stripe, SEPA manuale su Banca Sella.**
+- **Carta → Stripe.** Subscription/PaymentIntent, addebiti tracciati e gestiti dai webhook. Prima fattura on-session (conferma 3DS nel browser).
+- **SEPA (addebito bancario) → Banca Sella, non Stripe.** Stripe SEPA è stato abbandonato: sul nuovo account Radar bloccava gli addebiti SDD (`unknown_risk_level`/"blocked"). Il cliente compila e accetta un **mandato SDD B2B** nel portale (tabella `sepa_mandates`); Marco esegue gli addebiti su Banca Sella (SBS, file tracciato XML) e **segna le rate pagate a mano**.
+- Il chooser pubblico `/paga/[token]` offre **Carta** (`/carta`, Stripe) o **Addebito bancario SEPA** (`/sepa`, mandato Sella).
+- IBAN = dato del mandato SDD: conservato con RLS staff-only, mai in URL/log.
+- Attivazione: al **primo incasso** (carta) o alla **registrazione del mandato** (SEPA) il cliente passa direttamente a `cliente_attivo` ("Automatico al 1° pagamento").
 
 **Firma — DocuSeal.**
 - Piano **Cloud Pro** (~20$/mese, 1 seat + ~0,20$/documento firmato). Signing **embedded** dentro il portale via API.
@@ -55,19 +58,22 @@ Un cliente ha **molti contratti** (uno per servizio o rinnovo), ognuno con il pr
 
 - **profiles** — utenti interni. `id` (→ auth.users), `full_name`, `email`, `role` (`admin` | `commerciale`), `active`.
 - **clients** — anagrafica (prospect→cliente). `id`, `ragione_sociale`, `p_iva`, `codice_fiscale`, `codice_sdi`/`pec`, `indirizzo`, `referente`, `email`, `telefono`, `stato` (macchina a stati §4), `owner_id` (→ profiles), `created_at`.
-- **quotes** — preventivi. `id`, `client_id`, `numero`, `tipo` (`ricorrente`|`una_tantum`|`acconto`), `importo_totale`, `rate_num`, `rata_mensile`, `valido_fino`, `stato` (`bozza`|`inviato`|`visto`|`accettato`|`rifiutato`|`scaduto`), `public_token`, `viewed_at`, `accepted_at`.
-- **quote_items** — righe. `id`, `quote_id`, `descrizione`, `quantita`, `prezzo_unitario`.
+- **quotes** — preventivi. `id`, `client_id`, `numero`, `tipo` (`ricorrente`|`una_tantum`|`acconto`), `importo_totale`, `rate_num`, `rata_mensile`, `sconto`, **`motivo_sconto`** (testo, finisce sul documento cliente), **`data_prima_rata`** (onorata dai piani manuali/SDD; indicativa su Stripe), `valido_fino`, `stato` (`bozza`|`inviato`|`visto`|`accettato`|`rifiutato`|`scaduto`), `ordine`/`prezzi`/`addons` (jsonb, selezione servizi), `public_token`, `viewed_at`, `accepted_at`.
+- **quote_items** — righe (proiezione denormalizzata di `ordine`/`prezzi`/`addons`). `id`, `quote_id`, `descrizione`, `quantita`, `prezzo_unitario`.
 - **contracts** — ponte DocuSeal. `id`, `quote_id`, `client_id`, `docuseal_submission_id`, `stato` (`inviato`|`firmato`|`annullato`), `signed_at`, `signed_pdf_url`.
-- **payment_setups** — ponte Stripe. `id`, `client_id`, `contract_id`, `stripe_customer_id`, `stripe_subscription_id`, `metodo` (`sdd`|`carta`|`bonifico`), `stato`.
-- **payments** — le rate (= il piano pagamenti che il cliente vede). `id`, `client_id`, **`contract_id`**, `subscription_id`, `numero_rata`, `importo`, `scadenza`, `stato` (`pending`|`paid`|`failed`|`scheduled`), `stripe_payment_intent_id`, `paid_at`.
-- **invoices** — fatture (manuali per ora). `id`, `client_id`, `payment_id`, `numero`, `data`, `importo`, `pdf_url`, `stato`.
+- **payment_setups** — ponte Stripe/SDD. `id`, `client_id`, `contract_id`, `stripe_customer_id`, `stripe_subscription_id`, `metodo` (`sdd`|`carta`|`bonifico`), `stato` (incl. `manuale` per SDD Sella).
+- **sepa_mandates** — mandati SDD B2B (Banca Sella, fuori Stripe). `id`, `client_id`, `contract_id`, `quote_id`, `riferimento` (`MND-…`), `intestatario`, `iban`, `bic`, `creditor_id`, `stato`, `accettato_at`. IBAN protetto da RLS staff-only.
+- **payments** — le rate (= il piano pagamenti che il cliente vede). `id`, `client_id`, **`contract_id`**, `subscription_id`, `numero_rata`, `importo` (netto), `scadenza`, `stato` (`scheduled`|`pending`|`paid`|`failed`), `stripe_payment_intent_id`, `paid_at`, + campi insoluti/recupero (`recovery_stato`, `maggiorazione`, `failure_*`, `recovery_token`/`url`). **Generazione unica** via `src/lib/preventivi/genera-rate.ts` (anteprima 7b + SEPA + Stripe + onboarding manuale).
+- **invoices** — fatture (manuali per ora). `id`, `client_id`, `payment_id`, `numero`, `data`, `importo`, `pdf_url`, `stato`. Upload PDF + email al cliente.
 - **services** — servizi attivi. `id`, `client_id`, `contract_id`, `nome`, `stato`, `data_attivazione`.
-- **activity_log** — audit. `id`, `client_id`, `actor_id`, `azione`, `da_stato`, `a_stato`, `created_at`.
+- **service_catalog** — catalogo servizi. Contenuti (`titolo`, `sottotitolo`, `descrizione`, `attivita_incluse`/`condizioni`/`attivita_escluse` text[]), `prezzo_base`, `ricorrente`, `durata_mesi`, `ordine`, `immagine_url`, e i due flag distinti **`in_vetrina`** (visibile ai clienti) e **`vendibile`** (inseribile nei preventivi). `attivo` resta come colonna legacy allineata a `in_vetrina`.
+- **portfolio_items** — lavori collegati a un servizio del catalogo.
+- **activity_log** — audit + cronologia scheda. `id`, `client_id`, `actor_id`, `azione`, `da_stato`, `a_stato`, `created_at` (scritto da trigger sul cambio di `clients.stato`).
 
-**RLS (Row Level Security)**
-- `admin` → vede/modifica tutto.
-- `commerciale` → clienti dove `owner_id = auth.uid()` (o "tutti in lettura, modifica solo le proprie" — scelta di policy da confermare).
-- **cliente esterno** → solo i propri dati (`client_id` legato alla sessione), mai le tabelle interne della pipeline.
+**RLS (Row Level Security)** — helper security-definer in schema `private`.
+- `admin` → vede/modifica tutto. La **cancellazione clienti resta admin**.
+- `commerciale` → **team-read + team-write**: legge e modifica tutti i clienti/preventivi/contratti/rate/fatture/servizi (`private.is_staff()`, migration 0021/0022). Nota storica: prima era owner-only, ma un operatore non titolare salvava "a vuoto" (RLS scartava la riga senza errore) → risolto.
+- **cliente esterno** → solo i propri dati (`clients.auth_user_id = auth.uid()`; tabelle figlie via `client_id`), mai le tabelle interne della pipeline.
 
 ---
 
@@ -81,90 +87,101 @@ Percorso felice e trigger che fanno avanzare ogni transizione:
 - `preventivo_accettato` → click "Accetto" → **crea submission DocuSeal**.
 - `contratto_inviato` → modulo di firma embedded; il cliente compila dati societari e firma.
 - `contratto_firmato` → webhook DocuSeal `form.completed` → salva PDF, avanza.
-- `pagamento_setup` → il cliente inserisce il metodo (mandato SDD / carta / bonifico).
-- `pagamento_attivo` → webhook Stripe (mandato attivo / primo incasso) → crea subscription 12 mesi.
-- `cliente_attivo` → invito con link per impostare credenziali; portale cliente sbloccato.
+- `pagamento_setup` → il cliente sceglie il metodo su `/paga/[token]`: **carta** (Stripe) o **SEPA** (mandato Banca Sella).
+- `cliente_attivo` → **direttamente al 1° pagamento** ("Automatico al 1° pagamento"): al primo `invoice.paid` (carta) o alla registrazione del mandato SEPA il cliente diventa subito attivo, senza sostare su `pagamento_attivo`. Portale sbloccato + email di accesso. (Gli stati `pagamento_attivo` restano nell'enum ma non sono più una tappa obbligata.)
 
-Rami: `preventivo_rifiutato` / `scaduto`; `contratto_annullato` / `scaduto`; `pagamento_fallito` (webhook Stripe `invoice.payment_failed`) → dunning con retry → `sospeso`; `cessato` (fine ciclo o disdetta).
+Rami: `preventivo` `rifiutato` / `scaduto` (validità per-preventivo con grace di 7 giorni recuperabile); `contratto` `annullato`; rata `failed` (webhook Stripe `invoice.payment_failed`, o segnata a mano per SDD Sella) → **Insoluti**: recupero con link/nuovo mandato/bonifico + maggiorazione; `cessato` (fine ciclo o disdetta).
 
-**Principio**: ogni transizione è guidata da un webhook, non da un click manuale.
+**Principio**: le transizioni sono guidate da webhook (carta/DocuSeal) o dall'azione del cliente (mandato SEPA); Marco esita a mano solo gli addebiti SDD Sella.
 
 ---
 
 ## 5. Integrazioni & webhook
 
 - **DocuSeal**: `form.completed` → `contracts.stato = firmato`, salva `signed_pdf_url`, avanza pratica a `pagamento_setup`.
-- **Stripe** (eventi chiave): `setup_intent.succeeded` / mandato attivo → `pagamento_attivo` + crea subscription; `invoice.paid` → `payments.stato = paid` (+ notifica per emettere fattura); `invoice.payment_failed` → `payments.stato = failed` + dunning; `customer.subscription.deleted` → `cessato`.
-- **Fatture**: per ora manuale (Marco carica/collega il PDF FatturaHello in `invoices`). Futuro: su `invoice.paid` chiamare l'API del provider SdI e popolare `invoices`.
+- **Stripe (solo carta)** — eventi chiave: `setup_intent.succeeded` / primo `invoice.paid` → `cliente_attivo` + subscription; `invoice.paid` → `payments.stato = paid`; `invoice.payment_failed` → `payments.stato = failed` + flusso Insoluti; `customer.subscription.deleted` → `cessato`. Addebito **lordo** (netto ×1.22).
+- **SEPA (Banca Sella, no webhook)** — il mandato B2B si registra dal portale (`sepa_mandates` + piano rate `scheduled`), avvisa staff con IBAN/UMR per Sella; gli addebiti li invia Marco e segna le rate `paid` a mano.
+- **DocuSeal**: `form.completed` → contratto firmato (vedi sopra).
+- **Fatture**: manuale (upload PDF FatturaHello in `invoices` + email al cliente). Futuro: API provider SdI su `invoice.paid`.
 
 Tutti i webhook vanno su route API server-side (Next.js route handlers) con verifica della firma del webhook.
 
 ---
 
-## 6. Design system (v0.3)
+## 6. Design system (v0.4)
 
-Fondazione **Material 3 brandizzata Digital Discovery**, "flavor" ispirato alla reference EduWay. Token principali (CSS variables):
+Font **Fustat**, sfondo **salvia**, brand **Digital Discovery** (non Convivo). Riferimento: `design_handoff_v04/`. I token vivono in `src/app/globals.css` (`@theme` → utility Tailwind v4). Principali:
 
 ```
---ink:#222222;                 /* primario azione (charcoal) */
---bg:#e9ece6;                  /* pagina: salvia */
---card:#ffffff; --card-2:#f4f6f2; --line:#e1e4dd;
---violet:#a28ef9; --violet-soft:#ece8fe;   /* accento */
---mint:#a4f5a6;   --mint-soft:#dcf7dd;     /* positivo/accento */
-/* stati: paid(verde) · info(violetto) · wait(ambra) · fail(rosso) · draft(neutro) */
---r-card:24px; --r-md:16px; --r-sm:12px; --r-pill:999px;
-font: 'Fustat' (Google Fonts, variabile 300–800), cifre in tabular-nums
+--color-ink:#16171a  --color-on-ink:#fff       /* azione forte, blocchi scuri */
+--color-bg:#e9ece6  --color-bg-2:#dfe3da        /* pagina salvia */
+--color-card:#fff  --color-card-2:#f4f6f1  --color-panel:#f5f7f2
+--color-line:#e2e6dd  --color-line-strong:#cfd5c8  --color-line-field:#dfe3da
+--color-link:#4b3bbd                            /* link */
+--color-mint:#a8e6c4  --color-on-mint:#0f2e1e   /* positivo / WhatsApp */
+--color-violet-soft:#ece8fe / info-tx:#2c1d63   /* ricorrente, abbonamenti */
+/* stati: paid · info · wait(ambra #c99700) · fail(#d64535) · draft */
+--radius-crm:12  --radius-frame:16  --radius-btn:10  --radius-field:9  --radius-badge:8
+--radius-card:24 (portale)          /* densità doppia: CRM 12/16, portale 24/16 */
 ```
 
-- **Tipografia**: Fustat (una sola famiglia, contrasto di peso). Distinta dal DM Sans di Syllex.
-- **Colore**: primario charcoal su elementi forti; superfici salvia ariose; accenti violetto+menta; il **colore del logo** (quando disponibile) entra come accento — la dipendenza dal logo è quindi bassa. In alternativa, ri-generabile come seme M3 con `@material/material-color-utilities`.
-- **Elemento firma**: il **linguaggio di stato** (pallino + etichetta + pill tenue), identico su rate, contratti e pipeline = "trasparenza resa interfaccia".
-- I token sono già incorporati nei file mockup allegati; da estrarre in `globals.css` / design tokens del progetto.
+- **Zero-motion**: solo transizioni ≤120ms su colore/bordo; rispetto di `prefers-reduced-motion`.
+- **Componenti `src/components/ui/`**: `button` (primary/secondary/ghost/dashed/outline), `card` (`radius` crm/portale, variante `dark`), `input` (`labelRight`), **`drawer`** (pannello laterale 520px, scrim 34%, focus-trap), **`money-block`** (blocco denaro scuro), **`preflight-list`** (checklist "Prima di inviare"), `status-pill` (5 casi, max 2 per schermata).
+- **Elemento firma**: il **linguaggio di stato** (pallino + etichetta + pill tenue) identico su rate, contratti e pipeline.
+- **Navigazione CRM = 5 voci**: Pipeline (landing), Clienti, Pagamenti, Insoluti, Catalogo (+Utenti, admin). Rimosse Home operativa, Preventivi e Contratti (assorbite nella scheda cliente). Portale mobile: **tab bar in basso** (Home/Pagamenti/Servizi/Assistenza + Altro).
 
 ---
 
-## 7. Schermate
+## 7. Schermate (v0.4, realizzate)
 
-**Disegnate** (mockup HTML allegati, con token v0.3):
-- Portale cliente — **Home** (`portale-home.html`): eroe "prossima rata", piano pagamenti sintetico, servizi, fatture, contratto, supporto.
-- Portale cliente — **Piano pagamenti** (`piano-pagamenti.html`): multi-contratto (banner "nuovo contratto da firmare", selettore contratti, tabella 12 rate con stati e azioni).
-- Interno — **Board pipeline** (`pipeline-board.html`): 5 colonne (macchina a stati), card trattativa con assegnatario, conteggi e valore per colonna, filtri per collaboratore.
+**Interno (CRM).**
+- **Pipeline** (`/vendite`, landing) — 6 colonne (5 fasi + Persi); il **tempo come segnale**: bordo ambra e footer "Ferma da N giorni" sulle trattative aperte ferme da 14+ giorni (da `activity_log`), con filtro `?fermi=1` (4a).
+- **7a Nuovo cliente** — **drawer 520px** sopra Pipeline/Clienti: nome + contatto minimi, controllo duplicati inline sul telefono, fatturazione rimandata, pannello scuro "cosa succede"; footer Crea cliente / Crea e fai un preventivo / Annulla.
+- **7b Nuovo preventivo** (`/vendite/preventivo/[clienteId]`) — **pagina intera 1fr/400px**: "Cosa comprende" (servizi + voci libere + sconto con motivo inline), "Come si paga" (formula, n. rate, prima rata, chip scadenze dallo stesso `genera-rate`), "Validità"; a destra **blocco denaro scuro** (una-tantum e ricorrente separati, listino/sconto menta/IVA, primo incasso), checklist "Prima di inviare", "Quando premi Invia".
+- **Clienti** — master-detail 30/70 (lista completa lead+clienti a sinistra, scheda a destra). **Scheda cliente (4b)**: barra "Cronologia" (log attività), anagrafica, piano pagamenti + contratti, preventivi + fatture.
+- **Catalogo (6a/6b)** — lista con miniatura, due badge di stato (**in vetrina** / **vendibile**) e gruppo "Nascosti dalla vetrina"; editor con **liste di voci** riordinabili (⋮⋮ + tastiera) e **anteprima vetrina** affiancata.
+- **Pagamenti**, **Insoluti**, **Utenti**.
 
-**Da disegnare** (variazioni sui pattern già stabiliti):
-- Portale cliente: Fatture, Servizi, Contratti.
-- Interno: dettaglio trattativa (cosa si apre cliccando una card), anagrafica cliente, editor preventivo.
-- Flusso: pagina pubblica del preventivo, schermata di firma DocuSeal embedded.
-- Trasversali: auth/onboarding, empty state.
+**Portale cliente.**
+- **Home (3a)** — eroe "prossimo addebito", servizi, ultimi lavori, **blocco assistenza scuro** con WhatsApp in menta.
+- **Piano pagamenti (3b)** — fino a 6 rate visibili, le più vecchie collassate; banner insoluto + riga fallita evidenziata.
+- Fatture, Servizi, Contratti, Catalogo, Lavori, Assistenza. Mobile-first con tab bar in basso.
+
+**Flusso pubblico.** Preventivo (`/preventivo/[token]`, stampabile in PDF) → firma DocuSeal → `/paga/[token]` (Carta Stripe / SEPA mandato Sella).
 
 ---
 
 ## 8. Ordine di build consigliato (per Claude Code)
 
-**Fase 1 — Fondazione.**
-Repo + progetto Supabase (org dedicata) → schema (§3) come migration + RLS + enum degli stati → auth Supabase (Google OAuth per lo staff) → scaffold Next.js con i design token (§6) → CRM interno minimo: aggiungi lead, board pipeline, anagrafica.
+**Fase 1 — Fondazione. ✅ (in TEST)**
+Repo + Supabase (org dedicata) → schema come migration + RLS + enum → auth staff (Google OAuth) → CRM minimo (pipeline, anagrafiche).
 
-**Fase 2 — Contratto + pagamento.**
-Pagina pubblica preventivo (con `public_token`) → accetta → DocuSeal embedded signing + webhook `form.completed` → setup pagamento Stripe (mandato SDD + subscription) + webhook Stripe → automazione delle transizioni di stato.
+**Fase 2 — Contratto + pagamento. ✅ (in TEST)**
+Preventivo pubblico → DocuSeal embedded + webhook → pagamento: **carta su Stripe** (subscription/PI + webhook) e **SEPA mandato Banca Sella** (manuale) → automazione transizioni.
 
-**Fase 3 — Portale cliente.**
-Auth cliente + Home + Piano pagamenti (multi-contratto) + Fatture (manuali) + Servizi + Contratti.
+**Fase 3 — Portale cliente. ✅ (in TEST)**
+Auth cliente + Home + Piano pagamenti multi-contratto + Fatture (upload PDF + email) + Servizi + Contratti + Catalogo/Lavori + Assistenza.
 
-**Fase 4 — Estensioni.**
-Automazione fatture (provider SdI via API) + customer care.
+**Restyling v0.4 — ✅ applicato.**
+Design foundation (token + ui/), nav 5 voci, 7a/7b, generatore rate condiviso, `motivo_sconto`/`data_prima_rata`, 3b piano portale, 6b editor a liste, 4b cronologia scheda, 4a "ferma da X giorni", 6a `in_vetrina`/`vendibile`, 3a blocco assistenza + tab bar portale.
 
-**Primi passi concreti in Claude Code**
-1. `create-next-app` + configurazione Tailwind/token, Fustat, componenti base (bottoni, card, status pill) dal design system.
-2. Progetto Supabase, migration dello schema, policy RLS, seed di prova.
-3. Auth staff + layout interno (sidebar "Vendite") + board pipeline collegata a `clients`/`activity_log`.
-4. Solo dopo: integrazioni Stripe e DocuSeal (richiedono le API key che genera Marco).
+**Fase 4 — Estensioni (prossime).**
+Automazione fatture (provider SdI via API); riordino drag&drop catalogo con persistenza; rifiniture densità portale.
 
-**Sicurezza**: tutte le chiavi (Supabase service role, Stripe, DocuSeal) come env var su Vercel/Supabase; webhook con verifica firma; nessuna credenziale nel repo.
+**Sicurezza**: chiavi (Supabase service role, Stripe, DocuSeal) come env var su Vercel/Supabase; webhook con verifica firma; nessuna credenziale nel repo; IBAN mandati con RLS staff-only.
 
 ---
 
-## 9. Punti aperti da confermare
+## 9. Punti aperti / decisi
 
-- Logo Digital Discovery (per agganciare la palette esatta).
-- Policy RLS commerciali: "ognuno vede solo le proprie" o "tutti vedono, modifica solo le proprie".
-- Colonna "Persi" nella pipeline (sì/no).
-- Rese di dettaglio: eroe "prossima rata", card colorate, dicitura sidebar interna ("Vendite").
+**Decisi.**
+- Policy RLS commerciali → **team-read + team-write** (cancellazione clienti solo admin).
+- Colonna "Persi" nella pipeline → **sì**.
+- Attivazione → **automatica al 1° pagamento** (`cliente_attivo`).
+- SEPA → **Banca Sella manuale**, non Stripe (Stripe solo carta).
+
+**Aperti.**
+- **`NEXT_PUBLIC_ASSISTENZA_WHATSAPP`**: numero WhatsApp per il blocco assistenza del portale (finché vuoto, mostra il fallback "Scrivici"). Da impostare in `.env.local` + Vercel.
+- Riordino drag&drop del catalogo con persistenza dell'`ordine` (per ora si imposta dall'editor).
+- Automazione fatture SdI via API provider.
+- `docs/` contiene ancora i mockup v0.3; il riferimento visivo corrente è `design_handoff_v04/`.
