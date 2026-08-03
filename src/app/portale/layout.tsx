@@ -41,7 +41,8 @@ export default async function PortaleLayout({
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <PortaleSidebar ragioneSociale={client.ragione_sociale} />
-      <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
+      {/* pb extra su mobile: lascia spazio alla tab bar fissa in basso */}
+      <main className="flex-1 overflow-x-hidden p-4 pb-[calc(52px+env(safe-area-inset-bottom)+1rem)] sm:p-6 sm:pb-[calc(52px+env(safe-area-inset-bottom)+1rem)] lg:p-8 lg:pb-8">
         {children}
       </main>
     </div>
