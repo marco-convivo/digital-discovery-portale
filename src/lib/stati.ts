@@ -75,3 +75,30 @@ export function columnForStato(stato: ClientStato): string {
     PIPELINE_COLUMNS.find((c) => c.stati.includes(stato))?.key ?? "lead"
   );
 }
+
+// --- Il tempo come segnale (4a): trattative "ferme da X giorni" --------------
+
+/** Oltre questa soglia (giorni senza movimenti) una trattativa è "ferma". */
+export const GIORNI_FERMO = 14;
+
+/** Stati "aperti": una pratica chiusa (attiva/persa) non può essere "ferma". */
+export function statoAperto(stato: ClientStato): boolean {
+  return !["cliente_attivo", "rifiutato", "cessato"].includes(stato);
+}
+
+/** Giorni trascorsi da una data ISO (0 se assente o futura). */
+export function giorniDa(iso: string | null | undefined): number {
+  if (!iso) return 0;
+  return Math.max(
+    0,
+    Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000),
+  );
+}
+
+/** Una trattativa aperta e ferma da almeno GIORNI_FERMO giorni. */
+export function isFermo(
+  stato: ClientStato,
+  ultimoMovimento: string | null | undefined,
+): boolean {
+  return statoAperto(stato) && giorniDa(ultimoMovimento) >= GIORNI_FERMO;
+}

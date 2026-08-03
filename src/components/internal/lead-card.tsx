@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusPill } from "@/components/ui/status-pill";
-import { STATO_META } from "@/lib/stati";
+import { STATO_META, isFermo, giorniDa } from "@/lib/stati";
+import { cn } from "@/lib/utils";
 import type { ClientWithOwner } from "@/lib/types";
 
 function initials(name: string | null): string {
@@ -22,14 +23,26 @@ function eta(created_at: string): string {
   return `${days} giorni fa`;
 }
 
-export function LeadCard({ client }: { client: ClientWithOwner }) {
+export function LeadCard({
+  client,
+  ultimoMovimento,
+}: {
+  client: ClientWithOwner;
+  /** Data dell'ultimo cambio di stato (per il segnale "ferma da X giorni"). */
+  ultimoMovimento?: string | null;
+}) {
   const meta = STATO_META[client.stato];
   const sub = client.referente ?? client.email;
+  const riferimento = ultimoMovimento ?? client.created_at;
+  const fermo = isFermo(client.stato, riferimento);
 
   return (
     <Link
       href={`/vendite/clienti/${client.id}`}
-      className="block rounded-md border border-line bg-card p-3.5 shadow-card transition-shadow hover:shadow-md"
+      className={cn(
+        "block rounded-md border bg-card p-3.5 shadow-card transition-shadow hover:shadow-md",
+        fermo ? "border-wait-dot" : "border-line",
+      )}
     >
       <div className="text-[14px] font-bold text-text">
         {client.ragione_sociale}
@@ -46,9 +59,16 @@ export function LeadCard({ client }: { client: ClientWithOwner }) {
         </span>
       </div>
 
-      <div className="mt-2.5 text-[11.5px] text-text-3">
-        Aggiunto · {eta(client.created_at)}
-      </div>
+      {fermo ? (
+        <div className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-wait-tx">
+          <span className="size-1.5 rounded-full bg-wait-dot" />
+          Ferma da {giorniDa(riferimento)} giorni
+        </div>
+      ) : (
+        <div className="mt-2.5 text-[11.5px] text-text-3">
+          Aggiornata · {eta(riferimento)}
+        </div>
+      )}
     </Link>
   );
 }
