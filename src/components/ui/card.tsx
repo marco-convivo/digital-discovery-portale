@@ -1,14 +1,27 @@
 import { cn } from "@/lib/utils";
 
-/** Superficie bianca, raggio generoso, ombra morbida — il contenitore base. */
+/**
+ * Superficie base. Raggio per densità: `crm` (12px, default) · `portale` (24px).
+ * Variante `dark` = blocco denaro / assistenza (inchiostro, testo chiaro).
+ * Ombre quasi assenti in v0.4: conta il bordo.
+ */
 export function Card({
   className,
+  radius = "crm",
+  dark = false,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  radius?: "crm" | "portale";
+  dark?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "rounded-card bg-card shadow-card border border-line/60 p-5",
+        "border p-[18px]",
+        radius === "portale" ? "rounded-card" : "rounded-crm",
+        dark
+          ? "bg-ink text-on-ink border-[#2c2e31]"
+          : "bg-card border-line shadow-card",
         className,
       )}
       {...props}
@@ -20,7 +33,12 @@ export function CardHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-4 flex items-center justify-between gap-3", className)} {...props} />;
+  return (
+    <div
+      className={cn("mb-4 flex items-center justify-between gap-3", className)}
+      {...props}
+    />
+  );
 }
 
 export function CardTitle({
@@ -29,7 +47,10 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-[15px] font-bold tracking-[-0.01em] text-text", className)}
+      className={cn(
+        "text-[14px] font-bold tracking-[-0.01em] text-text",
+        className,
+      )}
       {...props}
     />
   );

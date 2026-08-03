@@ -1,60 +1,76 @@
 @import "tailwindcss";
 
 /* =========================================================================
-   Digital Discovery — Design System v0.3 ("EduWay flavor" su motore M3)
-   Token estratti dai mockup in /docs. Fonte di verità del look & feel.
+   Digital Discovery — Design System v0.4 (handoff design_handoff_v04)
+   Token estratti dal README dell'handoff. Fonte di verità del look & feel.
    In Tailwind v4 i token vivono in @theme: ogni --color-* / --radius-*
    genera anche l'utility corrispondente (bg-ink, text-text-2, rounded-card…).
    ========================================================================= */
 @theme {
-  /* Colore ------------------------------------------------------------- */
-  --color-ink: #222222; /* primario azione (charcoal) */
+  /* Inchiostro (testo) -------------------------------------------------- */
+  --color-ink: #16171a; /* testo primario, bottone primario, blocco denaro */
   --color-on-ink: #ffffff;
+  --color-text: #16171a;
+  --color-text-2: #4a4e46; /* secondario, contrasto AA su bianco */
+  --color-text-3: #5b5f5a; /* metadati */
+  --color-faint: #9aa094; /* placeholder, maniglie, icone inerti */
 
-  --color-text: #1e1e22;
-  --color-text-2: #55555e;
-  --color-text-3: #8a8a93;
-
-  --color-bg: #e9ece6; /* pagina: salvia */
+  /* Superfici salvia --------------------------------------------------- */
+  --color-bg: #e9ece6; /* sfondo app (CRM + portale) */
+  --color-bg-2: #dfe3da; /* canvas / sezioni esterne */
+  --color-sidebar: #e4e8de; /* colonna nav CRM */
   --color-card: #ffffff;
-  --color-card-2: #f4f6f2;
-  --color-line: #e1e4dd;
+  --color-card-2: #f4f6f1; /* superficie tenue (header tabella, riquadri) */
+  --color-panel: #f5f7f2; /* superficie drawer */
 
-  --color-violet: #a28ef9; /* accento */
+  /* Bordi -------------------------------------------------------------- */
+  --color-line: #e2e6dd; /* bordo card */
+  --color-line-strong: #cfd5c8; /* contorno frame / drawer */
+  --color-line-field: #dfe3da; /* bordo campo */
+  --color-line-soft: #f1f3ee; /* separatore righe */
+  --color-line-dashed: #c9cfc2; /* slot "aggiungi" */
+
+  /* Accenti (azione o impegno, non decorazione: max 2 per schermata) ---- */
+  --color-violet: #a28ef9; /* pallino ricorrente */
   --color-violet-soft: #ece8fe;
   --color-on-violet: #2c1d63;
-  --color-mint: #a4f5a6; /* positivo/accento */
+  --color-link: #4b3bbd; /* link (hover #2c1d63) */
+  --color-mint: #a8e6c4; /* menta: positivo SOLO su fondo scuro */
   --color-mint-soft: #dcf7dd;
-  --color-on-mint: #14532d;
+  --color-on-mint: #0f2e1e; /* testo su menta */
 
   /* Colori di stato (pallino + pill): paid · info · wait · fail · draft -- */
   --color-paid-bg: #d3f3d4;
   --color-paid-tx: #14532d;
   --color-paid-dot: #22c55e;
   --color-info-bg: #ece8fe;
-  --color-info-tx: #4326a6;
+  --color-info-tx: #2c1d63;
   --color-info-dot: #a28ef9;
-  --color-wait-bg: #fbebc9;
+  --color-wait-bg: #fdf4dd;
   --color-wait-tx: #7c4a03;
-  --color-wait-dot: #eab308;
+  --color-wait-dot: #c99700;
   --color-fail-bg: #fbe0de;
   --color-fail-tx: #8f1d1a;
-  --color-fail-dot: #ef4444;
+  --color-fail-dot: #d64535; /* rosso insoluti / badge conteggio */
   --color-draft-bg: #e8e8ec;
-  --color-draft-tx: #55555e;
-  --color-draft-dot: #a0a0a8;
+  --color-draft-tx: #4a4e46;
+  --color-draft-dot: #9aa094;
 
-  /* Raggi generosi ----------------------------------------------------- */
-  --radius-card: 24px;
-  --radius-md: 16px;
+  /* Raggi — portale morbido (24/16), CRM asciutto (16/12/10/9/8) -------- */
+  --radius-card: 24px; /* card portale */
+  --radius-md: 16px; /* interno portale / frame CRM */
+  --radius-crm: 12px; /* card CRM */
   --radius-sm: 12px;
+  --radius-btn: 10px; /* bottone, riquadro */
+  --radius-field: 9px; /* campo, voce nav */
+  --radius-badge: 8px; /* pill piccola, badge */
   --radius-pill: 999px;
 
-  /* Ombra morbida ------------------------------------------------------ */
-  --shadow-card: 0 2px 6px rgba(30, 30, 34, 0.04),
-    0 10px 28px -14px rgba(30, 30, 34, 0.1);
+  /* Ombre — quasi assenti; l'unica vera è quella del drawer ------------- */
+  --shadow-card: 0 1px 2px rgba(22, 23, 26, 0.04);
+  --shadow-drawer: -24px 0 60px rgba(22, 23, 26, 0.18);
 
-  /* Tipografia — Fustat, una sola famiglia, contrasto di peso ----------- */
+  /* Tipografia — Fustat, una sola famiglia, gerarchia guidata dal peso -- */
   --font-sans: var(--font-fustat), system-ui, sans-serif;
 }
 

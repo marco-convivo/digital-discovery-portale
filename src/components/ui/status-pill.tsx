@@ -4,6 +4,11 @@ import { cn } from "@/lib/utils";
  * Elemento firma del design system: pallino + etichetta + pill tenue.
  * Identico su rate, contratti e pipeline = "trasparenza resa interfaccia".
  * Presentazionale: la mappatura stato-dominio → tone/label sta in @/lib/stati.
+ *
+ * v0.4 — i 5 tone sono i casi reali: positivo (paid/verde) · ricorrente
+ * (info/violetto) · attenzione (wait/ambra) · errore (fail/rosso) · neutro
+ * (draft). REGOLA: max DUE pill colorate per schermata (menta e violetto
+ * significano azione/impegno, non decorazione); tutto il resto è testo normale.
  */
 export type Tone = "paid" | "info" | "wait" | "fail" | "draft";
 
