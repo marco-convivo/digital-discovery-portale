@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getPortalClient } from "@/lib/portale/client";
 import { AssistenzaForm } from "@/components/portale/assistenza-form";
+import { AssistenzaBlock } from "@/components/portale/assistenza-block";
 
 export default async function AssistenzaPage() {
   const client = await getPortalClient();
@@ -24,29 +25,14 @@ export default async function AssistenzaPage() {
         </section>
 
         <aside className="flex flex-col gap-4">
-          <div className="rounded-card border border-line/60 bg-card-2/60 p-5">
-            <h2 className="text-[15px] font-bold text-text">Il tuo referente</h2>
-            <p className="mt-1 text-[14px] text-text-2">
-              {client.referente
-                ? `${client.referente} segue il tuo account.`
-                : "Un contatto dedicato segue il tuo account."}
-            </p>
-          </div>
-          <div className="rounded-card border border-line/60 bg-card-2/60 p-5">
-            <h2 className="text-[15px] font-bold text-text">Altri modi</h2>
-            <p className="mt-1 text-[14px] text-text-2">
-              Email:{" "}
-              <a
-                href="mailto:info@digital-discovery.it"
-                className="font-semibold text-violet hover:underline"
-              >
-                info@digital-discovery.it
-              </a>
-            </p>
-            <p className="mt-1 text-[13px] text-text-3">
-              Rispondiamo nei giorni lavorativi, di solito in poche ore.
-            </p>
-          </div>
+          <AssistenzaBlock
+            referente={client.referente}
+            whatsapp={process.env.NEXT_PUBLIC_ASSISTENZA_WHATSAPP ?? null}
+            ragioneSociale={client.ragione_sociale}
+          />
+          <p className="px-1 text-[13px] text-text-3">
+            Rispondiamo nei giorni lavorativi, di solito in poche ore.
+          </p>
         </aside>
       </div>
     </div>

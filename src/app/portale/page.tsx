@@ -8,6 +8,7 @@ import { ServiziCarosello } from "@/components/portale/servizi-carosello";
 import { ServiziAttivi } from "@/components/portale/servizi-attivi";
 import { InsolutoClienteBanner } from "@/components/portale/insoluto-cliente";
 import { UltimiLavori } from "@/components/portale/ultimi-lavori";
+import { AssistenzaBlock } from "@/components/portale/assistenza-block";
 import { euro, dataIt, conIva } from "@/lib/format";
 
 export default async function PortaleHome() {
@@ -153,23 +154,12 @@ export default async function PortaleHome() {
             sub="firmati · documenti"
           />
 
-          {/* Assistenza */}
-          <div className="rounded-card border border-line/60 bg-card-2/60 p-5">
-            <h2 className="text-[15px] font-bold text-text">
-              {data.referente
-                ? `${data.referente}, il tuo referente`
-                : "Hai un referente dedicato"}
-            </h2>
-            <p className="mt-1 text-[13.5px] leading-relaxed text-text-2">
-              Modifiche, nuove idee o domande: scrivici, ti rispondiamo noi.
-            </p>
-            <Link
-              href="/portale/assistenza"
-              className="mt-3 inline-flex rounded-pill bg-ink px-5 py-2.5 text-[13.5px] font-semibold text-on-ink transition-opacity hover:opacity-90"
-            >
-              Scrivici
-            </Link>
-          </div>
+          {/* Assistenza — blocco scuro speculare al blocco denaro */}
+          <AssistenzaBlock
+            referente={data.referente}
+            whatsapp={process.env.NEXT_PUBLIC_ASSISTENZA_WHATSAPP ?? null}
+            ragioneSociale={client.ragione_sociale}
+          />
         </aside>
       </div>
 
