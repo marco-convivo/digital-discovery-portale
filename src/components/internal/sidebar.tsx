@@ -14,8 +14,6 @@ const NAV = [
   { href: "/vendite", label: "Home", icon: HomeIcon, ready: true },
   { href: "/vendite/pipeline", label: "Pipeline", icon: PipelineIcon, ready: true },
   { href: "/vendite/clienti", label: "Clienti", icon: UsersIcon, ready: true },
-  { href: "/vendite/preventivi", label: "Preventivi", icon: DocIcon, ready: true },
-  { href: "/vendite/contratti", label: "Contratti", icon: DocCheckIcon, ready: true },
   { href: "/vendite/pagamenti", label: "Pagamenti", icon: CardIcon, ready: true },
   { href: "/vendite/insoluti", label: "Insoluti", icon: AlertIcon, ready: true },
   { href: "/vendite/scadenze", label: "Scadenze", icon: ClockIcon, ready: true },
@@ -217,24 +215,6 @@ function UsersIcon() {
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    </svg>
-  );
-}
-function DocIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-      <path d="M8 13h8M8 17h5" />
-    </svg>
-  );
-}
-function DocCheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={svg}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-      <path d="M9 15l2 2 4-4" />
     </svg>
   );
 }
