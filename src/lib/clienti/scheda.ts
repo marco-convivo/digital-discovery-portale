@@ -10,6 +10,7 @@ import type { PreventivoItem } from "@/components/internal/preventivi-list";
 import type { FatturaRow } from "@/components/internal/fatture-cliente";
 import type { RataRow } from "@/components/internal/piano-pagamenti";
 import type { PianoGruppo } from "@/components/internal/piani-pagamento";
+import type { AllegatoRow } from "@/components/internal/allegati-cliente";
 import type { OrdineSelezione } from "@/lib/catalog";
 import type { Client } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export interface ClienteSchedaData {
   fatture: FatturaRow[];
   gruppiPagamenti: PianoGruppo[];
   attivita: AttivitaRow[];
+  allegati: AllegatoRow[];
 }
 
 /** Dati completi della scheda cliente, condivisi tra pagina intera e pannello. */
@@ -66,6 +68,7 @@ export async function getClienteScheda(
     { data: contrData },
     { data: invData },
     { data: logData },
+    { data: allegatiData },
   ] = await Promise.all([
     supabase
       .from("quotes")
@@ -94,12 +97,18 @@ export async function getClienteScheda(
       .select("id, azione, da_stato, a_stato, created_at")
       .eq("client_id", id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("client_attachments")
+      .select("id, nome, tipo, created_at")
+      .eq("client_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
   const contratti = (contrData ?? []) as unknown as ContractRow[];
   const fatture = (invData ?? []) as unknown as FatturaRow[];
   const attivita = (logData ?? []) as unknown as AttivitaRow[];
+  const allegati = (allegatiData ?? []) as unknown as AllegatoRow[];
 
   const pays = (payData ?? []) as unknown as (RataRow & {
     contract_id: string | null;
@@ -140,5 +149,6 @@ export async function getClienteScheda(
     fatture,
     gruppiPagamenti,
     attivita,
+    allegati,
   };
 }

@@ -6,6 +6,7 @@ import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
 import { PreventiviList } from "@/components/internal/preventivi-list";
 import { PianiPagamento } from "@/components/internal/piani-pagamento";
 import { FattureCliente } from "@/components/internal/fatture-cliente";
+import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META } from "@/lib/stati";
@@ -28,6 +29,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     fatture,
     gruppiPagamenti,
     attivita,
+    allegati,
   } = data;
   const meta = STATO_META[c.stato as ClientStato];
 
@@ -172,6 +174,17 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
             <FattureCliente clientId={c.id} fatture={fatture} />
           </Card>
         </div>
+
+        {/* Allegati interni (Visura + liberi) — solo staff */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Allegati</CardTitle>
+            <span className="text-[12px] font-medium text-text-3">
+              Documenti interni · non visibili al cliente
+            </span>
+          </CardHeader>
+          <AllegatiCliente clientId={c.id} allegati={allegati} />
+        </Card>
       </div>
     </div>
   );

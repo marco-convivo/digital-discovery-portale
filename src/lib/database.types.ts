@@ -112,6 +112,44 @@ export type Database = {
         }
         Relationships: []
       }
+      client_attachments: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          nome: string
+          storage_path: string
+          tipo: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          storage_path: string
+          tipo?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          storage_path?: string
+          tipo?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_attachments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           auth_user_id: string | null
