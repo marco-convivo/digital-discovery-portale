@@ -1,7 +1,28 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { parseAddons, addonContributo } from "@/lib/addon";
+
+/**
+ * Chi sta guardando è uno staff loggato? La pagina pubblica del preventivo è
+ * anon, ma se lo staff apre il link in anteprima ha la sua sessione CRM nei
+ * cookie. In quel caso NON si registra la visione né si permette l'accettazione:
+ * così l'anteprima non "sporca" lo stato della pratica del cliente.
+ */
+export async function isStaffViewer(): Promise<boolean> {
+  const sb = await createClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  const { data } = await sb
+    .from("profiles")
+    .select("active")
+    .eq("id", user.id)
+    .maybeSingle();
+  return !!(data as { active: boolean } | null)?.active;
+}
 
 // Il preventivo pubblico gira in contesto anon: admin client scoping sul token.
 
@@ -134,8 +155,14 @@ async function buildServizi(
     }));
 }
 
-/** Carica il preventivo per il token e, alla prima apertura, segna "visto". */
-export async function getPublicQuote(token: string): Promise<PublicQuote | null> {
+/**
+ * Carica il preventivo per il token e, alla prima apertura, segna "visto".
+ * Con `preview` (anteprima staff) NON registra nulla: solo lettura.
+ */
+export async function getPublicQuote(
+  token: string,
+  opts: { preview?: boolean } = {},
+): Promise<PublicQuote | null> {
   const q = await loadRaw(token);
   if (!q || !q.client) return null;
   const client = q.client as unknown as {
@@ -147,7 +174,8 @@ export async function getPublicQuote(token: string): Promise<PublicQuote | null>
   const db = createAdminClient();
 
   // Segna la visione una sola volta e avanza lo stato solo se era "inviato".
-  if (!q.viewed_at) {
+  // In anteprima staff si salta del tutto.
+  if (!q.viewed_at && !opts.preview) {
     await db
       .from("quotes")
       .update({ viewed_at: new Date().toISOString() })
@@ -204,6 +232,14 @@ export type AcceptResult =
 
 /** Accettazione del preventivo → quote 'accettato' + cliente 'preventivo_accettato'. */
 export async function acceptQuote(token: string): Promise<AcceptResult> {
+  // Anteprima staff: non registrare l'accettazione (protegge lo stato pratica).
+  if (await isStaffViewer())
+    return {
+      ok: false,
+      error:
+        "Sei in anteprima come staff: l'accettazione non viene registrata. Il cliente la completa dal suo link.",
+    };
+
   const q = await loadRaw(token);
   if (!q || !q.client) return { ok: false, error: "Preventivo non trovato." };
   const client = q.client as unknown as { id: string; stato: string };

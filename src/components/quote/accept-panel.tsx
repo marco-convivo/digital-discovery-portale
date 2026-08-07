@@ -9,13 +9,31 @@ import { Button } from "@/components/ui/button";
 export function AcceptPanel({
   token,
   alreadyAccepted,
+  preview = false,
 }: {
   token: string;
   alreadyAccepted: boolean;
+  preview?: boolean;
 }) {
   const [done, setDone] = useState(alreadyAccepted);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  // Anteprima staff: mostra il pannello ma senza CTA attiva (non registra nulla).
+  if (preview && !done) {
+    return (
+      <div className="rounded-md border border-line bg-card-2 p-4 text-center">
+        <p className="text-[15px] font-bold text-text">Pronti a partire?</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-text-2">
+          Da qui il cliente accetta e prosegue verso la firma. In anteprima staff
+          l&apos;accettazione è disattivata.
+        </p>
+        <Button disabled className="mt-4">
+          Accetta e procedi alla firma
+        </Button>
+      </div>
+    );
+  }
 
   if (done) {
     return (

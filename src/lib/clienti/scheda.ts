@@ -41,6 +41,7 @@ export interface ClienteSchedaData {
   gruppiPagamenti: PianoGruppo[];
   attivita: AttivitaRow[];
   allegati: AllegatoRow[];
+  isAdmin: boolean;
 }
 
 /** Dati completi della scheda cliente, condivisi tra pagina intera e pannello. */
@@ -61,6 +62,21 @@ export async function getClienteScheda(
     getPrezziBase(),
     getServiziExtra(),
   ]);
+
+  // Ruolo dell'utente corrente (per gestire azioni riservate all'admin).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let isAdmin = false;
+  if (user) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("role, active")
+      .eq("id", user.id)
+      .maybeSingle();
+    const pr = prof as { role: string; active: boolean } | null;
+    isAdmin = !!pr && pr.active && pr.role === "admin";
+  }
 
   const [
     { data: quotesData },
@@ -150,5 +166,6 @@ export async function getClienteScheda(
     gruppiPagamenti,
     attivita,
     allegati,
+    isAdmin,
   };
 }

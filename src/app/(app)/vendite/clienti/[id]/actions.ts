@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { addonContributo, type Addon } from "@/lib/addon";
 import type { Json } from "@/lib/database.types";
@@ -108,6 +109,61 @@ export async function updateCliente(
   if (!data || data.length === 0)
     return { ok: false, error: "Modifica non salvata: permessi insufficienti." };
   revalidatePath(`/vendite/clienti/${clientId}`);
+  return { ok: true };
+}
+
+/**
+ * Elimina un preventivo NON ancora accettato. Riservato all'admin (super admin).
+ * Guardie: no se accettato, no se ha un contratto collegato. Cancella prima le
+ * righe (quote_items) poi il preventivo, con client service-role (admin verificato).
+ */
+export async function eliminaPreventivo(quoteId: string): Promise<UpdateResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessione scaduta." };
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("role, active")
+    .eq("id", user.id)
+    .maybeSingle();
+  const p = prof as { role: string; active: boolean } | null;
+  if (!p || !p.active) return { ok: false, error: "Accesso non abilitato." };
+  if (p.role !== "admin")
+    return { ok: false, error: "Solo un amministratore può eliminare i preventivi." };
+
+  const { data: q } = await supabase
+    .from("quotes")
+    .select("id, stato, client_id")
+    .eq("id", quoteId)
+    .maybeSingle();
+  const quote = q as { id: string; stato: string; client_id: string } | null;
+  if (!quote) return { ok: false, error: "Preventivo non trovato." };
+  if (quote.stato === "accettato")
+    return {
+      ok: false,
+      error: "Un preventivo accettato non può essere eliminato.",
+    };
+
+  const { count } = await supabase
+    .from("contracts")
+    .select("id", { count: "exact", head: true })
+    .eq("quote_id", quoteId);
+  if ((count ?? 0) > 0)
+    return {
+      ok: false,
+      error: "Il preventivo ha un contratto collegato: non è eliminabile.",
+    };
+
+  // Admin verificato → service-role per la cancellazione (evita sorprese RLS).
+  const db = createAdminClient();
+  await db.from("quote_items").delete().eq("quote_id", quoteId);
+  const { error } = await db.from("quotes").delete().eq("id", quoteId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/vendite/clienti/${quote.client_id}`);
+  revalidatePath("/vendite");
   return { ok: true };
 }
 

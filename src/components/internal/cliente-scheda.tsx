@@ -30,6 +30,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     gruppiPagamenti,
     attivita,
     allegati,
+    isAdmin,
   } = data;
   const meta = STATO_META[c.stato as ClientStato];
 
@@ -164,7 +165,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
                 Apri →
               </Link>
             </CardHeader>
-            <PreventiviList quotes={quotes} />
+            <PreventiviList quotes={quotes} isAdmin={isAdmin} />
           </Card>
 
           <Card>

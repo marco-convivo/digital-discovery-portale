@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { ActionLink } from "@/components/internal/action-link";
+import { eliminaPreventivo } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { euro, dataIt } from "@/lib/format";
 
 const TONE: Record<string, Tone> = {
@@ -26,8 +28,17 @@ export interface PreventivoItem {
   created_at: string;
 }
 
-export function PreventiviList({ quotes }: { quotes: PreventivoItem[] }) {
+export function PreventiviList({
+  quotes,
+  isAdmin = false,
+}: {
+  quotes: PreventivoItem[];
+  isAdmin?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const router = useRouter();
 
   if (quotes.length === 0) {
     return <p className="text-sm text-text-3">Nessun preventivo ancora.</p>;
@@ -35,6 +46,21 @@ export function PreventiviList({ quotes }: { quotes: PreventivoItem[] }) {
 
   const visibili = expanded ? quotes : quotes.slice(0, 5);
   const restanti = quotes.length - 5;
+
+  function elimina(q: PreventivoItem) {
+    if (
+      !window.confirm(
+        `Eliminare definitivamente il preventivo ${q.numero ?? ""}? L'azione non è reversibile.`,
+      )
+    )
+      return;
+    setError(null);
+    start(async () => {
+      const res = await eliminaPreventivo(q.id);
+      if (res.ok) router.refresh();
+      else setError(res.error);
+    });
+  }
 
   return (
     <div>
@@ -62,10 +88,26 @@ export function PreventiviList({ quotes }: { quotes: PreventivoItem[] }) {
                 label="Link cliente"
                 icon="link"
               />
+              {isAdmin && q.stato !== "accettato" && (
+                <button
+                  type="button"
+                  onClick={() => elimina(q)}
+                  disabled={pending}
+                  className="text-[13px] font-semibold text-text-3 transition-colors hover:text-fail-tx disabled:opacity-50"
+                >
+                  Elimina
+                </button>
+              )}
             </div>
           </li>
         ))}
       </ul>
+
+      {error && (
+        <p className="mt-2 rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
+          {error}
+        </p>
+      )}
 
       {quotes.length > 5 && (
         <button

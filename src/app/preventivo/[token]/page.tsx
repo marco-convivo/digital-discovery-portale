@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPublicQuote } from "@/lib/quotes/public";
+import { getPublicQuote, isStaffViewer } from "@/lib/quotes/public";
 import { AcceptPanel } from "@/components/quote/accept-panel";
 import { euro, dataIt, conIva } from "@/lib/format";
 import { Logo } from "@/components/ui/logo";
@@ -12,7 +12,8 @@ export default async function PreventivoPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const q = await getPublicQuote(token);
+  const preview = await isStaffViewer();
+  const q = await getPublicQuote(token, { preview });
   if (!q) notFound();
 
   const ricorrente = q.tipo === "ricorrente";
@@ -26,6 +27,13 @@ export default async function PreventivoPage({
         </div>
         <StampaButton />
       </div>
+
+      {preview && (
+        <div className="mb-4 rounded-md border border-wait-dot bg-wait-bg px-4 py-3 text-[13px] font-semibold text-wait-tx print:hidden">
+          Anteprima staff · non registra la visualizzazione né l&apos;accettazione.
+          Il cliente vede questa pagina dal proprio link.
+        </div>
+      )}
 
       <div className="print:hidden">
         <FlowStepper current={1} />
@@ -161,7 +169,11 @@ export default async function PreventivoPage({
       </section>
 
       <div className="print:hidden">
-        <AcceptPanel token={token} alreadyAccepted={q.stato === "accettato"} />
+        <AcceptPanel
+          token={token}
+          alreadyAccepted={q.stato === "accettato"}
+          preview={preview}
+        />
       </div>
 
       <footer className="mt-10 text-center text-[12px] text-text-3">
