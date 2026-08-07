@@ -19,6 +19,7 @@ export default async function PagaPage({
   if (!info) notFound();
 
   const ricorrente = info.tipo === "ricorrente";
+  const unaTantum = info.tipo === "una_tantum";
 
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
@@ -83,28 +84,31 @@ export default async function PagaPage({
               <span className="flex-none text-text-3" aria-hidden>›</span>
             </Link>
 
-            <Link
-              href={`/paga/${token}/sepa`}
-              className="flex items-center gap-3.5 rounded-md border border-line p-4 transition-colors hover:border-ink hover:bg-card-2"
-            >
-              <span className="grid size-11 flex-none place-items-center rounded-[13px] bg-card-2 text-text">
-                <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 21h18M4 10h16M5 10 12 4l7 6M6 10v11M18 10v11M10 10v11M14 10v11" />
-                </svg>
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-bold text-text">
-                  Addebito bancario (SEPA)
+            {/* SEPA (addebito ricorrente): non per le una tantum */}
+            {!unaTantum && (
+              <Link
+                href={`/paga/${token}/sepa`}
+                className="flex items-center gap-3.5 rounded-md border border-line p-4 transition-colors hover:border-ink hover:bg-card-2"
+              >
+                <span className="grid size-11 flex-none place-items-center rounded-[13px] bg-card-2 text-text">
+                  <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18M4 10h16M5 10 12 4l7 6M6 10v11M18 10v11M10 10v11M14 10v11" />
+                  </svg>
                 </span>
-                <span className="block text-[12.5px] text-text-3">
-                  Compili il mandato con il tuo IBAN
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold text-text">
+                    Addebito bancario (SEPA)
+                  </span>
+                  <span className="block text-[12.5px] text-text-3">
+                    Compili il mandato con il tuo IBAN
+                  </span>
                 </span>
-              </span>
-              <span className="flex-none text-text-3" aria-hidden>›</span>
-            </Link>
+                <span className="flex-none text-text-3" aria-hidden>›</span>
+              </Link>
+            )}
 
             {/* Bonifico: solo per pagamenti in un'unica soluzione */}
-            {!ricorrente && (
+            {unaTantum && (
               <Link
                 href={`/paga/${token}/bonifico`}
                 className="flex items-center gap-3.5 rounded-md border border-line p-4 transition-colors hover:border-ink hover:bg-card-2"

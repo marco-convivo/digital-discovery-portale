@@ -24,8 +24,8 @@ export default async function BonificoPage({
   const { token } = await params;
   const info = await getPagamentoInfo(token);
   if (!info) notFound();
-  // Il bonifico è solo per i pagamenti in un'unica soluzione.
-  if (info.tipo === "ricorrente") redirect(`/paga/${token}`);
+  // Il bonifico è solo per i pagamenti in un'unica soluzione (una tantum).
+  if (info.tipo !== "una_tantum") redirect(`/paga/${token}`);
 
   const lordo = euro(conIva(info.importo_totale));
 
