@@ -56,7 +56,7 @@ export async function getPagamentoInfo(
 
   const psQuery = db
     .from("payment_setups")
-    .select("stripe_subscription_id, stato")
+    .select("stripe_subscription_id, stato, metodo")
     .eq("client_id", client.id);
   const { data: ps } = await (contractId
     ? psQuery.eq("contract_id", contractId)
@@ -64,6 +64,8 @@ export async function getPagamentoInfo(
   ).maybeSingle();
   const cartaAttiva =
     !!ps?.stripe_subscription_id && ps.stato !== "annullato";
+  // Bonifico già scelto: metodo bonifico + non annullato.
+  const bonificoScelto = ps?.metodo === "bonifico" && ps.stato !== "annullato";
 
   return {
     quoteId: quote.id,
@@ -77,6 +79,6 @@ export async function getPagamentoInfo(
     email: client.email,
     indirizzo: client.indirizzo,
     contractId,
-    giaImpostato: (mandati ?? 0) > 0 || cartaAttiva,
+    giaImpostato: (mandati ?? 0) > 0 || cartaAttiva || bonificoScelto,
   };
 }

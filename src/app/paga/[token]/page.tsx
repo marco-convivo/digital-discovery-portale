@@ -102,6 +102,30 @@ export default async function PagaPage({
               </span>
               <span className="flex-none text-text-3" aria-hidden>›</span>
             </Link>
+
+            {/* Bonifico: solo per pagamenti in un'unica soluzione */}
+            {!ricorrente && (
+              <Link
+                href={`/paga/${token}/bonifico`}
+                className="flex items-center gap-3.5 rounded-md border border-line p-4 transition-colors hover:border-ink hover:bg-card-2"
+              >
+                <span className="grid size-11 flex-none place-items-center rounded-[13px] bg-card-2 text-text">
+                  <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M3 9h18M7 14h4" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold text-text">
+                    Bonifico bancario
+                  </span>
+                  <span className="block text-[12.5px] text-text-3">
+                    Paghi l&apos;intero importo con i nostri dati IBAN
+                  </span>
+                </span>
+                <span className="flex-none text-text-3" aria-hidden>›</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
