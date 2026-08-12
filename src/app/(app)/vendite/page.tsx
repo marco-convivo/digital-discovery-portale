@@ -4,16 +4,9 @@ import { PIPELINE_COLUMNS, columnForStato, isFermo, GIORNI_FERMO } from "@/lib/s
 import { LeadCard } from "@/components/internal/lead-card";
 import { ClienteNuovoDrawer } from "@/components/internal/cliente-nuovo-drawer";
 import { cn } from "@/lib/utils";
-import type { Tone } from "@/components/ui/status-pill";
+import { TONE_DOT as DOT } from "@/components/ui/status-pill";
 import type { ClientWithOwner } from "@/lib/types";
 
-const DOT: Record<Tone, string> = {
-  paid: "bg-paid-dot",
-  info: "bg-info-dot",
-  wait: "bg-wait-dot",
-  fail: "bg-fail-dot",
-  draft: "bg-draft-dot",
-};
 
 // Landing CRM (v0.4): la board Pipeline.
 export default async function PipelinePage({

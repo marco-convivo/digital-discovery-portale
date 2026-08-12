@@ -3,6 +3,51 @@ import type { ClientStato } from "@/lib/types";
 import type { Database } from "@/lib/database.types";
 
 type PaymentStato = Database["public"]["Enums"]["payment_stato"];
+type QuoteStato = Database["public"]["Enums"]["quote_stato"];
+type ContractStato = Database["public"]["Enums"]["contract_stato"];
+
+// Stato dei preventivi → linguaggio di stato. Prima era ricopiato inline in
+// 2 file, con la label renderizzata grezza dal DB ("inviato").
+export const QUOTE_STATO_META: Record<
+  QuoteStato,
+  { label: string; tone: Tone }
+> = {
+  bozza: { label: "Bozza", tone: "draft" },
+  inviato: { label: "Inviato", tone: "info" },
+  visto: { label: "Visto", tone: "wait" },
+  accettato: { label: "Accettato", tone: "paid" },
+  rifiutato: { label: "Rifiutato", tone: "fail" },
+  scaduto: { label: "Scaduto", tone: "fail" },
+};
+
+/** Meta di uno stato preventivo, tollerante a valori sconosciuti. */
+export function quoteMeta(stato: string): { label: string; tone: Tone } {
+  return QUOTE_STATO_META[stato as QuoteStato] ?? { label: stato, tone: "draft" };
+}
+
+// Stato dei contratti → linguaggio di stato (prima inline in 3 file).
+export const CONTRACT_STATO_META: Record<
+  ContractStato,
+  { label: string; tone: Tone }
+> = {
+  inviato: { label: "Inviato", tone: "info" },
+  firmato: { label: "Firmato", tone: "paid" },
+  annullato: { label: "Annullato", tone: "fail" },
+};
+
+/** Meta di uno stato contratto, tollerante a valori sconosciuti. */
+export function contractMeta(stato: string): { label: string; tone: Tone } {
+  return (
+    CONTRACT_STATO_META[stato as ContractStato] ?? { label: stato, tone: "draft" }
+  );
+}
+
+// Tipo piano → etichetta leggibile (prima inline in 2 file).
+export const TIPO_PIANO_LABEL: Record<string, string> = {
+  ricorrente: "ricorrente",
+  una_tantum: "una tantum",
+  acconto: "acconto",
+};
 
 // Stato delle rate (piano pagamenti) → linguaggio di stato.
 export const PAYMENT_STATO_META: Record<

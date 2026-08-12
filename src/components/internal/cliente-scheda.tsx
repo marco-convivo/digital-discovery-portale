@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
 import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
 import { PreventiviList } from "@/components/internal/preventivi-list";
@@ -9,17 +9,11 @@ import { FattureCliente } from "@/components/internal/fatture-cliente";
 import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
 import { ActionLink } from "@/components/internal/action-link";
-import { STATO_META } from "@/lib/stati";
+import { STATO_META, contractMeta } from "@/lib/stati";
 import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
 import type { ClienteSchedaData } from "@/lib/clienti/scheda";
 import type { ClientStato } from "@/lib/types";
-
-const CONTRACT_TONE: Record<string, Tone> = {
-  inviato: "info",
-  firmato: "paid",
-  annullato: "fail",
-};
 
 export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
   const {
@@ -124,8 +118,8 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
                             : `Creato ${dataIt(ct.created_at)}`}
                         </div>
                         <div className="flex items-center gap-3">
-                          <StatusPill tone={CONTRACT_TONE[ct.stato] ?? "draft"}>
-                            {ct.stato}
+                          <StatusPill tone={contractMeta(ct.stato).tone}>
+                            {contractMeta(ct.stato).label}
                           </StatusPill>
                           {ct.signed_pdf_url && (
                             <ActionLink href={ct.signed_pdf_url} label="PDF firmato" icon="pdf" />

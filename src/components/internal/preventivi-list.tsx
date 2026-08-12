@@ -3,19 +3,11 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 import { ActionLink } from "@/components/internal/action-link";
 import { eliminaPreventivo } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { euro, dataIt } from "@/lib/format";
-
-const TONE: Record<string, Tone> = {
-  bozza: "draft",
-  inviato: "info",
-  visto: "wait",
-  accettato: "paid",
-  rifiutato: "fail",
-  scaduto: "fail",
-};
+import { quoteMeta } from "@/lib/stati";
 
 const EDITABILI = ["bozza", "inviato", "visto"];
 
@@ -74,7 +66,7 @@ export function PreventiviList({
               </div>
             </div>
             <div className="flex flex-none items-center gap-3">
-              <StatusPill tone={TONE[q.stato] ?? "draft"}>{q.stato}</StatusPill>
+              <StatusPill tone={quoteMeta(q.stato).tone}>{quoteMeta(q.stato).label}</StatusPill>
               {EDITABILI.includes(q.stato) && (
                 <Link
                   href={`/vendite/preventivi/${q.id}`}

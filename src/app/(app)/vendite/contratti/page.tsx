@@ -4,21 +4,10 @@ import {
   type ClienteConDoc,
   type DettaglioDoc,
 } from "@/components/internal/master-detail";
-import type { Tone } from "@/components/ui/status-pill";
 import { type OrdineSelezione } from "@/lib/catalog";
 import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
-
-const TONE: Record<string, Tone> = {
-  inviato: "info",
-  firmato: "paid",
-  annullato: "fail",
-};
-const TIPO: Record<string, string> = {
-  ricorrente: "ricorrente",
-  una_tantum: "una tantum",
-  acconto: "acconto",
-};
+import { contractMeta, TIPO_PIANO_LABEL } from "@/lib/stati";
 
 interface Row {
   id: string;
@@ -60,7 +49,7 @@ export default async function ContrattiPage({
       titolo: c.signed_at
         ? `Firmato il ${dataIt(c.signed_at)}`
         : `Creato ${dataIt(c.created_at)}`,
-      stato: { tone: TONE[c.stato] ?? "draft", label: c.stato },
+      stato: contractMeta(c.stato),
       servizi: scadenzeServizi(q?.ordine ?? null, c.signed_at).map((s) => ({
         label: s.label,
         scadenza: labelScadenza(s),
@@ -70,7 +59,7 @@ export default async function ContrattiPage({
       durata: ricorrente
         ? `${q?.rate_num ?? "—"} mesi`
         : q
-          ? (TIPO[q.tipo] ?? q.tipo)
+          ? (TIPO_PIANO_LABEL[q.tipo] ?? q.tipo)
           : null,
       action: c.signed_pdf_url
         ? {

@@ -4,23 +4,9 @@ import {
   type ClienteConDoc,
   type DettaglioDoc,
 } from "@/components/internal/master-detail";
-import type { Tone } from "@/components/ui/status-pill";
 import { serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { dataIt } from "@/lib/format";
-
-const TONE: Record<string, Tone> = {
-  bozza: "draft",
-  inviato: "info",
-  visto: "wait",
-  accettato: "paid",
-  rifiutato: "fail",
-  scaduto: "fail",
-};
-const TIPO: Record<string, string> = {
-  ricorrente: "ricorrente",
-  una_tantum: "una tantum",
-  acconto: "acconto",
-};
+import { quoteMeta, TIPO_PIANO_LABEL } from "@/lib/stati";
 
 interface Row {
   id: string;
@@ -57,11 +43,11 @@ export default async function PreventiviPage({
     const doc: DettaglioDoc = {
       id: q.id,
       titolo: `${q.numero ?? "—"} · ${dataIt(q.created_at)}`,
-      stato: { tone: TONE[q.stato] ?? "draft", label: q.stato },
+      stato: quoteMeta(q.stato),
       servizi: serviziDaOrdine(q.ordine).map((label) => ({ label })),
       totale: q.importo_totale,
       rata: ricorrente ? q.rata_mensile : null,
-      durata: ricorrente ? `${q.rate_num ?? "—"} mesi` : (TIPO[q.tipo] ?? q.tipo),
+      durata: ricorrente ? `${q.rate_num ?? "—"} mesi` : (TIPO_PIANO_LABEL[q.tipo] ?? q.tipo),
       action: {
         href: `/preventivo/${q.public_token}`,
         label: "Link cliente",

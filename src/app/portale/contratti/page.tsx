@@ -3,12 +3,7 @@ import { Card } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { ActionLink } from "@/components/internal/action-link";
 import { dataIt } from "@/lib/format";
-
-const TONE: Record<string, Tone> = {
-  inviato: "info",
-  firmato: "paid",
-  annullato: "fail",
-};
+import { contractMeta } from "@/lib/stati";
 
 interface ContractRow {
   id: string;
@@ -48,8 +43,8 @@ export default async function PortaleContratti() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <StatusPill tone={TONE[c.stato] ?? "draft"}>
-                    {c.stato}
+                  <StatusPill tone={contractMeta(c.stato).tone}>
+                    {contractMeta(c.stato).label}
                   </StatusPill>
                   {c.signed_pdf_url && (
                     <ActionLink

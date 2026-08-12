@@ -12,6 +12,22 @@ import { cn } from "@/lib/utils";
  */
 export type Tone = "paid" | "info" | "wait" | "fail" | "draft";
 
+export const TONE_DOT: Record<Tone, string> = {
+  paid: "bg-paid-dot",
+  info: "bg-info-dot",
+  wait: "bg-wait-dot",
+  fail: "bg-fail-dot",
+  draft: "bg-draft-dot",
+};
+
+export const TONE_CHIP: Record<Tone, string> = {
+  paid: "bg-paid-bg text-paid-tx",
+  info: "bg-info-bg text-info-tx",
+  wait: "bg-wait-bg text-wait-tx",
+  fail: "bg-fail-bg text-fail-tx",
+  draft: "bg-draft-bg text-draft-tx",
+};
+
 const TONES: Record<Tone, { pill: string; dot: string }> = {
   paid: { pill: "bg-paid-bg text-paid-tx", dot: "bg-paid-dot" },
   info: { pill: "bg-info-bg text-info-tx", dot: "bg-info-dot" },

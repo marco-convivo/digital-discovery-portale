@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { StatusPill, TONE_DOT as DOT, TONE_CHIP as CHIP_ACTIVE, type Tone } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
 import { STATO_META, PIPELINE_COLUMNS, columnForStato } from "@/lib/stati";
 import { cn } from "@/lib/utils";
@@ -22,20 +22,6 @@ export interface ClienteItem {
   insolutoPaymentId: string | null;
 }
 
-const DOT: Record<Tone, string> = {
-  paid: "bg-paid-dot",
-  info: "bg-info-dot",
-  wait: "bg-wait-dot",
-  fail: "bg-fail-dot",
-  draft: "bg-draft-dot",
-};
-const CHIP_ACTIVE: Record<Tone, string> = {
-  paid: "bg-paid-bg text-paid-tx",
-  info: "bg-info-bg text-info-tx",
-  wait: "bg-wait-bg text-wait-tx",
-  fail: "bg-fail-bg text-fail-tx",
-  draft: "bg-draft-bg text-draft-tx",
-};
 
 function norm(s: string) {
   return s.toLowerCase().trim();

@@ -1,17 +1,10 @@
 import { STATO_META } from "@/lib/stati";
 import { dataBreve } from "@/lib/format";
-import type { Tone } from "@/components/ui/status-pill";
+import { TONE_DOT as DOT, type Tone } from "@/components/ui/status-pill";
 import type { ClientStato } from "@/lib/types";
 import type { AttivitaRow } from "@/lib/clienti/scheda";
 import { cn } from "@/lib/utils";
 
-const DOT: Record<Tone, string> = {
-  paid: "bg-paid-dot",
-  info: "bg-info-dot",
-  wait: "bg-wait-dot",
-  fail: "bg-fail-dot",
-  draft: "bg-draft-dot",
-};
 
 /**
  * Barra log attività (4b): la storia della pratica come timeline orizzontale.
