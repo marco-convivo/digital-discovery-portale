@@ -8,13 +8,7 @@ import {
 } from "@/lib/catalog";
 import { scadenzeServizi, giorniAllaScadenza } from "@/lib/servizi";
 import { parseAddons } from "@/lib/addon";
-
-// signed_at + N mesi → data ISO (scadenza addon ricorrenti).
-function addMesiIso(iso: string, mesi: number): string {
-  const d = new Date(iso);
-  d.setMonth(d.getMonth() + mesi);
-  return d.toISOString().slice(0, 10);
-}
+import { addMesi } from "@/lib/preventivi/genera-rate";
 
 export interface ServizioAttivo {
   chiave: string;
@@ -104,7 +98,7 @@ export async function getPortaleHomeData(
     for (const a of parseAddons(c.quote?.addons)) {
       const scadenzaIso =
         a.tipo === "ricorrente" && c.signed_at
-          ? addMesiIso(c.signed_at, a.durata ?? 12)
+          ? addMesi(c.signed_at, a.durata ?? 12)
           : null;
       addonServizi.push({
         chiave: `addon-${addonServizi.length}`,

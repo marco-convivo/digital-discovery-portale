@@ -4,8 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send";
 import { emailBrand } from "@/lib/email/templates";
-
-const ADMIN = "marco@convivostudio.it";
+import { EMAIL_ADMIN as ADMIN } from "@/lib/config";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 

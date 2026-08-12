@@ -1,4 +1,5 @@
 import { STATO_META } from "@/lib/stati";
+import { dataBreve } from "@/lib/format";
 import type { Tone } from "@/components/ui/status-pill";
 import type { ClientStato } from "@/lib/types";
 import type { AttivitaRow } from "@/lib/clienti/scheda";
@@ -11,13 +12,6 @@ const DOT: Record<Tone, string> = {
   fail: "bg-fail-dot",
   draft: "bg-draft-dot",
 };
-
-function dataBreve(iso: string): string {
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(iso));
-}
 
 /**
  * Barra log attività (4b): la storia della pratica come timeline orizzontale.

@@ -2,9 +2,7 @@ import "server-only";
 import { sendEmail } from "@/lib/email/send";
 import { emailBrand } from "@/lib/email/templates";
 import { generaMagicLink } from "@/lib/portale/magic-link";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
 
 /**
  * Avvisa il cliente che è disponibile una nuova fattura e lo porta alla sezione

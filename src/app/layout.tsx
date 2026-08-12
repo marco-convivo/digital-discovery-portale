@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fustat } from "next/font/google";
+import { SITE_URL } from "@/lib/config";
 import "./globals.css";
 
 const fustat = Fustat({
@@ -8,9 +9,6 @@ const fustat = Fustat({
   weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

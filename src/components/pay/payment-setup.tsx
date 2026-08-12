@@ -12,18 +12,10 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { conIva } from "@/lib/format";
+import { conIva, euro } from "@/lib/format";
 import type { PaymentContext } from "@/lib/stripe/setup";
 
 type Props = PaymentContext & { token: string };
-
-function euro(n: number | null): string {
-  if (n == null) return "—";
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(n);
-}
 
 export function PaymentSetup(props: Props) {
   return (

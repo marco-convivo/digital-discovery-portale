@@ -1,17 +1,12 @@
 import { serviziDettaglio, type OrdineSelezione } from "@/lib/catalog";
 import { dataIt } from "@/lib/format";
+import { addMesi } from "@/lib/preventivi/genera-rate";
 
 export interface ScadenzaServizio {
   label: string;
   unaTantum: boolean;
   mesi: number; // durata effettiva (durata indicata o 12); ignorato se una tantum
   scadenzaIso: string | null; // firma + mesi; null se una tantum o non ancora firmato
-}
-
-function addMesi(iso: string, m: number): string {
-  const d = new Date(iso);
-  d.setMonth(d.getMonth() + m);
-  return d.toISOString();
 }
 
 /** Servizi di un contratto con la relativa scadenza calcolata dalla firma. */

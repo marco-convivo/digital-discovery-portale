@@ -7,10 +7,8 @@ import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import { euro } from "@/lib/format";
 import { SEPA_CREDITORE, isValidIban, normalizeIban } from "@/lib/sepa/config";
 import { generaRate } from "@/lib/preventivi/genera-rate";
-
-const ADMIN = "marco@convivostudio.it";
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
+import { EMAIL_ADMIN as ADMIN } from "@/lib/config";
 
 export type MandatoResult = { ok: true } | { ok: false; error: string };
 

@@ -5,6 +5,7 @@ import { updateAppSettings } from "@/lib/settings/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AppSettings } from "@/lib/settings/app-settings";
+import { euro } from "@/lib/format";
 
 export function ImpostazioniInsoluti({ initial }: { initial: AppSettings }) {
   const [open, setOpen] = useState(false);
@@ -38,7 +39,7 @@ export function ImpostazioniInsoluti({ initial }: { initial: AppSettings }) {
         onClick={() => setOpen(true)}
         className="text-[13px] font-semibold text-violet hover:underline"
       >
-        Impostazioni recupero (maggiorazione {euroLabel(initial.maggiorazione_insoluto)}, bonifico) →
+        Impostazioni recupero (maggiorazione {euro(initial.maggiorazione_insoluto)}, bonifico) →
       </button>
     );
   }
@@ -95,9 +96,3 @@ export function ImpostazioniInsoluti({ initial }: { initial: AppSettings }) {
   );
 }
 
-function euroLabel(n: number): string {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(Number(n ?? 0));
-}

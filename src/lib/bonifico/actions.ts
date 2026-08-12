@@ -5,10 +5,8 @@ import { sendEmail } from "@/lib/email/send";
 import { emailBrand } from "@/lib/email/templates";
 import { generaRate } from "@/lib/preventivi/genera-rate";
 import { conIva, euro } from "@/lib/format";
-
-const ADMIN = "marco@convivostudio.it";
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
+import { EMAIL_ADMIN as ADMIN } from "@/lib/config";
 
 export type BonificoResult = { ok: true } | { ok: false; error: string };
 

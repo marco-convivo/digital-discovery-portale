@@ -6,9 +6,7 @@ import { creaLinkRecupero } from "@/lib/stripe/recupero";
 import { getStripe } from "@/lib/stripe/server";
 import { sendEmail } from "@/lib/email/send";
 import { emailBrand } from "@/lib/email/templates";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 

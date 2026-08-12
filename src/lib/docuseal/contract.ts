@@ -9,6 +9,8 @@ import {
 } from "@/lib/docuseal/server";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { parseAddons, addonText, type Addon } from "@/lib/addon";
+import { euroSenzaSimbolo as num, dataNumerica } from "@/lib/format";
+import { oggiIso } from "@/lib/preventivi/genera-rate";
 
 export interface FirmaMeta {
   ip: string;
@@ -53,18 +55,6 @@ export type ContractView =
     }
   | null;
 
-function num(n: number | null | undefined): string {
-  return new Intl.NumberFormat("it-IT", { minimumFractionDigits: 2 }).format(
-    Number(n ?? 0),
-  );
-}
-function oggiIt(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-function oggiIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 // Da ordine (catalogo) → valori dei campi checkbox/testo servizi del contratto.
 function serviceFields(ordine: OrdineSelezione | null): Record<string, string> {
@@ -212,7 +202,7 @@ export async function signContract(
     addon: addons.length ? addonText(addons) : "",
     importo_rata: num(q.rata_mensile),
     rate: String(q.rate_num ?? ""),
-    scadenza_prima_rata: oggiIt(),
+    scadenza_prima_rata: dataNumerica(oggiIso()),
     luogo: "L'Aquila",
     data: oggiIso(),
     cliente_ragione_sociale: dati.ragioneSociale,

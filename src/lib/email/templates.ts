@@ -1,8 +1,7 @@
 // Layout email brandizzato Digital Discovery: tabelle + stili inline (email-safe),
 // monogramma DD, pulsante charcoal, footer. Usato da recupero insoluti e alert.
 
-const SITE_LABEL = "clienti.digital-discovery.it";
-const SITE_URL = "https://clienti.digital-discovery.it";
+import { SITE_URL, SITE_LABEL } from "@/lib/config";
 
 export interface EmailLayout {
   heading: string;

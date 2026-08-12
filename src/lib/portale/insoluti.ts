@@ -2,11 +2,9 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import type { Database } from "@/lib/database.types";
+import { SITE_URL as SITE } from "@/lib/config";
 
 type RecoveryStato = Database["public"]["Enums"]["recovery_stato"];
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
 
 const APERTI: RecoveryStato[] = [
   "da_recuperare",

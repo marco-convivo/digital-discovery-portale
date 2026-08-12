@@ -1,8 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
 
 /**
  * Genera un link di accesso automatico (magic link) alla dashboard cliente,

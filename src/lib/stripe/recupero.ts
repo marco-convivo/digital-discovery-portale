@@ -3,9 +3,7 @@ import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { ALIQUOTA_IVA } from "@/lib/format";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
+import { SITE_URL as SITE } from "@/lib/config";
 
 // Token non guessabile per la pagina pubblica di recupero.
 function nuovoToken(): string {

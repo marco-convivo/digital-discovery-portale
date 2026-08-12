@@ -1,9 +1,8 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { SITE_URL as SITE } from "@/lib/config";
 
 // URL pubblico dell'app (il webhook non ha un "origin" di richiesta).
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
 
 /**
  * Invia al cliente il magic link di accesso al portale (via SMTP Supabase/Resend).

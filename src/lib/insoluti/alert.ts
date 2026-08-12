@@ -3,10 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send";
 import { emailBrand } from "@/lib/email/templates";
 import { euro } from "@/lib/format";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://clienti.digital-discovery.it";
-const ADMIN = "marco@convivostudio.it";
+import { SITE_URL as SITE } from "@/lib/config";
+import { EMAIL_ADMIN as ADMIN } from "@/lib/config";
 
 /** Avvisa admin + operatore owner di un insoluto. Best-effort. */
 export async function inviaAlertInsoluto(paymentId: string): Promise<void> {
