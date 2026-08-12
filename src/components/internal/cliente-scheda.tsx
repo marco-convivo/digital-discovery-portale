@@ -141,34 +141,25 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           <ServiziAttiviCliente servizi={serviziAttivi} />
         </Card>
 
-        {/* Anagrafica: collassabile, per ridurre l'ingombro */}
+        {/* Anagrafica e fatturazione */}
         <Card>
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-              <CardTitle>Anagrafica e fatturazione</CardTitle>
-              <span className="text-[12px] font-medium text-text-3">
-                <span className="truncate">{c.email ?? c.p_iva ?? c.referente ?? "—"}</span>
-                <span className="ml-2 group-open:hidden">apri ▾</span>
-                <span className="ml-2 hidden group-open:inline">chiudi ▴</span>
-              </span>
-            </summary>
-            <div className="mt-4">
-              <AnagraficaEditor
-                clientId={c.id}
-                initial={{
-                  ragione_sociale: c.ragione_sociale,
-                  referente: c.referente,
-                  email: c.email,
-                  telefono: c.telefono,
-                  p_iva: c.p_iva,
-                  codice_fiscale: c.codice_fiscale,
-                  codice_sdi: c.codice_sdi,
-                  pec: c.pec,
-                  indirizzo: c.indirizzo,
-                }}
-              />
-            </div>
-          </details>
+          <CardHeader>
+            <CardTitle>Anagrafica e fatturazione</CardTitle>
+          </CardHeader>
+          <AnagraficaEditor
+            clientId={c.id}
+            initial={{
+              ragione_sociale: c.ragione_sociale,
+              referente: c.referente,
+              email: c.email,
+              telefono: c.telefono,
+              p_iva: c.p_iva,
+              codice_fiscale: c.codice_fiscale,
+              codice_sdi: c.codice_sdi,
+              pec: c.pec,
+              indirizzo: c.indirizzo,
+            }}
+          />
         </Card>
 
         {/* Dettagli a tab: Piano · Contratti · Preventivi · Fatture · Allegati */}

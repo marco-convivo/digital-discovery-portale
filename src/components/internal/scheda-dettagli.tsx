@@ -52,7 +52,7 @@ export function SchedaDettagli({
 
   return (
     <Card className="p-0">
-      <nav className="no-scrollbar flex gap-1 overflow-x-auto border-b border-line px-3">
+      <nav className="no-scrollbar flex flex-wrap gap-2 border-b border-line p-3">
         {TABS.map((t) => {
           const on = t.key === tab;
           return (
@@ -61,18 +61,18 @@ export function SchedaDettagli({
               type="button"
               onClick={() => setTab(t.key)}
               className={cn(
-                "-mb-px flex flex-none items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13.5px] font-semibold transition-colors",
+                "flex flex-none items-center gap-1.5 rounded-btn px-3.5 py-2 text-[13.5px] font-semibold transition-colors",
                 on
-                  ? "border-ink text-text"
-                  : "border-transparent text-text-3 hover:text-text-2",
+                  ? "bg-ink text-on-ink"
+                  : "bg-card-2 text-text-2 hover:bg-line-soft hover:text-text",
               )}
             >
               {t.label}
               {t.count > 0 && (
                 <span
                   className={cn(
-                    "tnum text-[11.5px] font-bold",
-                    on ? "text-text-3" : "text-faint",
+                    "tnum grid min-w-[18px] place-items-center rounded-pill px-1 text-[11px] font-bold",
+                    on ? "bg-white/20 text-on-ink" : "bg-bg-2 text-text-3",
                   )}
                 >
                   {t.count}
