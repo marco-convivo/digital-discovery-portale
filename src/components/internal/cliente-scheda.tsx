@@ -71,31 +71,50 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
   // filtrati per PERIODO. Un ricorrente scaduto (firma + durata < oggi) non è più
   // attivo; se un servizio è rinnovato in un contratto più recente, vince la
   // scadenza più avanti.
-  const perLabel = new Map<string, ReturnType<typeof scadenzeServizi>[number]>();
+  // Fine del piano per contratto (ultima rata): dà una scadenza anche ai servizi
+  // una tantum, che di per sé non ne hanno.
+  const finePiano = new Map<string, string>();
+  for (const g of gruppiPagamenti) {
+    const max = g.rate.reduce(
+      (m, r) => (r.scadenza && r.scadenza > m ? r.scadenza : m),
+      "",
+    );
+    if (max) finePiano.set(g.key, max);
+  }
+
+  type ServizioAttivo = { label: string; scadenzaIso: string | null; unaTantum: boolean };
+  const perLabel = new Map<string, ServizioAttivo>();
   for (const ct of contratti) {
     if (ct.stato !== "firmato" && ct.stato !== "completato") continue;
-    for (const s of scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at)) {
+    const servizi = scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at);
+    // Scadenza del contratto = la più lontana tra le scadenze dei ricorrenti e
+    // la fine del piano rate.
+    const cand = servizi
+      .filter((s) => !s.unaTantum && s.scadenzaIso)
+      .map((s) => s.scadenzaIso!)
+      .concat(finePiano.get(ct.id) ? [finePiano.get(ct.id)!] : []);
+    const contrattoScadenza = cand.length ? cand.sort().at(-1)! : null;
+    for (const s of servizi) {
+      // il ricorrente usa la sua scadenza; la una tantum eredita quella del contratto.
+      const scadenzaIso = s.unaTantum ? contrattoScadenza : s.scadenzaIso;
       const cur = perLabel.get(s.label);
-      if (!cur || (s.scadenzaIso ?? "") > (cur.scadenzaIso ?? ""))
-        perLabel.set(s.label, s);
+      if (!cur || (scadenzaIso ?? "") > (cur.scadenzaIso ?? ""))
+        perLabel.set(s.label, { label: s.label, scadenzaIso, unaTantum: s.unaTantum });
     }
   }
   let serviziScaduti = 0;
   const serviziAttivi = [...perLabel.values()].flatMap((s) => {
-    if (!s.unaTantum && s.scadenzaIso && giorniAllaScadenza(s.scadenzaIso) < 0) {
+    if (s.scadenzaIso && giorniAllaScadenza(s.scadenzaIso) < 0) {
       serviziScaduti++;
       return [];
     }
-    const gg =
-      !s.unaTantum && s.scadenzaIso ? giorniAllaScadenza(s.scadenzaIso) : null;
+    const gg = s.scadenzaIso ? giorniAllaScadenza(s.scadenzaIso) : null;
     const inScadenza = gg != null && gg <= 30;
-    const meta = s.unaTantum
-      ? "una tantum"
-      : gg != null
-        ? inScadenza
-          ? `in scadenza · ${gg} gg`
-          : `fino al ${dataIt(s.scadenzaIso!)}`
-        : "attivo";
+    const meta = s.scadenzaIso
+      ? inScadenza
+        ? `in scadenza · ${gg} gg`
+        : `fino al ${dataIt(s.scadenzaIso)}`
+      : "una tantum";
     return [{ label: s.label, meta, inScadenza }];
   });
 
