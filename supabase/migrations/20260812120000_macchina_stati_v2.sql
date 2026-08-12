@@ -215,6 +215,7 @@ alter table public.payment_setups
   using (
     case
       when stato is null       then null
+      when stato = 'pending'   then 'pending'
       when stato = 'active'    then 'attivo'
       when stato = 'attivo'    then 'attivo'
       when stato = 'manuale'   then 'manuale'
