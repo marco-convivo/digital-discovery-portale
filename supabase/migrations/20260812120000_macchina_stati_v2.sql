@@ -46,6 +46,16 @@ alter table public.clients
   using public._map_stato_v2(stato::text);
 alter table public.clients alter column stato set default 'lead';
 
+-- Lo storico è un fatto: prima del collasso 11→6 se ne conserva il valore
+-- originale in colonne legacy (irrecuperabile dopo il DROP TYPE).
+alter table public.activity_log
+  add column if not exists da_stato_legacy text,
+  add column if not exists a_stato_legacy  text;
+update public.activity_log
+  set da_stato_legacy = da_stato::text,
+      a_stato_legacy  = a_stato::text
+  where da_stato is not null or a_stato is not null;
+
 alter table public.activity_log
   alter column da_stato type public.client_stato_v2
   using public._map_stato_v2(da_stato::text);
@@ -64,7 +74,7 @@ drop function public._map_stato_v2(text);
 alter table public.activity_log add column if not exists actor_tipo text;
 
 create or replace function public.log_client_stato()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_actor text := nullif(current_setting('app.actor_tipo', true), '');
 begin
@@ -89,18 +99,27 @@ create or replace function public.transizione_cliente(
   p_evento text,
   p_actor  text default null
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_da public.client_stato;
   v_a  public.client_stato;
 begin
-  if auth.role() <> 'service_role' and not private.is_staff() then
+  -- Guard fail-closed: NULL non deve mai aprire il passaggio. Team-write
+  -- (migration 0021): qualsiasi staff attivo può muovere qualsiasi pratica.
+  if coalesce(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '')
+       <> 'service_role'
+     and not coalesce(private.is_staff(), false) then
     raise exception 'transizione_cliente: non autorizzato';
   end if;
 
   select stato into v_da from public.clients where id = p_client for update;
   if v_da is null then
     raise exception 'transizione_cliente: cliente % non trovato', p_client;
+  end if;
+
+  if p_evento not in ('preventivo_inviato','preventivo_chiuso','contratto_firmato',
+                      'primo_incasso','perso','riaperto','cessato') then
+    raise exception 'transizione_cliente: evento sconosciuto %', p_evento;
   end if;
 
   v_a := case p_evento
@@ -125,9 +144,11 @@ begin
     return jsonb_build_object('da', v_da, 'a', v_da, 'changed', false);
   end if;
 
-  -- actor per il trigger di log (GUC locale alla transazione)
+  -- actor per il trigger di log + flag "porta autorizzata" per il guard
   perform set_config('app.actor_tipo', coalesce(p_actor, ''), true);
+  perform set_config('app.transizione', 'on', true);
   update public.clients set stato = v_a where id = p_client;
+  perform set_config('app.transizione', '', true);
   perform set_config('app.actor_tipo', '', true);
 
   return jsonb_build_object('da', v_da, 'a', v_a, 'changed', true);
@@ -137,6 +158,25 @@ $$;
 revoke all on function public.transizione_cliente(uuid, text, text) from public;
 grant execute on function public.transizione_cliente(uuid, text, text)
   to authenticated, service_role;
+
+-- clients.stato si cambia SOLO via transizione_cliente(): il guard chiude anche
+-- il portale-cliente (la policy clients_update consente l'update della propria
+-- riga senza restrizioni di colonna). L'INSERT con stato esplicito resta
+-- consentito (onboarding manuale di clienti già attivi).
+create or replace function public.guard_client_stato()
+returns trigger language plpgsql set search_path = public, pg_temp as $$
+begin
+  if new.stato is distinct from old.stato
+     and coalesce(current_setting('app.transizione', true), '') <> 'on' then
+    raise exception 'clients.stato si cambia solo via transizione_cliente()';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_guard_client_stato
+  before update of stato on public.clients
+  for each row execute function public.guard_client_stato();
 
 -- ---- 4. quote_events: timeline per preventivo --------------------------------
 -- inviato · vista_cliente · accettato · rifiutato · scaduto · anteprima_staff
@@ -155,6 +195,11 @@ alter table public.quote_events enable row level security;
 -- Lo staff legge; le scritture arrivano solo dal service role (route/action server).
 create policy quote_events_select on public.quote_events for select
   using (private.is_staff());
+revoke insert, update, delete on public.quote_events from anon, authenticated;
+alter table public.quote_events
+  add constraint quote_events_evento_chk check (evento in
+    ('inviato', 'vista_cliente', 'accettato', 'rifiutato', 'scaduto', 'anteprima_staff'));
+create index idx_quote_events_quote_ts on public.quote_events (quote_id, created_at desc);
 
 -- ---- 5. payment_setups.stato: enum al posto del text libero ------------------
 
@@ -174,9 +219,10 @@ alter table public.payment_setups
       when stato = 'attivo'    then 'attivo'
       when stato = 'manuale'   then 'manuale'
       when stato = 'annullato' then 'annullato'
-      else 'pending'
+      else null
     end
   )::public.payment_setup_stato;
+alter table public.payment_setups alter column stato set default 'pending';
 
 -- ---- 6. contract_stato: fine piano ≠ cessazione ------------------------------
 -- 'completato' = tutte le rate incassate (il cliente resta attivo).
