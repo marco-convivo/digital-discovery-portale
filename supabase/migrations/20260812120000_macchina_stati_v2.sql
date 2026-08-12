@@ -40,6 +40,11 @@ returns public.client_stato_v2 language sql immutable as $$
   end::public.client_stato_v2
 $$;
 
+-- I trigger su clients citano la colonna stato (ON UPDATE OF stato): vanno
+-- rimossi prima del cambio tipo e ricreati dopo (v. sezione 2).
+drop trigger if exists trg_log_client_stato on public.clients;
+drop trigger if exists trg_log_client_insert on public.clients;
+
 alter table public.clients alter column stato drop default;
 alter table public.clients
   alter column stato type public.client_stato_v2
@@ -88,6 +93,15 @@ begin
   return new;
 end;
 $$;
+
+-- Ricrea i trigger rimossi prima del cambio tipo.
+create trigger trg_log_client_insert
+  after insert on public.clients
+  for each row execute function public.log_client_stato();
+
+create trigger trg_log_client_stato
+  after update of stato on public.clients
+  for each row execute function public.log_client_stato();
 
 -- ---- 3. transizione_cliente(): l'unica porta di scrittura --------------------
 -- Applica la matrice delle transizioni valide; una transizione non prevista è
