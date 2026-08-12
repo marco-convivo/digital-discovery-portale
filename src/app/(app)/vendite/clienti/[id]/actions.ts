@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { addonContributo, type Addon } from "@/lib/addon";
+import { calcolaTotali, contributoServizio } from "@/lib/pricing";
 import type { Json } from "@/lib/database.types";
 
 export interface AnagraficaInput {
@@ -20,18 +21,6 @@ export interface AnagraficaInput {
 }
 
 export type UpdateResult = { ok: true } | { ok: false; error: string };
-
-// Contributo al totale contratto per un servizio, dal prezzo MENSILE salvato:
-// ricorrente = mensile × mesi (durata); una tantum/progetto = prezzo una volta.
-function contributoDaMensile(
-  key: string,
-  mensile: number,
-  ordine: OrdineSelezione,
-): number {
-  const svc = CATALOG.find((c) => c.key === key);
-  if (svc?.ricorrente) return mensile * (ordine[key]?.durata ?? 12);
-  return mensile;
-}
 
 // Righe preventivo (un servizio per riga, col valore di contratto) + sconto.
 function buildQuoteItems(
@@ -49,7 +38,7 @@ function buildQuoteItems(
     quote_id: quoteId,
     descrizione: d,
     quantita: 1,
-    prezzo_unitario: contributoDaMensile(
+    prezzo_unitario: contributoServizio(
       selectedKeys[i],
       prezziMensili?.[selectedKeys[i]] ?? 0,
       ordine,
@@ -206,9 +195,14 @@ export async function createQuote(
   }
 
   const ricorrente = input.tipo === "ricorrente";
-  // Il form calcola il totale contratto (ricorrenti = mensile×mesi, una tantum
-  // = prezzo, meno sconto); qui lo usiamo direttamente. La rata è totale÷n.rate.
-  const importoTotale = Number(input.importoTotale ?? 0);
+  // Il totale è ricalcolato QUI dal motore prezzi (lib/pricing): il valore del
+  // form è solo anteprima e non viene mai scritto a DB.
+  const importoTotale = calcolaTotali(
+    input.ordine,
+    input.prezzi ?? {},
+    input.addons ?? [],
+    input.sconto ?? 0,
+  ).totaleContratto;
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
   const { count } = await supabase
@@ -311,7 +305,13 @@ export async function updateQuote(
   if (descrizioni.length === 0 && (input.addons ?? []).length === 0)
     return { ok: false, error: "Seleziona almeno un servizio o aggiungi un addon." };
   const ricorrente = input.tipo === "ricorrente";
-  const importoTotale = Number(input.importoTotale ?? 0);
+  // Come in createQuote: totale ricalcolato dal motore prezzi condiviso.
+  const importoTotale = calcolaTotali(
+    input.ordine,
+    input.prezzi ?? {},
+    input.addons ?? [],
+    input.sconto ?? 0,
+  ).totaleContratto;
   if (importoTotale <= 0) return { ok: false, error: "Importo non valido." };
 
   const { data: upRows, error: upErr } = await supabase

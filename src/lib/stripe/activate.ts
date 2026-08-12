@@ -8,7 +8,8 @@ import { inviaAlertInsoluto } from "@/lib/insoluti/alert";
 import { inviaAvvisoInsolutoCliente } from "@/lib/insoluti/cliente-email";
 import { inviaConfermaMandato } from "@/lib/pagamenti/mandato";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
-import { ALIQUOTA_IVA, conIva } from "@/lib/format";
+import { conIva } from "@/lib/format";
+import { lordoCent } from "@/lib/pricing";
 import { generaRate, oggiIso } from "@/lib/preventivi/genera-rate";
 import type { Database } from "@/lib/database.types";
 
@@ -176,7 +177,7 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
             // sanifica: tollera spazi/righe multiple incollate per errore nell'env
             product: (process.env.STRIPE_PRODUCT_ID ?? "").trim().split(/\s+/)[0],
             // addebito LORDO (IVA inclusa): il netto è in quote.rata_mensile
-            unit_amount: Math.round(rata * (1 + ALIQUOTA_IVA) * 100),
+            unit_amount: lordoCent(rata),
             recurring: { interval: "month" },
           },
         },
@@ -212,7 +213,7 @@ export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void
     const importo = Number(quote.importo_totale ?? 0);
     const pi = await stripe.paymentIntents.create({
       customer: customerId,
-      amount: Math.round(importo * (1 + ALIQUOTA_IVA) * 100), // lordo (IVA inclusa)
+      amount: lordoCent(importo), // lordo (IVA inclusa)
       currency: "eur",
       payment_method: pmId,
       off_session: true,

@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { CATALOG, type OrdineSelezione, type CatalogService } from "@/lib/catalog";
 import { addonContributo, type Addon } from "@/lib/addon";
+import { calcolaTotali, contributoServizio, durataServizio } from "@/lib/pricing";
 import type { ServizioExtra } from "@/lib/catalogo/queries";
 import { euro } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -100,25 +101,22 @@ export function CreateQuoteForm({
     const n = Number(prezzi[k]);
     return Number.isFinite(n) ? n : 0;
   };
-  const durataOf = (c: CatalogService) => sel[c.key]?.durata ?? 12;
-  // Contributo al TOTALE contratto: ricorrente = prezzo mensile × mesi;
-  // una tantum / progetto = prezzo una volta.
+  const durataOf = (c: CatalogService) => durataServizio(c.key, sel);
   const contributo = (c: CatalogService) =>
-    c.ricorrente ? prezzoNum(c.key) * durataOf(c) : prezzoNum(c.key);
+    contributoServizio(c.key, prezzoNum(c.key), sel);
 
   const selectedServices = CATALOG.filter((c) => sel[c.key]?.selected);
-  const totaleAddon = addons.reduce((s, a) => s + addonContributo(a), 0);
-  const totaleServizi =
-    selectedServices.reduce((s, c) => s + contributo(c), 0) + totaleAddon;
   const scontoNum = Math.max(0, Number(sconto) || 0);
-  const totaleContratto = Math.max(0, totaleServizi - scontoNum);
-
-  // N. rate: default = durata più lunga tra i ricorrenti (servizi + addon).
-  const durate = [
-    ...selectedServices.filter((c) => c.ricorrente).map(durataOf),
-    ...addons.filter((a) => a.tipo === "ricorrente").map((a) => a.durata ?? 12),
-  ];
-  const mesiContratto = durate.length ? Math.max(...durate) : 12;
+  // Totali dal motore prezzi condiviso (lib/pricing) — il server ricalcola.
+  const totali = calcolaTotali(
+    sel,
+    Object.fromEntries(selectedServices.map((c) => [c.key, prezzoNum(c.key)])),
+    addons,
+    scontoNum,
+  );
+  const totaleContratto = totali.totaleContratto;
+  const mesiContratto = totali.mesiContratto;
+  const totaleServizi = totali.totaleServizi + totali.totaleAddon;
   const rateN = rateTouched
     ? Math.max(1, Math.trunc(Number(rateNum) || 0))
     : mesiContratto;

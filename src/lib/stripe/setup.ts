@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
-import { ALIQUOTA_IVA } from "@/lib/format";
+import { lordoCent as lordo } from "@/lib/pricing";
 import { generaRate, oggiIso } from "@/lib/preventivi/genera-rate";
 
 // Il flusso pagamento pubblico gira in contesto anon: usiamo l'admin client
@@ -28,9 +28,7 @@ export interface PaymentContext {
   statementDescriptor: string | null;
 }
 
-function lordo(netto: number): number {
-  return Math.round(netto * (1 + ALIQUOTA_IVA) * 100); // centesimi, IVA inclusa
-}
+
 
 // client_secret con cui confermare l'invoice della subscription lato browser.
 // Nella API attuale sta in invoice.confirmation_secret; lo recuperiamo via

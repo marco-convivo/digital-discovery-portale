@@ -2,7 +2,7 @@ import "server-only";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
-import { ALIQUOTA_IVA } from "@/lib/format";
+import { lordoCent } from "@/lib/pricing";
 import { SITE_URL as SITE } from "@/lib/config";
 
 // Token non guessabile per la pagina pubblica di recupero.
@@ -101,7 +101,7 @@ export async function ensureRecoveryContext(
     };
   }
 
-  const lordoCents = Math.round(netto * (1 + ALIQUOTA_IVA) * 100);
+  const lordoCents = lordoCent(netto);
   const pi = await getStripe().paymentIntents.create({
     amount: lordoCents,
     currency: "eur",
