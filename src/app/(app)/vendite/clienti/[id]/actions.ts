@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { addonContributo, type Addon } from "@/lib/addon";
 import { calcolaTotali, contributoServizio } from "@/lib/pricing";
+import { transizioneCliente } from "@/lib/stato/transizione";
 import type { Json } from "@/lib/database.types";
 
 export interface AnagraficaInput {
@@ -245,11 +246,8 @@ export async function createQuote(
   );
   await supabase.from("quote_items").insert(items);
 
-  await supabase
-    .from("clients")
-    .update({ stato: "preventivo_inviato" })
-    .eq("id", input.clientId)
-    .in("stato", ["lead"]);
+  // lead/perso → in_trattativa (idempotente per i preventivi successivi)
+  await transizioneCliente(supabase, input.clientId, "preventivo_inviato", "staff");
 
   revalidatePath(`/vendite/clienti/${input.clientId}`);
   revalidatePath("/vendite");

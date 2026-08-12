@@ -32,6 +32,7 @@ export const CONTRACT_STATO_META: Record<
 > = {
   inviato: { label: "Inviato", tone: "info" },
   firmato: { label: "Firmato", tone: "paid" },
+  completato: { label: "Completato", tone: "paid" },
   annullato: { label: "Annullato", tone: "fail" },
 };
 
@@ -64,15 +65,10 @@ export const PAYMENT_STATO_META: Record<
 // Vive qui (non nel componente) così StatusPill resta condiviso CRM/portale.
 export const STATO_META: Record<ClientStato, { label: string; tone: Tone }> = {
   lead: { label: "Lead", tone: "draft" },
-  preventivo_inviato: { label: "Preventivo inviato", tone: "wait" },
-  preventivo_visto: { label: "Preventivo visto", tone: "wait" },
-  preventivo_accettato: { label: "Preventivo accettato", tone: "info" },
-  contratto_inviato: { label: "Contratto da firmare", tone: "info" },
-  contratto_firmato: { label: "Contratto firmato", tone: "info" },
-  pagamento_setup: { label: "Setup pagamento", tone: "wait" },
-  pagamento_attivo: { label: "Pagamento attivo", tone: "paid" },
-  cliente_attivo: { label: "Cliente attivo", tone: "paid" },
-  rifiutato: { label: "Rifiutato", tone: "fail" },
+  in_trattativa: { label: "In trattativa", tone: "wait" },
+  in_attivazione: { label: "In attivazione", tone: "info" },
+  attivo: { label: "Attivo", tone: "paid" },
+  perso: { label: "Perso", tone: "fail" },
   cessato: { label: "Cessato", tone: "fail" },
 };
 
@@ -88,29 +84,23 @@ export interface PipelineColumn {
 export const PIPELINE_COLUMNS: PipelineColumn[] = [
   { key: "lead", label: "Lead", tone: "draft", stati: ["lead"] },
   {
-    key: "preventivo",
-    label: "Preventivo",
+    key: "trattativa",
+    label: "In trattativa",
     tone: "wait",
-    stati: ["preventivo_inviato", "preventivo_visto", "preventivo_accettato"],
+    stati: ["in_trattativa"],
   },
   {
-    key: "contratto",
-    label: "Contratto",
+    key: "attivazione",
+    label: "In attivazione",
     tone: "info",
-    stati: ["contratto_inviato", "contratto_firmato"],
+    stati: ["in_attivazione"],
   },
-  {
-    key: "pagamento",
-    label: "Pagamento",
-    tone: "info",
-    stati: ["pagamento_setup", "pagamento_attivo"],
-  },
-  { key: "attivo", label: "Attivo", tone: "paid", stati: ["cliente_attivo"] },
+  { key: "attivo", label: "Attivi", tone: "paid", stati: ["attivo"] },
   {
     key: "persi",
     label: "Persi",
     tone: "fail",
-    stati: ["rifiutato", "cessato"],
+    stati: ["perso", "cessato"],
   },
 ];
 
@@ -128,7 +118,7 @@ export const GIORNI_FERMO = 14;
 
 /** Stati "aperti": una pratica chiusa (attiva/persa) non può essere "ferma". */
 export function statoAperto(stato: ClientStato): boolean {
-  return !["cliente_attivo", "rifiutato", "cessato"].includes(stato);
+  return !["attivo", "perso", "cessato"].includes(stato);
 }
 
 /** Giorni trascorsi da una data ISO (0 se assente o futura). */

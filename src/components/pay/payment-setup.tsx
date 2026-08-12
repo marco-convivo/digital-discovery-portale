@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Logo } from "@/components/ui/logo";
 import { FlowStepper } from "@/components/flow/flow-stepper";
-import { SepaAvviso } from "@/components/pay/sepa-avviso";
 import {
   Elements,
   PaymentElement,
@@ -112,7 +111,7 @@ function PaymentBody(props: Props & { clientSecret: string }) {
           },
         }}
       >
-        <PayForm token={props.token} descrittore={props.statementDescriptor} />
+        <PayForm token={props.token} />
       </Elements>
 
       <p className="mt-4 text-[12px] leading-relaxed text-text-3">
@@ -123,18 +122,11 @@ function PaymentBody(props: Props & { clientSecret: string }) {
   );
 }
 
-function PayForm({
-  token,
-  descrittore,
-}: {
-  token: string;
-  descrittore: string | null;
-}) {
+function PayForm({ token }: { token: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [metodo, setMetodo] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -159,8 +151,7 @@ function PayForm({
 
   return (
     <form onSubmit={onSubmit} className="mt-5">
-      <PaymentElement onChange={(e) => setMetodo(e.value.type)} />
-      {metodo === "sepa_debit" && <SepaAvviso descrittore={descrittore} />}
+      <PaymentElement />
       {error && (
         <p className="mt-3 rounded-sm bg-fail-bg px-3 py-2 text-[13px] text-fail-tx">
           {error}

@@ -7,6 +7,7 @@ import { generaRate } from "@/lib/preventivi/genera-rate";
 import { conIva, euro } from "@/lib/format";
 import { SITE_URL as SITE } from "@/lib/config";
 import { EMAIL_ADMIN as ADMIN } from "@/lib/config";
+import { transizioneCliente } from "@/lib/stato/transizione";
 
 export type BonificoResult = { ok: true } | { ok: false; error: string };
 
@@ -95,16 +96,8 @@ export async function registraBonifico(token: string): Promise<BonificoResult> {
     });
   }
 
-  // Metodo scelto → pagamento_setup (NON attiva: attende la contabile).
-  await db
-    .from("clients")
-    .update({ stato: "pagamento_setup" })
-    .eq("id", client.id)
-    .in("stato", [
-      "preventivo_accettato",
-      "contratto_inviato",
-      "contratto_firmato",
-    ]);
+  // Metodo scelto → resta "in attivazione" (NON attiva: attende la contabile).
+  await transizioneCliente(db, client.id, "contratto_firmato", "cliente");
 
   await inviaAvvisoBonifico({
     clientId: client.id,

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
 import {
-  handleSetupSucceeded,
   handleInvoicePaid,
   handleInvoiceFailed,
   handleSubscriptionUpdated,
@@ -32,9 +31,6 @@ export async function POST(req: Request) {
   // Instrada l'evento alla transizione di stato (handler con service role).
   try {
     switch (event.type) {
-      case "setup_intent.succeeded":
-        await handleSetupSucceeded(event.data.object as Stripe.SetupIntent);
-        break;
       case "invoice.paid":
         await handleInvoicePaid(event.data.object as Stripe.Invoice);
         break;

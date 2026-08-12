@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
-import { StatusPill, type Tone } from "@/components/ui/status-pill";
+import { StatusPill } from "@/components/ui/status-pill";
 import { ActionLink } from "@/components/internal/action-link";
 import { dataIt } from "@/lib/format";
 import { contractMeta } from "@/lib/stati";

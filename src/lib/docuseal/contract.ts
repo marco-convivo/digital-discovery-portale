@@ -11,6 +11,7 @@ import { CATALOG, serviziDaOrdine, type OrdineSelezione } from "@/lib/catalog";
 import { parseAddons, addonText, type Addon } from "@/lib/addon";
 import { euroSenzaSimbolo as num, dataNumerica } from "@/lib/format";
 import { oggiIso } from "@/lib/preventivi/genera-rate";
+import { transizioneCliente } from "@/lib/stato/transizione";
 
 export interface FirmaMeta {
   ip: string;
@@ -256,16 +257,7 @@ export async function signContract(
     signed_pdf_url: signedPdfUrl,
   });
 
-  await db
-    .from("clients")
-    .update({ stato: "pagamento_setup" })
-    .eq("id", q.client.id)
-    .in("stato", [
-      "preventivo_inviato",
-      "preventivo_visto",
-      "preventivo_accettato",
-      "contratto_inviato",
-    ]);
+  await transizioneCliente(db, q.client.id, "contratto_firmato", "cliente");
 
   return { ok: true };
 }
@@ -294,9 +286,5 @@ export async function handleContractSigned(
     })
     .eq("id", contract.id);
 
-  await db
-    .from("clients")
-    .update({ stato: "pagamento_setup" })
-    .eq("id", contract.client_id)
-    .eq("stato", "contratto_inviato");
+  await transizioneCliente(db, contract.client_id, "contratto_firmato", "webhook:docuseal");
 }

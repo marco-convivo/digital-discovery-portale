@@ -21,6 +21,7 @@ export type Database = {
         Row: {
           a_stato: Database["public"]["Enums"]["client_stato"] | null
           actor_id: string | null
+          actor_tipo: string | null
           azione: string
           client_id: string | null
           created_at: string
@@ -30,6 +31,7 @@ export type Database = {
         Insert: {
           a_stato?: Database["public"]["Enums"]["client_stato"] | null
           actor_id?: string | null
+          actor_tipo?: string | null
           azione: string
           client_id?: string | null
           created_at?: string
@@ -39,6 +41,7 @@ export type Database = {
         Update: {
           a_stato?: Database["public"]["Enums"]["client_stato"] | null
           actor_id?: string | null
+          actor_tipo?: string | null
           azione?: string
           client_id?: string | null
           created_at?: string
@@ -308,6 +311,41 @@ export type Database = {
           },
         ]
       }
+      quote_events: {
+        Row: {
+          actor_tipo: string | null
+          created_at: string
+          evento: string
+          id: string
+          meta: Json | null
+          quote_id: string
+        }
+        Insert: {
+          actor_tipo?: string | null
+          created_at?: string
+          evento: string
+          id?: string
+          meta?: Json | null
+          quote_id: string
+        }
+        Update: {
+          actor_tipo?: string | null
+          created_at?: string
+          evento?: string
+          id?: string
+          meta?: Json | null
+          quote_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_events_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_setups: {
         Row: {
           client_id: string
@@ -315,7 +353,7 @@ export type Database = {
           created_at: string
           id: string
           metodo: Database["public"]["Enums"]["payment_metodo"] | null
-          stato: string | null
+          stato: Database["public"]["Enums"]["payment_setup_stato"] | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
         }
@@ -325,7 +363,7 @@ export type Database = {
           created_at?: string
           id?: string
           metodo?: Database["public"]["Enums"]["payment_metodo"] | null
-          stato?: string | null
+          stato?: Database["public"]["Enums"]["payment_setup_stato"] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
         }
@@ -335,7 +373,7 @@ export type Database = {
           created_at?: string
           id?: string
           metodo?: Database["public"]["Enums"]["payment_metodo"] | null
-          stato?: string | null
+          stato?: Database["public"]["Enums"]["payment_setup_stato"] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
         }
@@ -787,23 +825,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      transizione_cliente: {
+        Args: { p_client: string; p_evento: string; p_actor?: string | null }
+        Returns: Json
+      }
     }
     Enums: {
       client_stato:
         | "lead"
-        | "preventivo_inviato"
-        | "preventivo_visto"
-        | "preventivo_accettato"
-        | "contratto_inviato"
-        | "contratto_firmato"
-        | "pagamento_setup"
-        | "pagamento_attivo"
-        | "cliente_attivo"
-        | "rifiutato"
+        | "in_trattativa"
+        | "in_attivazione"
+        | "attivo"
+        | "perso"
         | "cessato"
-      contract_stato: "inviato" | "firmato" | "annullato"
+      contract_stato: "inviato" | "firmato" | "annullato" | "completato"
       payment_metodo: "sdd" | "carta" | "bonifico"
+      payment_setup_stato: "pending" | "attivo" | "manuale" | "annullato"
       payment_stato: "scheduled" | "pending" | "paid" | "failed"
       profile_role: "admin" | "commerciale"
       quote_stato:
@@ -951,19 +988,15 @@ export const Constants = {
     Enums: {
       client_stato: [
         "lead",
-        "preventivo_inviato",
-        "preventivo_visto",
-        "preventivo_accettato",
-        "contratto_inviato",
-        "contratto_firmato",
-        "pagamento_setup",
-        "pagamento_attivo",
-        "cliente_attivo",
-        "rifiutato",
+        "in_trattativa",
+        "in_attivazione",
+        "attivo",
+        "perso",
         "cessato",
       ],
-      contract_stato: ["inviato", "firmato", "annullato"],
+      contract_stato: ["inviato", "firmato", "annullato", "completato"],
       payment_metodo: ["sdd", "carta", "bonifico"],
+      payment_setup_stato: ["pending", "attivo", "manuale", "annullato"],
       payment_stato: ["scheduled", "pending", "paid", "failed"],
       profile_role: ["admin", "commerciale"],
       quote_stato: [

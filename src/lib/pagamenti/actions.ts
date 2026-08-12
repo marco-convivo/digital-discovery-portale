@@ -3,20 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { inviaAccessoPortale } from "@/lib/portale/welcome";
+import { transizioneCliente } from "@/lib/stato/transizione";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 // Stati "pre-attivi": alla prima rata incassata il cliente diventa attivo.
-const PRE_ATTIVI = [
-  "lead",
-  "preventivo_inviato",
-  "preventivo_visto",
-  "preventivo_accettato",
-  "contratto_inviato",
-  "contratto_firmato",
-  "pagamento_setup",
-  "pagamento_attivo",
-];
+const PRE_ATTIVI = ["lead", "in_trattativa", "in_attivazione"];
 
 async function assertStaff(): Promise<string | null> {
   const sb = await createClient();
@@ -64,13 +56,8 @@ export async function segnaRataPagata(
       .maybeSingle();
     const c = cli as { stato: string; email: string | null } | null;
     if (c && PRE_ATTIVI.includes(c.stato)) {
-      const { data: upd } = await sb
-        .from("clients")
-        .update({ stato: "cliente_attivo" })
-        .eq("id", clientId)
-        .not("stato", "in", "(cliente_attivo,cessato,rifiutato)")
-        .select("id");
-      if (upd && upd.length > 0 && c.email) {
+      const esito = await transizioneCliente(sb, clientId, "primo_incasso", "staff");
+      if (esito.changed && c.email) {
         try {
           await inviaAccessoPortale(c.email);
         } catch {

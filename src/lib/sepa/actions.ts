@@ -133,12 +133,9 @@ export async function registraMandatoSepa(
     });
   }
 
-  // Cliente attivo (transizione atomica).
-  await db
-    .from("clients")
-    .update({ stato: "cliente_attivo" })
-    .eq("id", client.id)
-    .not("stato", "in", "(cliente_attivo,cessato)");
+  // NB (macchina a stati v2): il mandato registrato NON attiva il cliente.
+  // "Attivo" scatta solo al primo incasso riscontrato (transizione
+  // 'primo_incasso' dallo staff o dal webhook). Il cliente resta in_attivazione.
 
   // Avvisi: staff (con dati mandato per Sella) + accesso portale al cliente.
   await inviaAvvisoMandato({

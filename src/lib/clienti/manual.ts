@@ -128,7 +128,7 @@ export async function creaClienteEsistente(
       codice_sdi: clean(input.codice_sdi),
       pec: clean(input.pec),
       indirizzo: clean(input.indirizzo),
-      stato: "cliente_attivo",
+      stato: "attivo",
       owner_id: staffId,
     })
     .select("id")

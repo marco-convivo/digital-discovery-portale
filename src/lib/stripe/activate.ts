@@ -6,11 +6,7 @@ import { inviaAccessoPortale } from "@/lib/portale/welcome";
 import { motivoInsoluto } from "@/lib/stripe/insoluti-reason";
 import { inviaAlertInsoluto } from "@/lib/insoluti/alert";
 import { inviaAvvisoInsolutoCliente } from "@/lib/insoluti/cliente-email";
-import { inviaConfermaMandato } from "@/lib/pagamenti/mandato";
-import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
-import { conIva } from "@/lib/format";
-import { lordoCent } from "@/lib/pricing";
-import { generaRate, oggiIso } from "@/lib/preventivi/genera-rate";
+import { transizioneCliente } from "@/lib/stato/transizione";
 import type { Database } from "@/lib/database.types";
 
 type PaymentMetodo = Database["public"]["Enums"]["payment_metodo"];
@@ -40,11 +36,6 @@ async function metodoFromPmId(pmId: string | null): Promise<PaymentMetodo | null
   return null;
 }
 
-async function metodoFromSetupIntent(si: Stripe.SetupIntent): Promise<PaymentMetodo | null> {
-  return metodoFromPmId(
-    typeof si.payment_method === "string" ? si.payment_method : (si.payment_method?.id ?? null),
-  );
-}
 
 async function metodoFromSubscription(sub: Stripe.Subscription): Promise<PaymentMetodo | null> {
   const pm = sub.default_payment_method;
@@ -57,212 +48,32 @@ async function metodoFromPaymentIntent(pi: Stripe.PaymentIntent): Promise<Paymen
 }
 
 /**
- * Porta il cliente a `cliente_attivo` al PRIMO incasso e invia gli avvisi
- * (accesso portale + conferma mandato SEPA). Scelta: al primo pagamento il
- * cliente diventa subito attivo (niente sosta su `pagamento_attivo`). La
- * transizione di stato è ATOMICA (solo il primo evento che vince l'UPDATE manda
- * le email): così invoice.paid, customer.subscription.updated e
- * payment_intent.succeeded sono idempotenti tra loro e non duplicano le email.
+ * Porta il cliente ad `attivo` al PRIMO incasso confermato e invia l'accesso
+ * al portale. La transizione passa da transizione_cliente() ed è atomica:
+ * solo il primo evento che la vince (changed=true) manda le email, così
+ * invoice.paid, customer.subscription.updated e payment_intent.succeeded
+ * restano idempotenti tra loro.
  */
 async function attivaClientePagamento(
   db: ReturnType<typeof createAdminClient>,
   opts: { clientId: string; quoteId?: string | null; metodo?: PaymentMetodo | null },
 ): Promise<void> {
-  const { data: upd } = await db
-    .from("clients")
-    .update({ stato: "cliente_attivo" })
-    .eq("id", opts.clientId)
-    .not("stato", "in", "(cliente_attivo,cessato)")
-    .select("email, ragione_sociale");
-  const cli = (upd ?? [])[0] as
-    | { email: string | null; ragione_sociale: string }
-    | undefined;
-  if (!cli) return; // già attivato da un altro evento
+  const esito = await transizioneCliente(
+    db,
+    opts.clientId,
+    "primo_incasso",
+    "webhook:stripe",
+  );
+  if (!esito.changed) return; // già attivato da un altro evento
 
-  await inviaAccessoPortale(cli.email);
-
-  // Conferma mandato SEPA per i piani ricorrenti pagati con addebito diretto.
-  if (opts.metodo === "sdd" && opts.quoteId) {
-    const { data: q } = await db
-      .from("quotes")
-      .select("tipo, rata_mensile, rate_num")
-      .eq("id", opts.quoteId)
-      .maybeSingle();
-    if (q && q.tipo === "ricorrente") {
-      const { statement_descriptor } = await getAppSettingsAdmin();
-      await inviaConfermaMandato({
-        email: cli.email,
-        ragioneSociale: cli.ragione_sociale,
-        rataLorda: conIva(Number(q.rata_mensile ?? 0)),
-        rateNum: q.rate_num ?? 12,
-        descriptor: statement_descriptor,
-      });
-    }
-  }
-}
-
-/**
- * setup_intent.succeeded: il mandato SDD / la carta sono salvati.
- * Crea la subscription (ricorrente) o incassa una tantum, pre-genera le rate,
- * porta il cliente a `cliente_attivo`. Idempotente sul payment_setup.
- */
-export async function handleSetupSucceeded(si: Stripe.SetupIntent): Promise<void> {
-  const quoteId = si.metadata?.quote_id;
-  const clientId = si.metadata?.client_id;
-  const contractId = si.metadata?.contract_id || null;
-  if (!quoteId || !clientId) return;
-
-  const db = createAdminClient();
-
-  const psQuery = db
-    .from("payment_setups")
-    .select("id, stripe_customer_id, stripe_subscription_id")
-    .eq("client_id", clientId);
-  const { data: ps } = await (contractId
-    ? psQuery.eq("contract_id", contractId)
-    : psQuery.is("contract_id", null)
-  ).maybeSingle();
-  if (!ps) return;
-
-  const stripe = getStripe();
-  const pmId = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
-  const customerId =
-    typeof si.customer === "string" ? si.customer : si.customer?.id;
-  const metodo = await metodoFromSetupIntent(si);
-  const oggi = new Date();
-
-  // Flusso "nuovo mandato": la subscription esiste già → non ricrearla, ma
-  // ripuntarla al nuovo metodo di pagamento e ritentare le rate insolute.
-  if (ps.stripe_subscription_id) {
-    if (!pmId) return;
-    await stripe.subscriptions.update(ps.stripe_subscription_id, {
-      default_payment_method: pmId,
-    });
-    await db.from("payment_setups").update({ metodo }).eq("id", ps.id);
-    const { data: falliti } = await db
-      .from("payments")
-      .select("stripe_invoice_id")
-      .eq("subscription_id", ps.stripe_subscription_id)
-      .eq("stato", "failed")
-      .not("stripe_invoice_id", "is", null);
-    for (const f of (falliti ?? []) as { stripe_invoice_id: string | null }[]) {
-      if (!f.stripe_invoice_id) continue;
-      try {
-        await stripe.invoices.pay(f.stripe_invoice_id, { payment_method: pmId });
-      } catch {
-        // best-effort: l'esito lo scrivono i webhook invoice.paid/payment_failed
-      }
-    }
-    return;
-  }
-
-  const { data: quote } = await db
-    .from("quotes")
-    .select("tipo, rata_mensile, rate_num, importo_totale")
-    .eq("id", quoteId)
-    .maybeSingle();
-  if (!quote) return;
-
-  if (quote.tipo === "ricorrente") {
-    const rate = quote.rate_num ?? 12;
-    const rata = Number(quote.rata_mensile ?? 0);
-    const cancelAt = Math.floor(oggi.getTime() / 1000) + rate * 31 * 24 * 3600;
-
-    const sub = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [
-        {
-          price_data: {
-            currency: "eur",
-            // sanifica: tollera spazi/righe multiple incollate per errore nell'env
-            product: (process.env.STRIPE_PRODUCT_ID ?? "").trim().split(/\s+/)[0],
-            // addebito LORDO (IVA inclusa): il netto è in quote.rata_mensile
-            unit_amount: lordoCent(rata),
-            recurring: { interval: "month" },
-          },
-        },
-      ],
-      default_payment_method: pmId,
-      cancel_at: cancelAt,
-      metadata: { quote_id: quoteId, client_id: clientId, contract_id: contractId ?? "" },
-    });
-
-    // Pre-genera le N rate come "scheduled" (il piano che il cliente vedrà),
-    // legate al contratto — generatore condiviso.
-    const rows = generaRate({
-      tipo: "ricorrente",
-      importoTotale: quote.importo_totale,
-      rataMensile: quote.rata_mensile,
-      rateNum: quote.rate_num,
-    }).map((r) => ({
-      client_id: clientId,
-      contract_id: contractId,
-      subscription_id: sub.id,
-      numero_rata: r.numero_rata,
-      importo: r.importo,
-      scadenza: r.scadenza,
-      stato: "scheduled" as const,
-    }));
-    await db.from("payments").insert(rows);
-    await db
-      .from("payment_setups")
-      .update({ stripe_subscription_id: sub.id, metodo, stato: "active" })
-      .eq("id", ps.id);
-  } else {
-    // una_tantum / acconto: incasso immediato off-session.
-    const importo = Number(quote.importo_totale ?? 0);
-    const pi = await stripe.paymentIntents.create({
-      customer: customerId,
-      amount: lordoCent(importo), // lordo (IVA inclusa)
-      currency: "eur",
-      payment_method: pmId,
-      off_session: true,
-      confirm: true,
-      metadata: { quote_id: quoteId, client_id: clientId, contract_id: contractId ?? "" },
-    });
-    await db.from("payments").insert({
-      client_id: clientId,
-      contract_id: contractId,
-      numero_rata: 1,
-      importo,
-      scadenza: oggiIso(),
-      stato: pi.status === "succeeded" ? "paid" : "pending",
-      stripe_payment_intent_id: pi.id,
-      paid_at: pi.status === "succeeded" ? new Date().toISOString() : null,
-    });
-    await db
-      .from("payment_setups")
-      .update({ metodo, stato: "active" })
-      .eq("id", ps.id);
-  }
-
-  await db
-    .from("clients")
-    .update({ stato: "cliente_attivo" })
-    .eq("id", clientId)
-    .not("stato", "in", "(cliente_attivo,cessato)");
-
-  // Invito di accesso al portale (magic link) — best-effort, non blocca il flusso.
   const { data: cli } = await db
     .from("clients")
-    .select("email, ragione_sociale")
-    .eq("id", clientId)
+    .select("email")
+    .eq("id", opts.clientId)
     .maybeSingle();
-  const cliRow = cli as { email: string | null; ragione_sociale: string } | null;
-  await inviaAccessoPortale(cliRow?.email);
-
-  // Conferma mandato SEPA per i piani ricorrenti pagati con addebito diretto.
-  if (metodo === "sdd" && quote.tipo === "ricorrente" && cliRow) {
-    const { statement_descriptor } = await getAppSettingsAdmin();
-    await inviaConfermaMandato({
-      email: cliRow.email,
-      ragioneSociale: cliRow.ragione_sociale,
-      rataLorda: conIva(Number(quote.rata_mensile ?? 0)),
-      rateNum: quote.rate_num ?? 12,
-      descriptor: statement_descriptor,
-    });
-  }
+  await inviaAccessoPortale((cli as { email: string | null } | null)?.email ?? null);
 }
+
 
 // Trova (o aggancia stabilmente) la rata di un invoice di subscription: alla
 // prima comparsa dell'invoice lo si assegna alla prima rata senza invoice; dopo
@@ -331,7 +142,7 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> 
   const metodo = await metodoFromSubscription(sub);
   await db
     .from("payment_setups")
-    .update({ metodo, stato: "active" })
+    .update({ metodo, stato: "attivo" })
     .eq("stripe_subscription_id", subId);
   await attivaClientePagamento(db, {
     clientId,
@@ -355,7 +166,7 @@ export async function handleSubscriptionUpdated(
   const metodo = await metodoFromSubscription(sub);
   await db
     .from("payment_setups")
-    .update({ metodo, stato: "active" })
+    .update({ metodo, stato: "attivo" })
     .eq("stripe_subscription_id", sub.id);
   await attivaClientePagamento(db, {
     clientId,
@@ -506,7 +317,7 @@ export async function handlePaymentIntentSucceeded(
     const metodo = await metodoFromPaymentIntent(pi);
     const psUpd = db
       .from("payment_setups")
-      .update({ metodo, stato: "active" })
+      .update({ metodo, stato: "attivo" })
       .eq("client_id", clientId);
     await (contractId
       ? psUpd.eq("contract_id", contractId)
@@ -577,12 +388,40 @@ export async function handleChargeDispute(dispute: Stripe.Dispute): Promise<void
   await inviaAvvisoInsolutoCliente(rataId);
 }
 
-/** customer.subscription.deleted: il cliente cessa. */
+/**
+ * customer.subscription.deleted — fine piano ≠ cessazione.
+ * La subscription nasce con `cancel_at` a fine piano: quando il cliente FINISCE
+ * di pagare regolarmente Stripe emette comunque questo evento. Se tutte le rate
+ * del contratto sono incassate il contratto va a 'completato' e il cliente
+ * resta attivo; solo se restano rate non pagate è una vera cessazione.
+ */
 export async function handleSubscriptionDeleted(
   sub: Stripe.Subscription,
 ): Promise<void> {
   const clientId = sub.metadata?.client_id;
   if (!clientId) return;
   const db = createAdminClient();
-  await db.from("clients").update({ stato: "cessato" }).eq("id", clientId);
+
+  const contractId = sub.metadata?.contract_id || null;
+  const { data: rate } = await db
+    .from("payments")
+    .select("stato")
+    .eq("subscription_id", sub.id);
+  const aperte = (rate ?? []).filter((r) =>
+    ["scheduled", "pending", "failed"].includes(String(r.stato)),
+  ).length;
+
+  if ((rate ?? []).length > 0 && aperte === 0) {
+    // Piano completato: contratto chiuso positivamente, cliente resta attivo.
+    if (contractId) {
+      await db
+        .from("contracts")
+        .update({ stato: "completato" })
+        .eq("id", contractId)
+        .eq("stato", "firmato");
+    }
+    return;
+  }
+
+  await transizioneCliente(db, clientId, "cessato", "webhook:stripe");
 }

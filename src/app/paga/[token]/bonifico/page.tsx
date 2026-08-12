@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getPagamentoInfo } from "@/lib/pagamento";
-import { BONIFICO } from "@/lib/bonifico/config";
+import { BONIFICO, IBAN_FALLBACK } from "@/lib/bonifico/config";
+import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { BonificoConferma } from "@/components/pay/bonifico-conferma";
 import { Logo } from "@/components/ui/logo";
 import { FlowStepper } from "@/components/flow/flow-stepper";
@@ -28,6 +29,8 @@ export default async function BonificoPage({
   if (info.tipo !== "una_tantum") redirect(`/paga/${token}`);
 
   const lordo = euro(conIva(info.importo_totale));
+  const { iban_bonifico } = await getAppSettingsAdmin();
+  const iban = iban_bonifico ?? IBAN_FALLBACK;
 
   return (
     <main className="mx-auto max-w-lg px-6 py-12">
@@ -75,7 +78,7 @@ export default async function BonificoPage({
 
           <div className="mt-5 rounded-md bg-card-2 p-4">
             <Riga label="Intestato a" value={BONIFICO.intestatario} />
-            <Riga label="IBAN" value={BONIFICO.iban} />
+            <Riga label="IBAN" value={iban} />
             <Riga label="Banca" value={BONIFICO.banca} />
             <Riga label="Importo" value={lordo} />
             <Riga label="Causale" value={info.numero ?? "—"} />

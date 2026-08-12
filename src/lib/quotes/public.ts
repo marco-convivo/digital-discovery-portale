@@ -183,12 +183,14 @@ export async function getPublicQuote(
     if (q.stato === "inviato") {
       await db.from("quotes").update({ stato: "visto" }).eq("id", q.id);
     }
-    if (client.stato === "preventivo_inviato") {
-      await db
-        .from("clients")
-        .update({ stato: "preventivo_visto" })
-        .eq("id", client.id);
-    }
+    // Macchina a stati v2: la vista è un fatto del PREVENTIVO (quote_events),
+    // lo stato cliente resta in_trattativa. Così anche il 2º preventivo di uno
+    // stesso cliente viene tracciato.
+    await db.from("quote_events").insert({
+      quote_id: q.id,
+      evento: "vista_cliente",
+      actor_tipo: "cliente",
+    });
   }
 
   const items =
@@ -254,13 +256,14 @@ export async function acceptQuote(token: string): Promise<AcceptResult> {
     .from("quotes")
     .update({ stato: "accettato", accepted_at: new Date().toISOString() })
     .eq("id", q.id);
+  await db.from("quote_events").insert({
+    quote_id: q.id,
+    evento: "accettato",
+    actor_tipo: "cliente",
+  });
 
-  // Avanza il cliente (il prossimo passo — contratto DocuSeal — arriverà dopo).
-  if (["preventivo_inviato", "preventivo_visto"].includes(client.stato)) {
-    await db
-      .from("clients")
-      .update({ stato: "preventivo_accettato" })
-      .eq("id", client.id);
-  }
+  // Macchina a stati v2: l'accettazione è un fatto del preventivo; il cliente
+  // resta in_trattativa finché non firma (evento 'contratto_firmato').
+  void client;
   return { ok: true };
 }

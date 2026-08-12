@@ -37,7 +37,7 @@ Il collante è **un'unica macchina a stati per pratica**, fatta avanzare da **we
 
 - **Multi-contratto per cliente.** Un cliente ha **molti** contratti, ognuno col proprio piano pagamenti indipendente. Per questo `payments` **e** `services` hanno **`contract_id`** (non solo `client_id`). Le rate puntano al contratto/subscription, non solo al cliente. Non collassare mai su `client_id`.
 
-- **La macchina a stati vive in `clients.stato`** (enum, §4 della spec). Ogni transizione è idealmente conseguenza di un webhook. Un **trigger** su cambio di `clients.stato` scrive automaticamente una riga in `activity_log` (`actor_id = auth.uid()`, `da_stato`, `a_stato`): lo storico della board non si scrive a mano nel codice.
+- **La macchina a stati vive in `clients.stato`** — v2 (migration 0027): 6 stati SOLO commerciali (`lead → in_trattativa → in_attivazione → attivo | perso | cessato`); il dettaglio operativo sta sulle entità figlie (`quotes.stato`, `contracts.stato`, `payments.stato`). **Ogni scrittura passa da `public.transizione_cliente(client, evento, actor)`** (wrapper TS: `src/lib/stato/transizione.ts`) — mai UPDATE diretto: la funzione applica la matrice delle transizioni valide, è atomica e un evento non previsto è un no-op (mai errore, i webhook restano idempotenti). Un **trigger** su cambio di `clients.stato` scrive automaticamente `activity_log` (`actor_id = auth.uid()`, `actor_tipo` = staff/cliente/webhook:*/job:*, `da_stato`, `a_stato`). "Attivo" = **primo incasso confermato** per tutti i metodi (il mandato SEPA registrato NON attiva più). Le viste/accettazioni dei preventivi sono fatti del preventivo (`quote_events`), non dello stato cliente.
 
 - **RLS su tutte le tabelle**, costruita su helper SQL **security-definer** nello schema **`private`** (non esposto da PostgREST, per non triggerare gli advisor): `private.is_staff()`, `private.is_admin()`, `private.owns_client(uuid)`, `private.is_client_member(uuid)`. Devono restare eseguibili da `authenticated` (le usa la valutazione RLS): revocare l'EXECUTE le rompe. Policy:
   - `admin`: accesso completo.
@@ -45,12 +45,13 @@ Il collante è **un'unica macchina a stati per pratica**, fatta avanzare da **we
   - `cliente`: solo le righe dove `auth_user_id = auth.uid()`; per le tabelle figlie, `client_id in (select id from clients where auth_user_id = auth.uid())`. **Mai** accesso alle tabelle interne di pipeline.
 
 - **Enum = contratto della macchina a stati.** Non rinominare/riordinare i valori a cuor leggero:
-  - `client_stato`: lead, preventivo_inviato, preventivo_visto, preventivo_accettato, contratto_inviato, contratto_firmato, pagamento_setup, pagamento_attivo, cliente_attivo, rifiutato, cessato
+  - `client_stato` (v2): lead, in_trattativa, in_attivazione, attivo, perso, cessato
   - `quote_stato`: bozza, inviato, visto, accettato, rifiutato, scaduto
-  - `contract_stato`: inviato, firmato, annullato
+  - `contract_stato`: inviato, firmato, completato, annullato — `completato` = tutte le rate incassate (fine piano ≠ cessazione)
   - `payment_stato`: scheduled, pending, paid, failed
+  - `payment_setup_stato`: pending, attivo, manuale, annullato (era text libero)
 
-- **Webhook server-side.** Le integrazioni (DocuSeal `form.completed`, Stripe `invoice.paid`/`payment_failed`/`setup_intent.succeeded`/`customer.subscription.deleted`) arrivano su route handler Next.js **con verifica firma**, e sono ciò che fa avanzare `clients.stato`. Fatturazione manuale per ora (`invoices.pdf_url` da FatturaHello).
+- **Webhook server-side.** Le integrazioni (DocuSeal `form.completed`, Stripe `invoice.paid`/`payment_failed`/`customer.subscription.updated|deleted`/`payment_intent.succeeded`) arrivano su route handler Next.js **con verifica firma** e fanno avanzare lo stato SOLO via `transizione_cliente`. `subscription.deleted` distingue fine piano (contratto → `completato`, cliente resta attivo) da vera cessazione. Il percorso Stripe-SDD off-session (`setup_intent.succeeded`) è stato rimosso: l'SDD è manuale su Sella. Fatturazione manuale per ora (`invoices.pdf_url` da FatturaHello).
 
 - **Migration versionate.** Lo schema va introdotto come migration Supabase in tre parti nell'ordine: (a) enum → (b) tabelle → (c) RLS (helper + policy) + trigger. Non applicare DDL ad-hoc fuori dalle migration.
 
