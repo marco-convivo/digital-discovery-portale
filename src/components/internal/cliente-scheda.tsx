@@ -3,15 +3,10 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
 import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
-import { PreventiviList } from "@/components/internal/preventivi-list";
-import { PianiCliente } from "@/components/internal/piani-cliente";
-import { FattureCliente } from "@/components/internal/fatture-cliente";
-import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
-import { ActionLink } from "@/components/internal/action-link";
-import { STATO_META, contractMeta } from "@/lib/stati";
-import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { ServiziAttiviCliente } from "@/components/internal/servizi-attivi-cliente";
+import { SchedaDettagli } from "@/components/internal/scheda-dettagli";
+import { STATO_META } from "@/lib/stati";
 import { dataIt, euro } from "@/lib/format";
 import type { ClienteSchedaData } from "@/lib/clienti/scheda";
 import type { ClientStato } from "@/lib/types";
@@ -176,108 +171,16 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           </details>
         </Card>
 
-        {/* Piano pagamenti | Contratti — 50/50 */}
-        <div className="grid items-start gap-5 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Piano pagamenti</CardTitle>
-              <Link
-                href={`/vendite/pagamenti/piani?cliente=${c.id}`}
-                className="text-[13px] font-semibold text-link hover:underline"
-              >
-                Apri →
-              </Link>
-            </CardHeader>
-            <PianiCliente piani={gruppiPagamenti} />
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Contratti</CardTitle>
-              <Link
-                href={`/vendite/contratti?cliente=${c.id}`}
-                className="text-[13px] font-semibold text-violet hover:underline"
-              >
-                Apri →
-              </Link>
-            </CardHeader>
-            {contratti.length === 0 ? (
-              <p className="text-sm text-text-3">Nessun contratto ancora.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {contratti.map((ct) => {
-                  const servizi = scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at);
-                  return (
-                    <div key={ct.id} className="rounded-md border border-line p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-[13px] font-semibold text-text">
-                          {ct.signed_at
-                            ? `Firmato il ${dataIt(ct.signed_at)}`
-                            : `Creato ${dataIt(ct.created_at)}`}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <StatusPill tone={contractMeta(ct.stato).tone}>
-                            {contractMeta(ct.stato).label}
-                          </StatusPill>
-                          {ct.signed_pdf_url && (
-                            <ActionLink href={ct.signed_pdf_url} label="PDF firmato" icon="pdf" />
-                          )}
-                        </div>
-                      </div>
-                      {servizi.length > 0 && (
-                        <ul className="mt-2.5 flex flex-col gap-1 border-t border-line pt-2.5">
-                          {servizi.map((s, i) => (
-                            <li
-                              key={i}
-                              className="flex items-baseline justify-between gap-2 text-[12.5px]"
-                            >
-                              <span className="min-w-0 truncate text-text-2">{s.label}</span>
-                              <span className="flex-none text-text-3">{labelScadenza(s)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        </div>
-
-        {/* Preventivi | Fatture — 50/50 */}
-        <div className="grid items-start gap-5 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preventivi inviati</CardTitle>
-              <Link
-                href={`/vendite/preventivi?cliente=${c.id}`}
-                className="text-[13px] font-semibold text-violet hover:underline"
-              >
-                Apri →
-              </Link>
-            </CardHeader>
-            <PreventiviList quotes={quotes} isAdmin={isAdmin} />
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Fatture</CardTitle>
-            </CardHeader>
-            <FattureCliente clientId={c.id} fatture={fatture} />
-          </Card>
-        </div>
-
-        {/* Allegati interni (Visura + liberi) — solo staff */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Allegati</CardTitle>
-            <span className="text-[12px] font-medium text-text-3">
-              Documenti interni · non visibili al cliente
-            </span>
-          </CardHeader>
-          <AllegatiCliente clientId={c.id} allegati={allegati} />
-        </Card>
+        {/* Dettagli a tab: Piano · Contratti · Preventivi · Fatture · Allegati */}
+        <SchedaDettagli
+          clientId={c.id}
+          piani={gruppiPagamenti}
+          contratti={contratti}
+          quotes={quotes}
+          fatture={fatture}
+          allegati={allegati}
+          isAdmin={isAdmin}
+        />
         </div>
 
         {/* Cronologia: colonna destra verticale e scrollabile */}
