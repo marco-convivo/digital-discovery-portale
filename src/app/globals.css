@@ -56,15 +56,19 @@
   --color-draft-tx: #4a4e46;
   --color-draft-dot: #9aa094;
 
-  /* Raggi — portale morbido (24/16), CRM asciutto (16/12/10/9/8) -------- */
-  --radius-card: 24px; /* card portale */
-  --radius-md: 16px; /* interno portale / frame CRM */
-  --radius-crm: 12px; /* card CRM */
-  --radius-sm: 12px;
-  --radius-btn: 10px; /* bottone, riquadro */
-  --radius-field: 9px; /* campo, voce nav */
-  --radius-badge: 8px; /* pill piccola, badge */
+  /* Raggi v0.5 — un solo raggio per densità (1e).
+     CRM:     superficie 14 · controllo 10 · pill 999.
+     Portale: superficie 20 · controllo 12 · pill 999 (stessa scala, più morbida).
+     I nomi dei token restano stabili; cambiano solo i valori. */
+  --radius-crm: 14px; /* superficie CRM (card) */
+  --radius-card: 20px; /* superficie portale */
+  --radius-md: 12px; /* controllo/frame portale */
+  --radius-sm: 10px;
+  --radius-btn: 10px; /* controllo CRM (bottone) */
+  --radius-field: 10px; /* campo, voce nav → stesso controllo */
+  --radius-badge: 10px; /* badge/pill piccola → stesso controllo */
   --radius-pill: 999px;
+  --radius-frame: 16px; /* cornice esterna canvas (rail, drawer) */
 
   /* Ombre — quasi assenti; l'unica vera è quella del drawer ------------- */
   --shadow-card: 0 1px 2px rgba(22, 23, 26, 0.04);
@@ -89,6 +93,38 @@ body {
 /* Cifre in tabular-nums: solo dove serve l'allineamento (tabelle rate) */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* v0.5 (1e) — Contenitore e griglia.
+   Il contenuto riempie la finestra fino a 1720px con gutter 24: niente più
+   colonna centrata con max-w-* diverso per pagina. I moduli si dichiarano in
+   colonne su una griglia a 12 (grid-cols-12 + col-span-*), che collassa a 6
+   sotto 1280 e a 1 sotto 900. */
+.dd-container {
+  width: 100%;
+  max-width: 1720px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1280px) {
+  .dd-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .dd-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Sotto 900 ogni modulo occupa l'intera riga, qualunque sia lo span. */
+  .dd-grid > * {
+    grid-column: 1 / -1 !important;
+  }
 }
 
 /* Scroll senza barra visibile (liste con overflow interno) */
