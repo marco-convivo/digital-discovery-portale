@@ -5,41 +5,49 @@ import type { ClientStato } from "@/lib/types";
 import type { AttivitaRow } from "@/lib/clienti/scheda";
 import { cn } from "@/lib/utils";
 
-
 /**
- * Barra log attività (4b): la storia della pratica come timeline orizzontale.
- * Ogni nodo è una transizione di stato (o un'azione) scritta dal trigger su
- * activity_log. Scorre in orizzontale su schermi stretti.
+ * Cronologia della pratica come timeline VERTICALE (v0.5): ogni evento mostra il
+ * suo stato (pallino + etichetta), il dettaglio e la data. Pensata per una
+ * colonna stretta e scrollabile a destra della scheda. Più recente in alto.
  */
 export function AttivitaLog({ attivita }: { attivita: AttivitaRow[] }) {
   if (attivita.length === 0) {
     return (
-      <p className="text-[13px] text-text-3">
-        Nessuna attività ancora registrata.
-      </p>
+      <p className="text-[13px] text-text-3">Nessuna attività ancora registrata.</p>
     );
   }
 
+  const eventi = [...attivita].reverse(); // dal più recente
+
   return (
-    <ol className="no-scrollbar flex items-start gap-0 overflow-x-auto pb-1">
-      {attivita.map((a, i) => {
+    <ol className="flex flex-col">
+      {eventi.map((a, i) => {
         const stato = a.a_stato as ClientStato | null;
         const meta = stato ? STATO_META[stato] : null;
-        const label = meta?.label ?? a.azione;
+        const label = meta?.label ?? a.azione ?? "Aggiornamento";
         const tone: Tone = meta?.tone ?? "draft";
+        const dettaglio =
+          a.azione && a.azione.trim() && a.azione.trim() !== label
+            ? a.azione.trim()
+            : null;
+        const ultimo = i === eventi.length - 1;
         return (
-          <li key={a.id} className="flex items-start">
-            {i > 0 && (
-              <span className="mt-[6px] h-px w-8 flex-none bg-line-strong" aria-hidden />
-            )}
-            <div className="flex w-max flex-none flex-col items-center gap-1 px-1.5">
-              <span className={cn("size-3 rounded-full", DOT[tone])} />
-              <span className="whitespace-nowrap text-[12px] font-semibold text-text">
-                {label}
-              </span>
-              <span className="whitespace-nowrap text-[11px] text-text-3">
+          <li key={a.id} className="flex gap-3">
+            {/* rail: pallino di stato + linea di collegamento */}
+            <div className="flex flex-none flex-col items-center">
+              <span className={cn("mt-1 size-2.5 rounded-full", DOT[tone])} />
+              {!ultimo && <span className="w-px flex-1 bg-line" />}
+            </div>
+            <div className={cn("min-w-0", ultimo ? "pb-0.5" : "pb-4")}>
+              <div className="text-[13px] font-bold text-text">{label}</div>
+              {dettaglio && (
+                <div className="mt-0.5 text-[12px] leading-snug text-text-2">
+                  {dettaglio}
+                </div>
+              )}
+              <div className="mt-0.5 text-[11.5px] text-text-3">
                 {dataBreve(a.created_at)}
-              </span>
+              </div>
             </div>
           </li>
         );

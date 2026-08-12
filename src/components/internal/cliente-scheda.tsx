@@ -4,7 +4,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { AnagraficaEditor } from "@/components/internal/anagrafica-editor";
 import { InviaAccessoButton } from "@/components/internal/invia-accesso-button";
 import { PreventiviList } from "@/components/internal/preventivi-list";
-import { PianiPagamento } from "@/components/internal/piani-pagamento";
+import { PianiCliente } from "@/components/internal/piani-cliente";
 import { FattureCliente } from "@/components/internal/fatture-cliente";
 import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
@@ -86,7 +86,8 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
         </div>
       </header>
 
-      <div className="flex flex-col gap-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-5">
         {/* Stato pratica: a colpo d'occhio, dove siamo e cosa fare adesso */}
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
@@ -130,14 +131,6 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           </div>
         </Card>
 
-        {/* Barra log attività: la storia della pratica, dalla prima all'ultima */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cronologia</CardTitle>
-          </CardHeader>
-          <AttivitaLog attivita={attivita} />
-        </Card>
-
         {/* Anagrafica: full-width, campi su due colonne */}
         <Card>
           <AnagraficaEditor
@@ -162,13 +155,13 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
             <CardHeader>
               <CardTitle>Piano pagamenti</CardTitle>
               <Link
-                href={`/vendite/pagamenti?cliente=${c.id}`}
-                className="text-[13px] font-semibold text-violet hover:underline"
+                href={`/vendite/pagamenti/piani?cliente=${c.id}`}
+                className="text-[13px] font-semibold text-link hover:underline"
               >
                 Apri →
               </Link>
             </CardHeader>
-            <PianiPagamento groups={gruppiPagamenti} />
+            <PianiCliente piani={gruppiPagamenti} />
           </Card>
 
           <Card>
@@ -257,6 +250,17 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
             </span>
           </CardHeader>
           <AllegatiCliente clientId={c.id} allegati={allegati} />
+        </Card>
+        </div>
+
+        {/* Cronologia: colonna destra verticale e scrollabile */}
+        <Card className="xl:sticky xl:top-4">
+          <CardHeader>
+            <CardTitle>Cronologia</CardTitle>
+          </CardHeader>
+          <div className="no-scrollbar max-h-[72vh] overflow-y-auto">
+            <AttivitaLog attivita={attivita} />
+          </div>
         </Card>
       </div>
     </div>

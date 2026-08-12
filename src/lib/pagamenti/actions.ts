@@ -72,6 +72,33 @@ export async function segnaRataPagata(
   return { ok: true };
 }
 
+/**
+ * Segna una rata come NON riuscita (es. addebito Sella rifiutato): la porta in
+ * `failed` con `recovery_stato = da_recuperare`, così entra negli Insoluti.
+ */
+export async function segnaRataNonRiuscita(
+  paymentId: string,
+  motivo?: string | null,
+): Promise<ActionResult> {
+  const err = await assertStaff();
+  if (err) return { ok: false, error: err };
+  const sb = await createClient();
+  const { error } = await sb
+    .from("payments")
+    .update({
+      stato: "failed",
+      failed_at: new Date().toISOString(),
+      recovery_stato: "da_recuperare",
+      failure_reason: (motivo ?? "").trim() || "Addebito non riuscito",
+      paid_at: null,
+    })
+    .eq("id", paymentId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/vendite/pagamenti");
+  revalidatePath("/vendite/insoluti");
+  return { ok: true };
+}
+
 /** Annulla il pagamento manuale di una rata (torna programmata). */
 export async function annullaRataPagata(
   paymentId: string,
