@@ -66,6 +66,17 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     }
   })();
 
+  // Servizi attivi: dai contratti in corso (firmato/completato) → ordine → servizi.
+  const serviziMap = new Map<string, { label: string; meta: string; unaTantum: boolean }>();
+  for (const ct of contratti) {
+    if (ct.stato !== "firmato" && ct.stato !== "completato") continue;
+    for (const s of scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at)) {
+      if (!serviziMap.has(s.label))
+        serviziMap.set(s.label, { label: s.label, meta: labelScadenza(s), unaTantum: s.unaTantum });
+    }
+  }
+  const serviziAttivi = [...serviziMap.values()];
+
   return (
     <div>
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
@@ -131,22 +142,68 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           </div>
         </Card>
 
-        {/* Anagrafica: full-width, campi su due colonne */}
+        {/* Servizi attivi: cosa ha il cliente, dai contratti in corso */}
         <Card>
-          <AnagraficaEditor
-            clientId={c.id}
-            initial={{
-              ragione_sociale: c.ragione_sociale,
-              referente: c.referente,
-              email: c.email,
-              telefono: c.telefono,
-              p_iva: c.p_iva,
-              codice_fiscale: c.codice_fiscale,
-              codice_sdi: c.codice_sdi,
-              pec: c.pec,
-              indirizzo: c.indirizzo,
-            }}
-          />
+          <CardHeader>
+            <CardTitle>Servizi attivi</CardTitle>
+            {serviziAttivi.length > 0 && (
+              <span className="text-[12px] font-medium text-text-3">
+                {serviziAttivi.length} in corso
+              </span>
+            )}
+          </CardHeader>
+          {serviziAttivi.length === 0 ? (
+            <p className="text-sm text-text-3">
+              Nessun servizio attivo: compaiono qui alla firma del contratto.
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {serviziAttivi.map((s, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2.5 rounded-md border border-line px-3 py-2"
+                >
+                  <span className="size-1.5 flex-none rounded-full bg-paid-dot" />
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">
+                    {s.label}
+                  </span>
+                  <span className="flex-none text-[12px] text-text-3">
+                    {s.unaTantum ? "una tantum" : s.meta}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Anagrafica: collassabile, per ridurre l'ingombro */}
+        <Card>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+              <CardTitle>Anagrafica e fatturazione</CardTitle>
+              <span className="text-[12px] font-medium text-text-3">
+                <span className="truncate">{c.email ?? c.p_iva ?? c.referente ?? "—"}</span>
+                <span className="ml-2 group-open:hidden">apri ▾</span>
+                <span className="ml-2 hidden group-open:inline">chiudi ▴</span>
+              </span>
+            </summary>
+            <div className="mt-4">
+              <AnagraficaEditor
+                clientId={c.id}
+                initial={{
+                  ragione_sociale: c.ragione_sociale,
+                  referente: c.referente,
+                  email: c.email,
+                  telefono: c.telefono,
+                  p_iva: c.p_iva,
+                  codice_fiscale: c.codice_fiscale,
+                  codice_sdi: c.codice_sdi,
+                  pec: c.pec,
+                  indirizzo: c.indirizzo,
+                }}
+              />
+            </div>
+          </details>
         </Card>
 
         {/* Piano pagamenti | Contratti — 50/50 */}
