@@ -219,6 +219,24 @@ export async function createServizio(
   return { ok: true, chiave };
 }
 
+/** Salva l'ordine di vetrina del catalogo (ordine = posizione nella lista). Solo admin. */
+export async function salvaOrdineCatalogo(chiavi: string[]): Promise<ActionResult> {
+  const err = await assertAdmin();
+  if (err) return { ok: false, error: err };
+  const supabase = await createClient();
+  const ora = new Date().toISOString();
+  for (let i = 0; i < chiavi.length; i++) {
+    const { error } = await supabase
+      .from("service_catalog")
+      .update({ ordine: i, updated_at: ora })
+      .eq("chiave", chiavi[i]);
+    if (error) return { ok: false, error: error.message };
+  }
+  revalidatePath("/vendite/catalogo");
+  revalidatePath("/catalogo");
+  return { ok: true };
+}
+
 /** Elimina un servizio a catalogo (il portfolio collegato cade in cascata). Solo admin. */
 export async function deleteServizio(chiave: string): Promise<ActionResult> {
   const err = await assertAdmin();
