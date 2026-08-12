@@ -35,7 +35,7 @@ export default async function NuovoPreventivoPage({
     <div className="mx-auto max-w-6xl">
       <header className="mb-6">
         <nav className="flex items-center gap-1.5 text-[13px] font-semibold text-text-3">
-          <Link href="/vendite" className="hover:text-text-2">
+          <Link href="/vendite/pipeline" className="hover:text-text-2">
             Pipeline
           </Link>
           <span>/</span>
