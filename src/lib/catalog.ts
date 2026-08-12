@@ -139,6 +139,7 @@ export function serviziDaOrdine(ordine: OrdineSelezione | null): string[] {
 
 // Dettaglio servizi con durata e flag una tantum (per calcolare le scadenze).
 export interface ServizioDett {
+  key: string; // chiave catalogo (per recuperare i contenuti "cosa comprende")
   label: string;
   durataMesi: number | null; // mesi indicati (social/ads); null se non specificato
   unaTantum: boolean;
@@ -159,6 +160,7 @@ export function serviziDettaglio(ordine: OrdineSelezione | null): ServizioDett[]
     if (sel.durata) extra.push(`${sel.durata} mesi`);
     if (sel.quantita) extra.push(`n. ${sel.quantita}`);
     out.push({
+      key: svc.key,
       label: extra.length ? `${svc.label} · ${extra.join(" · ")}` : svc.label,
       durataMesi: sel.durata ?? null,
       unaTantum: !!svc.unaTantum,

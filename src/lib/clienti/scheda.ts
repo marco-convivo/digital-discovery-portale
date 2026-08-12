@@ -6,6 +6,10 @@ import {
   type ServizioExtra,
 } from "@/lib/catalogo/queries";
 import { dataIt } from "@/lib/format";
+import { serviziDettaglio } from "@/lib/catalog";
+import { addMesi } from "@/lib/preventivi/genera-rate";
+import { giorniAllaScadenza } from "@/lib/servizi";
+import { parseAddons } from "@/lib/addon";
 import type { PreventivoItem } from "@/components/internal/preventivi-list";
 import type { FatturaRow } from "@/components/internal/fatture-cliente";
 import type { RataRow } from "@/components/internal/piano-pagamenti";
@@ -13,6 +17,15 @@ import type { PianoGruppo } from "@/components/internal/piani-pagamento";
 import type { AllegatoRow } from "@/components/internal/allegati-cliente";
 import type { OrdineSelezione } from "@/lib/catalog";
 import type { Client } from "@/lib/types";
+
+export interface ServizioAttivo {
+  label: string;
+  meta: string; // "fino al …" / "in scadenza · N gg" / "una tantum"
+  inScadenza: boolean;
+  incluse: string[]; // "cosa facciamo" dal catalogo
+  descrizione: string | null; // descrizione catalogo o testo della voce custom
+  custom: boolean; // true = voce libera (addon), non da catalogo
+}
 
 export interface ContractRow {
   id: string;
@@ -41,6 +54,7 @@ export interface ClienteSchedaData {
   gruppiPagamenti: PianoGruppo[];
   attivita: AttivitaRow[];
   allegati: AllegatoRow[];
+  serviziAttivi: ServizioAttivo[];
   isAdmin: boolean;
 }
 
@@ -85,6 +99,7 @@ export async function getClienteScheda(
     { data: invData },
     { data: logData },
     { data: allegatiData },
+    { data: catData },
   ] = await Promise.all([
     supabase
       .from("quotes")
@@ -99,7 +114,7 @@ export async function getClienteScheda(
     supabase
       .from("contracts")
       .select(
-        "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(ordine)",
+        "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(ordine, addons)",
       )
       .eq("client_id", id)
       .order("created_at", { ascending: false }),
@@ -118,6 +133,9 @@ export async function getClienteScheda(
       .select("id, nome, tipo, created_at")
       .eq("client_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("service_catalog")
+      .select("chiave, attivita_incluse, descrizione"),
   ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
@@ -156,6 +174,101 @@ export async function getClienteScheda(
     return { key: k, label, rate: g.rate, manuale: g.manuale };
   });
 
+  // --- Servizi attivi (con "cosa comprende" + scadenza per periodo) ----------
+  // Contenuti catalogo per chiave (attività incluse + descrizione).
+  const catMap = new Map<string, { incluse: string[]; descrizione: string | null }>();
+  for (const r of (catData ?? []) as {
+    chiave: string;
+    attivita_incluse: string[] | null;
+    descrizione: string | null;
+  }[]) {
+    catMap.set(r.chiave, {
+      incluse: r.attivita_incluse ?? [],
+      descrizione: r.descrizione,
+    });
+  }
+  // Fine del piano per contratto (ultima rata) → scadenza per le una tantum.
+  const finePiano = new Map<string, string>();
+  for (const g of gruppiPagamenti) {
+    const max = g.rate.reduce((m, r) => (r.scadenza && r.scadenza > m ? r.scadenza : m), "");
+    if (max) finePiano.set(g.key, max);
+  }
+
+  interface Raw {
+    label: string;
+    scadenzaIso: string | null;
+    incluse: string[];
+    descrizione: string | null;
+    custom: boolean;
+  }
+  const perLabel = new Map<string, Raw>();
+  const contrRaw = (contrData ?? []) as unknown as {
+    id: string;
+    stato: string;
+    signed_at: string | null;
+    quote: { ordine: OrdineSelezione | null; addons: unknown } | null;
+  }[];
+  for (const ct of contrRaw) {
+    if (ct.stato !== "firmato" && ct.stato !== "completato") continue;
+    const dett = serviziDettaglio(ct.quote?.ordine ?? null);
+    const addons = parseAddons(ct.quote?.addons);
+    const firma = ct.signed_at;
+    // Scadenza del contratto = la più lontana tra i ricorrenti (catalogo+addon)
+    // e la fine del piano rate.
+    const cand: string[] = [];
+    for (const d of dett) if (!d.unaTantum && firma) cand.push(addMesi(firma, d.durataMesi ?? 12));
+    for (const a of addons) if (a.tipo === "ricorrente" && firma) cand.push(addMesi(firma, a.durata ?? 12));
+    const fp = finePiano.get(ct.id);
+    if (fp) cand.push(fp);
+    const contrattoScadenza = cand.length ? cand.sort().at(-1)! : null;
+
+    const add = (raw: Raw) => {
+      const cur = perLabel.get(raw.label);
+      if (!cur || (raw.scadenzaIso ?? "") > (cur.scadenzaIso ?? ""))
+        perLabel.set(raw.label, raw);
+    };
+    for (const d of dett) {
+      const content = catMap.get(d.key);
+      add({
+        label: d.label,
+        scadenzaIso: d.unaTantum ? contrattoScadenza : firma ? addMesi(firma, d.durataMesi ?? 12) : null,
+        incluse: content?.incluse ?? [],
+        descrizione: content?.descrizione ?? null,
+        custom: false,
+      });
+    }
+    for (const a of addons) {
+      add({
+        label: a.descrizione,
+        scadenzaIso: a.tipo === "ricorrente" ? (firma ? addMesi(firma, a.durata ?? 12) : null) : contrattoScadenza,
+        incluse: [],
+        descrizione: a.descrizione,
+        custom: true,
+      });
+    }
+  }
+
+  const serviziAttivi: ServizioAttivo[] = [...perLabel.values()].flatMap((s) => {
+    if (s.scadenzaIso && giorniAllaScadenza(s.scadenzaIso) < 0) return [];
+    const gg = s.scadenzaIso ? giorniAllaScadenza(s.scadenzaIso) : null;
+    const inScadenza = gg != null && gg <= 30;
+    const meta = s.scadenzaIso
+      ? inScadenza
+        ? `in scadenza · ${gg} gg`
+        : `fino al ${dataIt(s.scadenzaIso)}`
+      : "una tantum";
+    return [
+      {
+        label: s.label,
+        meta,
+        inScadenza,
+        incluse: s.incluse,
+        descrizione: s.descrizione,
+        custom: s.custom,
+      },
+    ];
+  });
+
   return {
     client: c,
     prezziBase,
@@ -166,6 +279,7 @@ export async function getClienteScheda(
     gruppiPagamenti,
     attivita,
     allegati,
+    serviziAttivi,
     isAdmin,
   };
 }

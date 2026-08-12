@@ -10,8 +10,8 @@ import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META, contractMeta } from "@/lib/stati";
-import { scadenzeServizi, labelScadenza, giorniAllaScadenza } from "@/lib/servizi";
-import { cn } from "@/lib/utils";
+import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
+import { ServiziAttiviCliente } from "@/components/internal/servizi-attivi-cliente";
 import { dataIt, euro } from "@/lib/format";
 import type { ClienteSchedaData } from "@/lib/clienti/scheda";
 import type { ClientStato } from "@/lib/types";
@@ -25,6 +25,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     gruppiPagamenti,
     attivita,
     allegati,
+    serviziAttivi,
     isAdmin,
   } = data;
   const stato = c.stato as ClientStato;
@@ -66,57 +67,6 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
         return meta.label;
     }
   })();
-
-  // Servizi attivi: dai contratti in corso (firmato/completato) → ordine → servizi,
-  // filtrati per PERIODO. Un ricorrente scaduto (firma + durata < oggi) non è più
-  // attivo; se un servizio è rinnovato in un contratto più recente, vince la
-  // scadenza più avanti.
-  // Fine del piano per contratto (ultima rata): dà una scadenza anche ai servizi
-  // una tantum, che di per sé non ne hanno.
-  const finePiano = new Map<string, string>();
-  for (const g of gruppiPagamenti) {
-    const max = g.rate.reduce(
-      (m, r) => (r.scadenza && r.scadenza > m ? r.scadenza : m),
-      "",
-    );
-    if (max) finePiano.set(g.key, max);
-  }
-
-  type ServizioAttivo = { label: string; scadenzaIso: string | null; unaTantum: boolean };
-  const perLabel = new Map<string, ServizioAttivo>();
-  for (const ct of contratti) {
-    if (ct.stato !== "firmato" && ct.stato !== "completato") continue;
-    const servizi = scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at);
-    // Scadenza del contratto = la più lontana tra le scadenze dei ricorrenti e
-    // la fine del piano rate.
-    const cand = servizi
-      .filter((s) => !s.unaTantum && s.scadenzaIso)
-      .map((s) => s.scadenzaIso!)
-      .concat(finePiano.get(ct.id) ? [finePiano.get(ct.id)!] : []);
-    const contrattoScadenza = cand.length ? cand.sort().at(-1)! : null;
-    for (const s of servizi) {
-      // il ricorrente usa la sua scadenza; la una tantum eredita quella del contratto.
-      const scadenzaIso = s.unaTantum ? contrattoScadenza : s.scadenzaIso;
-      const cur = perLabel.get(s.label);
-      if (!cur || (scadenzaIso ?? "") > (cur.scadenzaIso ?? ""))
-        perLabel.set(s.label, { label: s.label, scadenzaIso, unaTantum: s.unaTantum });
-    }
-  }
-  let serviziScaduti = 0;
-  const serviziAttivi = [...perLabel.values()].flatMap((s) => {
-    if (s.scadenzaIso && giorniAllaScadenza(s.scadenzaIso) < 0) {
-      serviziScaduti++;
-      return [];
-    }
-    const gg = s.scadenzaIso ? giorniAllaScadenza(s.scadenzaIso) : null;
-    const inScadenza = gg != null && gg <= 30;
-    const meta = s.scadenzaIso
-      ? inScadenza
-        ? `in scadenza · ${gg} gg`
-        : `fino al ${dataIt(s.scadenzaIso)}`
-      : "una tantum";
-    return [{ label: s.label, meta, inScadenza }];
-  });
 
   return (
     <div>
@@ -193,47 +143,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
               </span>
             )}
           </CardHeader>
-          {serviziAttivi.length === 0 ? (
-            <p className="text-sm text-text-3">
-              {serviziScaduti > 0
-                ? "Nessun servizio attivo: i contratti sono scaduti."
-                : "Nessun servizio attivo: compaiono qui alla firma del contratto."}
-            </p>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {serviziAttivi.map((s, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2.5 rounded-md border border-line px-3 py-2"
-                >
-                  <span
-                    className={cn(
-                      "size-1.5 flex-none rounded-full",
-                      s.inScadenza ? "bg-wait-dot" : "bg-paid-dot",
-                    )}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">
-                    {s.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "flex-none text-[12px]",
-                      s.inScadenza ? "font-semibold text-wait-tx" : "text-text-3",
-                    )}
-                  >
-                    {s.meta}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          {serviziScaduti > 0 && (
-            <p className="mt-2.5 text-[12px] text-text-3">
-              {serviziScaduti}{" "}
-              {serviziScaduti === 1 ? "servizio scaduto" : "servizi scaduti"} non
-              più attivi (contratto da rinnovare).
-            </p>
-          )}
+          <ServiziAttiviCliente servizi={serviziAttivi} />
         </Card>
 
         {/* Anagrafica: collassabile, per ridurre l'ingombro */}
