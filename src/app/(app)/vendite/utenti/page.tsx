@@ -30,13 +30,13 @@ export default async function UtentiPage() {
     <div className="mx-auto max-w-3xl">
       <header className="mb-6">
         <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
-          Utenti
+          Team
         </h1>
         <p className="mt-0.5 max-w-[60ch] text-sm text-text-2">
           Chi entra con una mail <b>@convivostudio.it</b> compare qui in attesa:
           abilitalo per dargli accesso. Gli <b>operatori</b> gestiscono pipeline
           e preventivi; solo gli <b>amministratori</b> gestiscono il catalogo e
-          gli utenti.
+          il team.
         </p>
       </header>
 

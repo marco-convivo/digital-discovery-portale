@@ -47,8 +47,8 @@ function Row({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-line/60 px-5 py-4 last:border-b-0">
-      <span className="grid size-10 flex-none place-items-center rounded-[12px] bg-violet text-[13px] font-bold text-on-violet">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-line px-5 py-4 last:border-b-0">
+      <span className="grid size-10 flex-none place-items-center rounded-btn bg-violet text-[13px] font-bold text-on-violet">
         {initials(m)}
       </span>
 
@@ -80,7 +80,7 @@ function Row({
         disabled={pending || isSelf}
         title={isSelf ? "Non puoi cambiare il tuo ruolo" : "Cambia ruolo"}
         onChange={(e) => run(setUserRole(m.id, e.target.value as ProfileRole))}
-        className="rounded-sm border border-line bg-card px-2.5 py-1.5 text-[13px] font-semibold text-text outline-none focus:border-violet disabled:opacity-50"
+        className="rounded-field border border-line-field bg-card px-2.5 py-1.5 text-[13px] font-semibold text-text outline-none focus:border-ink disabled:opacity-50"
       >
         <option value="admin">Amministratore</option>
         <option value="commerciale">Operatore</option>
@@ -118,9 +118,9 @@ export function UserManager({
   const inAttesa = members.filter((m) => !m.active).length;
 
   return (
-    <div className="overflow-hidden rounded-card border border-line/60 bg-card shadow-card">
+    <div className="overflow-hidden rounded-crm border border-line bg-card shadow-card">
       {inAttesa > 0 && (
-        <p className="border-b border-line/60 bg-wait-bg/50 px-5 py-2.5 text-[12.5px] font-medium text-wait-tx">
+        <p className="border-b border-line bg-wait-bg/50 px-5 py-2.5 text-[12.5px] font-medium text-wait-tx">
           {inAttesa === 1
             ? "1 persona in attesa di abilitazione."
             : `${inAttesa} persone in attesa di abilitazione.`}
