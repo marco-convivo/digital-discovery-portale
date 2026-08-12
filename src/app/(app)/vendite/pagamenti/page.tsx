@@ -1,111 +1,88 @@
-import { createClient } from "@/lib/supabase/server";
-import {
-  MasterDetailPagamenti,
-  type ClientePagamenti,
-} from "@/components/internal/master-detail-pagamenti";
-import { type RataRow } from "@/components/internal/piano-pagamenti";
-import { type FatturaRow } from "@/components/internal/fatture-cliente";
-import { dataIt } from "@/lib/format";
-import type { Database } from "@/lib/database.types";
+import Link from "next/link";
+import { getCassaMese } from "@/lib/oggi/queries";
+import { getCalendarioCassa } from "@/lib/cassa/queries";
+import { countInsolutiAperti } from "@/lib/insoluti/queries";
+import { CassaShell } from "@/components/internal/cassa-shell";
+import { CassaDelMese } from "@/components/internal/oggi/moduli";
+import { StatusPill } from "@/components/ui/status-pill";
+import { PAYMENT_STATO_META } from "@/lib/stati";
+import { euro, dataBreve } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-type PaymentStato = Database["public"]["Enums"]["payment_stato"];
-
-interface Row {
-  numero_rata: number | null;
-  importo: number | null;
-  scadenza: string | null;
-  stato: PaymentStato;
-  contract_id: string | null;
-  client: { id: string; ragione_sociale: string } | null;
-}
-
-interface InvoiceRow extends FatturaRow {
-  client_id: string;
-}
-
-export default async function PagamentiPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ cliente?: string }>;
-}) {
-  const { cliente } = await searchParams;
-  const supabase = await createClient();
-  const [{ data: payData }, { data: contrData }, { data: invData }] =
-    await Promise.all([
-      supabase
-        .from("payments")
-        .select(
-          "numero_rata, importo, scadenza, stato, contract_id, client:clients!payments_client_id_fkey(id, ragione_sociale)",
-        )
-        .order("numero_rata", { ascending: true }),
-      supabase.from("contracts").select("id, signed_at"),
-      supabase
-        .from("invoices")
-        .select("id, numero, data, importo, pdf_url, client_id")
-        .order("data", { ascending: false }),
-    ]);
-
-  const firmato = new Map(
-    ((contrData ?? []) as { id: string; signed_at: string | null }[]).map((c) => [
-      c.id,
-      c.signed_at,
-    ]),
-  );
-
-  const fattureByClient = new Map<string, FatturaRow[]>();
-  for (const inv of (invData ?? []) as unknown as InvoiceRow[]) {
-    const arr = fattureByClient.get(inv.client_id) ?? [];
-    arr.push({
-      id: inv.id,
-      numero: inv.numero,
-      data: inv.data,
-      importo: inv.importo,
-      pdf_url: inv.pdf_url,
-    });
-    fattureByClient.set(inv.client_id, arr);
-  }
-
-  const byClient = new Map<string, ClientePagamenti>();
-  for (const p of (payData ?? []) as unknown as Row[]) {
-    if (!p.client) continue;
-    let cliente = byClient.get(p.client.id);
-    if (!cliente) {
-      cliente = {
-        id: p.client.id,
-        ragione_sociale: p.client.ragione_sociale,
-        piani: [],
-        fatture: fattureByClient.get(p.client.id) ?? [],
-      };
-      byClient.set(p.client.id, cliente);
-    }
-    const key = p.contract_id ?? "__none__";
-    let piano = cliente.piani.find((pl) => pl.key === key);
-    if (!piano) {
-      const signedAt = p.contract_id ? firmato.get(p.contract_id) : null;
-      piano = {
-        key,
-        label: signedAt ? `Contratto firmato il ${dataIt(signedAt)}` : "Piano",
-        rate: [],
-      };
-      cliente.piani.push(piano);
-    }
-    (piano.rate as RataRow[]).push({
-      numero_rata: p.numero_rata,
-      importo: p.importo,
-      scadenza: p.scadenza,
-      stato: p.stato,
-    });
-  }
-  const clienti = [...byClient.values()].sort((a, b) =>
-    a.ragione_sociale.localeCompare(b.ragione_sociale),
-  );
+// Cassa · Calendario: le rate attese per finestra temporale + il denaro del mese.
+export default async function CalendarioCassaPage() {
+  const [cassa, buckets, insolutiCount] = await Promise.all([
+    getCassaMese(),
+    getCalendarioCassa(),
+    countInsolutiAperti(),
+  ]);
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-6 text-2xl font-extrabold tracking-[-0.02em] text-text">
-        Pagamenti
-      </h1>
-      <MasterDetailPagamenti clienti={clienti} initialSelected={cliente ?? null} />
-    </div>
+    <CassaShell active="calendario" insolutiCount={insolutiCount}>
+      {insolutiCount > 0 && (
+        <Link
+          href="/vendite/insoluti"
+          className="mb-4 flex items-center gap-2.5 rounded-crm border border-fail-dot bg-fail-bg px-4 py-3 text-[13.5px] font-semibold text-fail-tx"
+        >
+          <span className="size-1.5 rounded-full bg-fail-dot" />
+          {insolutiCount} {insolutiCount === 1 ? "addebito da recuperare" : "addebiti da recuperare"} — vai agli insoluti →
+        </Link>
+      )}
+
+      <div className="grid grid-cols-12 gap-5">
+        <div className="col-span-12 lg:col-span-8">
+          {buckets.length === 0 ? (
+            <div className="rounded-crm border border-line bg-card p-8 text-center">
+              <p className="text-[15px] font-bold text-text">Nessuna rata in arrivo</p>
+              <p className="mt-1 text-[13px] text-text-2">
+                Le rate programmate compaiono qui, dalla più vicina.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-crm border border-line bg-card">
+              {buckets.map((b) => (
+                <div key={b.key}>
+                  <div
+                    className={cn(
+                      "flex items-center justify-between border-b border-line bg-card-2 px-4 py-1.5 text-[11.5px] font-semibold uppercase tracking-wide",
+                      b.ritardo ? "text-fail-tx" : "text-text-2",
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      {b.ritardo && <span className="size-1.5 rounded-full bg-fail-dot" />}
+                      {b.label} · {b.items.length}
+                    </span>
+                    <span className="tnum normal-case">{euro(b.totale)}</span>
+                  </div>
+                  {b.items.map((r) => {
+                    const meta = PAYMENT_STATO_META[r.stato];
+                    return (
+                      <Link
+                        key={r.id}
+                        href={`/vendite/clienti/${r.clientId}`}
+                        className="grid grid-cols-[2.4fr_1fr_1.2fr_1.2fr] items-center border-b border-line-soft px-4 py-2.5 text-[13px] last:border-b-0 hover:bg-card-2"
+                      >
+                        <span className="truncate font-bold text-text">
+                          {r.ragioneSociale}
+                        </span>
+                        <span className="text-text-3">Rata {r.numeroRata ?? "—"}</span>
+                        <span className="tnum font-bold text-text">{euro(r.importo)}</span>
+                        <span className="flex items-center justify-end gap-2.5">
+                          <span className="text-text-3">{dataBreve(r.scadenza)}</span>
+                          <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="col-span-12 lg:col-span-4">
+          <CassaDelMese cassa={cassa} />
+        </div>
+      </div>
+    </CassaShell>
   );
 }

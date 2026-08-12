@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { StatusPill, type Tone } from "@/components/ui/status-pill";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CassaShell } from "@/components/internal/cassa-shell";
+import { countInsolutiAperti } from "@/lib/insoluti/queries";
 import { scadenzeServizi, giorniAllaScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
 import type { OrdineSelezione } from "@/lib/catalog";
@@ -30,12 +32,15 @@ function urgenza(g: number): { tone: Tone; label: string } {
 
 export default async function ScadenzePage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("contracts")
-    .select(
-      "signed_at, quote:quotes!contracts_quote_id_fkey(ordine), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
-    )
-    .eq("stato", "firmato");
+  const [{ data }, insolutiCount] = await Promise.all([
+    supabase
+      .from("contracts")
+      .select(
+        "signed_at, quote:quotes!contracts_quote_id_fkey(ordine), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
+      )
+      .eq("stato", "firmato"),
+    countInsolutiAperti(),
+  ]);
 
   const items: Item[] = [];
   for (const c of (data ?? []) as unknown as Row[]) {
@@ -55,18 +60,14 @@ export default async function ScadenzePage() {
   const urgenti = items.filter((i) => i.giorni <= 60).length;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <header className="mb-6">
-        <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-text">
-          Servizi in scadenza
-        </h1>
-        <p className="mt-0.5 text-sm text-text-2">
+    <CassaShell active="scadenze" insolutiCount={insolutiCount}>
+      <div className="max-w-3xl">
+        <p className="mb-5 text-sm text-text-2">
           Scadenze dei servizi ricorrenti, dalla firma del contratto. Ordinate
           per urgenza — {urgenti} entro 60 giorni.
         </p>
-      </header>
 
-      <Card>
+        <Card>
         {items.length === 0 ? (
           <EmptyState
             title="Nessun servizio con scadenza"
@@ -98,7 +99,8 @@ export default async function ScadenzePage() {
             })}
           </ul>
         )}
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </CassaShell>
   );
 }
