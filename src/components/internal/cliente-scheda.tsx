@@ -10,7 +10,8 @@ import { AllegatiCliente } from "@/components/internal/allegati-cliente";
 import { AttivitaLog } from "@/components/internal/attivita-log";
 import { ActionLink } from "@/components/internal/action-link";
 import { STATO_META, contractMeta } from "@/lib/stati";
-import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
+import { scadenzeServizi, labelScadenza, giorniAllaScadenza } from "@/lib/servizi";
+import { cn } from "@/lib/utils";
 import { dataIt, euro } from "@/lib/format";
 import type { ClienteSchedaData } from "@/lib/clienti/scheda";
 import type { ClientStato } from "@/lib/types";
@@ -66,16 +67,37 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     }
   })();
 
-  // Servizi attivi: dai contratti in corso (firmato/completato) → ordine → servizi.
-  const serviziMap = new Map<string, { label: string; meta: string; unaTantum: boolean }>();
+  // Servizi attivi: dai contratti in corso (firmato/completato) → ordine → servizi,
+  // filtrati per PERIODO. Un ricorrente scaduto (firma + durata < oggi) non è più
+  // attivo; se un servizio è rinnovato in un contratto più recente, vince la
+  // scadenza più avanti.
+  const perLabel = new Map<string, ReturnType<typeof scadenzeServizi>[number]>();
   for (const ct of contratti) {
     if (ct.stato !== "firmato" && ct.stato !== "completato") continue;
     for (const s of scadenzeServizi(ct.quote?.ordine ?? null, ct.signed_at)) {
-      if (!serviziMap.has(s.label))
-        serviziMap.set(s.label, { label: s.label, meta: labelScadenza(s), unaTantum: s.unaTantum });
+      const cur = perLabel.get(s.label);
+      if (!cur || (s.scadenzaIso ?? "") > (cur.scadenzaIso ?? ""))
+        perLabel.set(s.label, s);
     }
   }
-  const serviziAttivi = [...serviziMap.values()];
+  let serviziScaduti = 0;
+  const serviziAttivi = [...perLabel.values()].flatMap((s) => {
+    if (!s.unaTantum && s.scadenzaIso && giorniAllaScadenza(s.scadenzaIso) < 0) {
+      serviziScaduti++;
+      return [];
+    }
+    const gg =
+      !s.unaTantum && s.scadenzaIso ? giorniAllaScadenza(s.scadenzaIso) : null;
+    const inScadenza = gg != null && gg <= 30;
+    const meta = s.unaTantum
+      ? "una tantum"
+      : gg != null
+        ? inScadenza
+          ? `in scadenza · ${gg} gg`
+          : `fino al ${dataIt(s.scadenzaIso!)}`
+        : "attivo";
+    return [{ label: s.label, meta, inScadenza }];
+  });
 
   return (
     <div>
@@ -154,7 +176,9 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           </CardHeader>
           {serviziAttivi.length === 0 ? (
             <p className="text-sm text-text-3">
-              Nessun servizio attivo: compaiono qui alla firma del contratto.
+              {serviziScaduti > 0
+                ? "Nessun servizio attivo: i contratti sono scaduti."
+                : "Nessun servizio attivo: compaiono qui alla firma del contratto."}
             </p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
@@ -163,16 +187,33 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
                   key={i}
                   className="flex items-center gap-2.5 rounded-md border border-line px-3 py-2"
                 >
-                  <span className="size-1.5 flex-none rounded-full bg-paid-dot" />
+                  <span
+                    className={cn(
+                      "size-1.5 flex-none rounded-full",
+                      s.inScadenza ? "bg-wait-dot" : "bg-paid-dot",
+                    )}
+                  />
                   <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">
                     {s.label}
                   </span>
-                  <span className="flex-none text-[12px] text-text-3">
-                    {s.unaTantum ? "una tantum" : s.meta}
+                  <span
+                    className={cn(
+                      "flex-none text-[12px]",
+                      s.inScadenza ? "font-semibold text-wait-tx" : "text-text-3",
+                    )}
+                  >
+                    {s.meta}
                   </span>
                 </div>
               ))}
             </div>
+          )}
+          {serviziScaduti > 0 && (
+            <p className="mt-2.5 text-[12px] text-text-3">
+              {serviziScaduti}{" "}
+              {serviziScaduti === 1 ? "servizio scaduto" : "servizi scaduti"} non
+              più attivi (contratto da rinnovare).
+            </p>
           )}
         </Card>
 
