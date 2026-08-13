@@ -11,7 +11,7 @@ import type { OrdineSelezione } from "@/lib/catalog";
 interface Row {
   id: string;
   signed_at: string | null;
-  quote: { ordine: OrdineSelezione | null } | null;
+  quote: { numero: string | null; ordine: OrdineSelezione | null } | null;
   client: { id: string; ragione_sociale: string } | null;
 }
 
@@ -26,7 +26,7 @@ export default async function ScadenzePage() {
       supabase
         .from("contracts")
         .select(
-          "id, signed_at, quote:quotes!contracts_quote_id_fkey(ordine), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
+          "id, signed_at, quote:quotes!contracts_quote_id_fkey(numero, ordine), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
         )
         .in("stato", ["firmato", "completato"]),
       supabase.from("avviso_stato").select("chiave").eq("stato", "ignorato"),
@@ -56,6 +56,7 @@ export default async function ScadenzePage() {
         clienteId: c.client.id,
         cliente: c.client.ragione_sociale,
         titolo: s.label,
+        riferimento: c.quote?.numero ?? null,
         scadenzaIso: s.scadenzaIso!,
         giorni: giorniAllaScadenza(s.scadenzaIso!),
       });
@@ -71,6 +72,7 @@ export default async function ScadenzePage() {
         clienteId: c.client.id,
         cliente: c.client.ragione_sociale,
         titolo: "Fine contratto",
+        riferimento: c.quote?.numero ?? null,
         scadenzaIso: maxSc,
         giorni: giorniAllaScadenza(maxSc),
       });

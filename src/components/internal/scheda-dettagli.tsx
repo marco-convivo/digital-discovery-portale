@@ -112,10 +112,17 @@ function Contratti({ contratti }: { contratti: ContractRow[] }) {
         return (
           <div key={ct.id} className="rounded-md border border-line p-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[13px] font-semibold text-text">
-                {ct.signed_at
-                  ? `Firmato il ${dataIt(ct.signed_at)}`
-                  : `Creato ${dataIt(ct.created_at)}`}
+              <div className="min-w-0">
+                {ct.quote?.numero && (
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">
+                    Rif. preventivo {ct.quote.numero}
+                  </div>
+                )}
+                <div className="text-[13px] font-semibold text-text">
+                  {ct.signed_at
+                    ? `Firmato il ${dataIt(ct.signed_at)}`
+                    : `Creato ${dataIt(ct.created_at)}`}
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <StatusPill tone={contractMeta(ct.stato).tone}>

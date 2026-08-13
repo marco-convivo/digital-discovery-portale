@@ -16,6 +16,7 @@ interface Row {
   signed_pdf_url: string | null;
   created_at: string;
   quote: {
+    numero: string | null;
     rate_num: number | null;
     tipo: string;
     ordine: OrdineSelezione | null;
@@ -35,7 +36,7 @@ export default async function ContrattiPage({
   const { data } = await supabase
     .from("contracts")
     .select(
-      "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(rate_num, tipo, ordine, importo_totale, rata_mensile), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
+      "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(numero, rate_num, tipo, ordine, importo_totale, rata_mensile), client:clients!contracts_client_id_fkey(id, ragione_sociale)",
     )
     .order("created_at", { ascending: false });
 
@@ -49,6 +50,7 @@ export default async function ContrattiPage({
       titolo: c.signed_at
         ? `Firmato il ${dataIt(c.signed_at)}`
         : `Creato ${dataIt(c.created_at)}`,
+      riferimento: q?.numero ?? null,
       stato: contractMeta(c.stato),
       servizi: scadenzeServizi(q?.ordine ?? null, c.signed_at).map((s) => ({
         label: s.label,

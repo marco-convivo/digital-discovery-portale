@@ -11,13 +11,16 @@ interface ContractRow {
   signed_at: string | null;
   signed_pdf_url: string | null;
   created_at: string;
+  quote: { numero: string | null } | null;
 }
 
 export default async function PortaleContratti() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("contracts")
-    .select("id, stato, signed_at, signed_pdf_url, created_at")
+    .select(
+      "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(numero)",
+    )
     .order("created_at", { ascending: false });
   const contratti = (data ?? []) as unknown as ContractRow[];
 
@@ -39,6 +42,7 @@ export default async function PortaleContratti() {
                     {c.signed_at ? `· firmato il ${dataIt(c.signed_at)}` : ""}
                   </div>
                   <div className="text-[12.5px] text-text-3">
+                    {c.quote?.numero ? `Rif. preventivo ${c.quote.numero} · ` : ""}
                     Creato {dataIt(c.created_at)}
                   </div>
                 </div>

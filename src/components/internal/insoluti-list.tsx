@@ -68,6 +68,7 @@ function Riga({
   const [mandatoUrl, setMandatoUrl] = useState<string | null>(null);
   const [bonifico, setBonifico] = useState(false);
   const [copiato, setCopiato] = useState<string | null>(null);
+  const [confermaRinuncia, setConfermaRinuncia] = useState(false);
 
   const magg = Number(r.maggiorazione ?? settings.maggiorazione_insoluto ?? 0);
   const netto = Number(r.importo ?? 0);
@@ -135,7 +136,7 @@ function Riga({
         </div>
       </div>
 
-      {/* Carta */}
+      {/* Link di pagamento (carta + bonifico) */}
       <div className="mt-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -143,7 +144,7 @@ function Riga({
             disabled={pending}
             onClick={() => esegui(azioneGeneraLink(r.id), { onUrl: setUrl })}
           >
-            {url ? "Rigenera link carta" : "Genera link carta"}
+            {url ? "Rigenera link di pagamento" : "Genera link di pagamento"}
           </Button>
           <Button
             size="sm"
@@ -155,8 +156,9 @@ function Riga({
           </Button>
         </div>
         <p className="mt-1 text-[11.5px] text-text-3">
-          Crea un link sicuro per far saldare la rata con carta (IVA inclusa):
-          copialo e invialo, oppure invialo tu via email.
+          Crea una pagina sicura per saldare la rata (IVA inclusa): il cliente
+          sceglie <b>carta</b> (immediato) o <b>bonifico</b> con i dati già
+          pronti. Copiala e inviala, oppure inviala tu via email.
         </p>
         {url && (
           <LinkCopiabile
@@ -185,10 +187,46 @@ function Riga({
         >
           Nuovo mandato SEPA
         </Button>
-        <Button size="sm" variant="ghost" disabled={pending} onClick={() => esegui(azioneAnnulla(r.id))}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          onClick={() => setConfermaRinuncia(true)}
+        >
           Rinuncia
         </Button>
       </div>
+
+      {confermaRinuncia && (
+        <div className="mt-2 rounded-field border border-fail-dot/40 bg-fail-bg/50 p-3.5">
+          <p className="text-[13px] font-bold text-text">Confermi la rinuncia al recupero?</p>
+          <p className="mt-0.5 text-[12px] text-text-2">
+            L&apos;insoluto verrà chiuso senza incasso e sparirà dall&apos;elenco.
+            L&apos;azione non incassa la rata: usala solo se hai deciso di non
+            recuperare {euro(lordo)} da {r.client?.ragione_sociale ?? "questo cliente"}.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              disabled={pending}
+              className="bg-fail-tx text-white hover:opacity-90"
+              onClick={() =>
+                esegui(azioneAnnulla(r.id), { okMsg: "Insoluto chiuso: recupero annullato." })
+              }
+            >
+              Sì, rinuncia al recupero
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={pending}
+              onClick={() => setConfermaRinuncia(false)}
+            >
+              Annulla
+            </Button>
+          </div>
+        </div>
+      )}
 
       {mandatoUrl && (
         <div className="mt-2">

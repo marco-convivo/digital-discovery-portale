@@ -33,7 +33,7 @@ export interface ContractRow {
   signed_at: string | null;
   signed_pdf_url: string | null;
   created_at: string;
-  quote: { ordine: OrdineSelezione | null } | null;
+  quote: { numero: string | null; ordine: OrdineSelezione | null } | null;
 }
 
 export interface AttivitaRow {
@@ -114,7 +114,7 @@ export async function getClienteScheda(
     supabase
       .from("contracts")
       .select(
-        "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(ordine, addons)",
+        "id, stato, signed_at, signed_pdf_url, created_at, quote:quotes!contracts_quote_id_fkey(numero, ordine, addons)",
       )
       .eq("client_id", id)
       .order("created_at", { ascending: false }),
@@ -166,10 +166,13 @@ export async function getClienteScheda(
     }, new Map<string, { rate: RataRow[]; manuale: boolean }>()),
   ).map(([k, g]) => {
     const contract = k === NONE ? null : (contratti.find((c) => c.id === k) ?? null);
+    const rif = contract?.quote?.numero
+      ? `Rif. preventivo ${contract.quote.numero}`
+      : "Contratto";
     const label = contract
       ? contract.signed_at
-        ? `Contratto · firmato il ${dataIt(contract.signed_at)}`
-        : "Contratto"
+        ? `${rif} · firmato il ${dataIt(contract.signed_at)}`
+        : rif
       : "Piano";
     return { key: k, label, rate: g.rate, manuale: g.manuale };
   });

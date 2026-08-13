@@ -11,6 +11,7 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { euro, conIva } from "@/lib/format";
+import { BONIFICO, CONTATTI_BONIFICO } from "@/lib/bonifico/config";
 import type { RecoveryContext } from "@/lib/stripe/recupero";
 
 export function RecuperoPayment(props: RecoveryContext) {
@@ -77,33 +78,134 @@ export function RecuperoPayment(props: RecoveryContext) {
               </div>
             </dl>
 
-            <Elements
-              stripe={stripePromise}
-              options={{
-                clientSecret: props.clientSecret,
-                appearance: {
-                  theme: "flat",
-                  variables: {
-                    colorPrimary: "#222222",
-                    colorBackground: "#ffffff",
-                    colorText: "#1e1e22",
-                    borderRadius: "12px",
-                    fontFamily: "Fustat, system-ui, sans-serif",
-                  },
-                },
-              }}
-            >
-              <PayForm />
-            </Elements>
+            {/* --- Carta --- */}
+            <div className="mt-5">
+              <h2 className="text-[13px] font-bold text-text">Paga con carta</h2>
+              <p className="mt-0.5 text-[12.5px] text-text-2">
+                Immediato: la rata risulta saldata subito.
+              </p>
+              <div className="mt-3">
+                <Elements
+                  stripe={stripePromise}
+                  options={{
+                    clientSecret: props.clientSecret,
+                    appearance: {
+                      theme: "flat",
+                      variables: {
+                        colorPrimary: "#222222",
+                        colorBackground: "#ffffff",
+                        colorText: "#1e1e22",
+                        borderRadius: "12px",
+                        fontFamily: "Fustat, system-ui, sans-serif",
+                      },
+                    },
+                  }}
+                >
+                  <PayForm />
+                </Elements>
+              </div>
+              <p className="mt-3 text-[12px] leading-relaxed text-text-3">
+                Pagamento sicuro con carta gestito da Stripe. Digital Discovery
+                non conserva i dati della carta.
+              </p>
+            </div>
 
-            <p className="mt-4 text-[12px] leading-relaxed text-text-3">
-              Pagamento sicuro con carta gestito da Stripe. Digital Discovery non
-              conserva i dati della carta.
-            </p>
+            {/* --- Bonifico --- */}
+            <BonificoBlock
+              iban={props.iban}
+              importoLordo={conIva(props.netto)}
+              numeroRata={props.numeroRata}
+              ragioneSociale={props.ragioneSociale}
+            />
           </>
         )}
       </div>
     </main>
+  );
+}
+
+function BonificoBlock({
+  iban,
+  importoLordo,
+  numeroRata,
+  ragioneSociale,
+}: {
+  iban: string;
+  importoLordo: number;
+  numeroRata: number | null;
+  ragioneSociale: string;
+}) {
+  const causale = `Rata ${numeroRata ?? ""} · ${ragioneSociale}`.trim();
+  const waHref = `https://wa.me/${CONTATTI_BONIFICO.whatsappNumero}?text=${encodeURIComponent(
+    `Ho effettuato il bonifico per la ${causale} (${euro(importoLordo)}).`,
+  )}`;
+  const mailHref = `mailto:${CONTATTI_BONIFICO.email}?subject=${encodeURIComponent(
+    `Bonifico ${causale}`,
+  )}`;
+
+  return (
+    <div className="mt-6 border-t border-line pt-6">
+      <h2 className="text-[13px] font-bold text-text">Oppure paga con bonifico</h2>
+      <p className="mt-0.5 text-[12.5px] text-text-2">
+        Usa questi dati dalla tua banca. Il saldo verrà registrato al riscontro
+        della contabile.
+      </p>
+
+      <dl className="mt-3 flex flex-col gap-2 rounded-md bg-card-2 p-4 text-[13px]">
+        <Voce label="Intestatario" value={BONIFICO.intestatario} />
+        <Voce label="IBAN" value={iban} mono />
+        <Voce label="Banca" value={BONIFICO.banca} />
+        <Voce label="Importo" value={`${euro(importoLordo)} (IVA inclusa)`} />
+        <Voce label="Causale" value={causale} />
+      </dl>
+
+      <div className="mt-3 rounded-md bg-violet-soft/60 p-4">
+        <p className="text-[13px] font-bold text-text">
+          Dopo il bonifico, avvisaci
+        </p>
+        <p className="mt-0.5 text-[12.5px] leading-relaxed text-text-2">
+          Mandaci conferma così registriamo subito il pagamento senza attendere i
+          tempi bancari.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-btn bg-ink px-4 py-2 text-[13px] font-semibold text-on-ink transition-opacity hover:opacity-90"
+          >
+            WhatsApp {CONTATTI_BONIFICO.whatsappDisplay}
+          </a>
+          <a
+            href={mailHref}
+            className="rounded-btn border border-line-strong px-4 py-2 text-[13px] font-semibold text-text transition-colors hover:bg-card-2"
+          >
+            {CONTATTI_BONIFICO.email}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Voce({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-text-3">{label}</dt>
+      <dd
+        className={`text-right font-semibold text-text ${mono ? "tnum tracking-tight" : ""}`}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }
 

@@ -11,6 +11,7 @@ import { euro } from "@/lib/format";
 export interface DettaglioDoc {
   id: string;
   titolo: string;
+  riferimento?: string | null;
   stato: { tone: Tone; label: string };
   servizi: {
     label: string;
@@ -90,6 +91,11 @@ export function MasterDetail({
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3">
                       <div className="min-w-0">
+                        {d.riferimento && (
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-text-3">
+                            Rif. preventivo {d.riferimento}
+                          </div>
+                        )}
                         <div className="truncate text-[13.5px] font-bold text-text">
                           {d.titolo}
                         </div>

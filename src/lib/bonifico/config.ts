@@ -8,3 +8,10 @@ export const BONIFICO = {
 } as const;
 
 export const IBAN_FALLBACK = "IT47L0326822300052573507410";
+
+// Canali per avvisare dell'avvenuto bonifico (riscontro contabile).
+export const CONTATTI_BONIFICO = {
+  email: "info@digital-discovery.it",
+  whatsappNumero: "393311093149", // per wa.me
+  whatsappDisplay: "+39 331 109 3149",
+} as const;

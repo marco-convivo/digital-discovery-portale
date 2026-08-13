@@ -255,7 +255,7 @@ export async function getCodaLavoro(): Promise<CodaItem[]> {
         gg <= 1 ? "Contratto inviato, in attesa di firma" : `Contratto da firmare · ${gg} giorni`,
       giorni: gg,
       importo: c.quote?.importo_totale ?? null,
-      azione: { label: "Ricorda", href: `/vendite/clienti/${c.client.id}` },
+      azione: { label: "Apri", href: `/vendite/clienti/${c.client.id}` },
       gruppo: "movimento",
       urgenza: 60,
     });
@@ -283,7 +283,7 @@ export async function getCodaLavoro(): Promise<CodaItem[]> {
         situazione: `Ha aperto il preventivo · ${gg} giorni`,
         giorni: gg,
         importo: q.importo_totale,
-        azione: { label: "Chiama", href: `/vendite/clienti/${q.client.id}` },
+        azione: { label: "Apri", href: `/vendite/clienti/${q.client.id}` },
         gruppo: "movimento",
         urgenza: 55,
       });
@@ -297,7 +297,7 @@ export async function getCodaLavoro(): Promise<CodaItem[]> {
         situazione: `Preventivo inviato, mai aperto · ${gg} giorni`,
         giorni: gg,
         importo: q.importo_totale,
-        azione: { label: "Sollecita", href: `/vendite/clienti/${q.client.id}` },
+        azione: { label: "Apri", href: `/vendite/clienti/${q.client.id}` },
         gruppo: vecchio ? "ferme" : "movimento",
         urgenza: vecchio ? 70 : 50,
       });

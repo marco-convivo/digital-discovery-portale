@@ -70,7 +70,8 @@ export async function azioneInviaLinkEmail(
     heading: "Salda la rata in sospeso",
     paragraphs: [
       `Gentile <b>${row?.client?.ragione_sociale ?? "Cliente"}</b>, l'addebito della rata ${row?.numero_rata ?? ""} non è andato a buon fine.`,
-      "Puoi saldare in tutta sicurezza con carta dal pulsante qui sotto. Bastano pochi istanti.",
+      "Dal pulsante qui sotto puoi saldare come preferisci: <b>con carta</b> (immediato) oppure <b>con bonifico</b>, con i dati già pronti nella pagina.",
+      "Se scegli il bonifico, ricordati di avvisarci una volta effettuato — trovi email e WhatsApp nella stessa pagina.",
     ],
     cta: { label: "Salda ora", url: link.url },
     fallbackUrl: link.url,

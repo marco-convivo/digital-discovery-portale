@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppSettingsAdmin } from "@/lib/settings/app-settings";
 import { lordoCent } from "@/lib/pricing";
 import { SITE_URL as SITE } from "@/lib/config";
+import { IBAN_FALLBACK } from "@/lib/bonifico/config";
 
 // Token non guessabile per la pagina pubblica di recupero.
 function nuovoToken(): string {
@@ -52,6 +53,7 @@ export interface RecoveryContext {
   netto: number; // rata + maggiorazione, netto
   maggiorazione: number;
   giaPagato: boolean;
+  iban: string; // per il bonifico alternativo
 }
 
 /**
@@ -82,10 +84,11 @@ export async function ensureRecoveryContext(
   const cli = row.client;
   if (!cli) return null;
 
-  const { maggiorazione_insoluto } = await getAppSettingsAdmin();
-  const magg = Number(row.maggiorazione ?? maggiorazione_insoluto ?? 0);
+  const settings = await getAppSettingsAdmin();
+  const magg = Number(row.maggiorazione ?? settings.maggiorazione_insoluto ?? 0);
   const nettoRata = Number(row.importo ?? 0);
   const netto = nettoRata + magg;
+  const iban = settings.iban_bonifico ?? IBAN_FALLBACK;
 
   // Già saldato (pagamento riuscito o recupero chiuso): nessun PaymentIntent.
   const giaPagato = row.stato === "paid" || row.recovery_stato === "recuperato";
@@ -98,6 +101,7 @@ export async function ensureRecoveryContext(
       netto,
       maggiorazione: magg,
       giaPagato: true,
+      iban,
     };
   }
 
@@ -119,5 +123,6 @@ export async function ensureRecoveryContext(
     netto,
     maggiorazione: magg,
     giaPagato: false,
+    iban,
   };
 }
