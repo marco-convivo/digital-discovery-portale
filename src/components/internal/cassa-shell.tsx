@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type CassaVista = "calendario" | "insoluti" | "piani" | "scadenze";
+type CassaVista = "calendario" | "insoluti" | "scadenze";
 
 const TAB: { key: CassaVista; label: string; href: string }[] = [
   { key: "calendario", label: "Calendario", href: "/vendite/pagamenti" },
   { key: "insoluti", label: "Insoluti", href: "/vendite/insoluti" },
-  { key: "piani", label: "Piani", href: "/vendite/pagamenti/piani" },
   { key: "scadenze", label: "Scadenze", href: "/vendite/scadenze" },
 ];
 
