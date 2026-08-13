@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusPill } from "@/components/ui/status-pill";
-import { ActionLink } from "@/components/internal/action-link";
 import { eliminaPreventivo } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { euro, dataIt } from "@/lib/format";
 import { quoteMeta } from "@/lib/stati";
@@ -29,8 +28,15 @@ export function PreventiviList({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiato, setCopiato] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
+
+  function copiaLink(q: PreventivoItem) {
+    navigator.clipboard.writeText(`${location.origin}/preventivo/${q.public_token}`);
+    setCopiato(q.id);
+    setTimeout(() => setCopiato((c) => (c === q.id ? null : c)), 1500);
+  }
 
   if (quotes.length === 0) {
     return <p className="text-sm text-text-3">Nessun preventivo ancora.</p>;
@@ -75,11 +81,22 @@ export function PreventiviList({
                   Modifica
                 </Link>
               )}
-              <ActionLink
-                href={`/preventivo/${q.public_token}`}
-                label="Link cliente"
-                icon="link"
-              />
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(`/preventivo/${q.public_token}`, "_blank", "noopener")
+                }
+                className="text-[13px] font-semibold text-link hover:underline"
+              >
+                Anteprima
+              </button>
+              <button
+                type="button"
+                onClick={() => copiaLink(q)}
+                className="text-[13px] font-semibold text-text-2 transition-colors hover:text-text"
+              >
+                {copiato === q.id ? "Copiato ✓" : "Copia link"}
+              </button>
               {isAdmin && q.stato !== "accettato" && (
                 <button
                   type="button"
