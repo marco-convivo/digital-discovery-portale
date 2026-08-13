@@ -84,7 +84,11 @@ export function PreventiviList({
               <button
                 type="button"
                 onClick={() =>
-                  window.open(`/preventivo/${q.public_token}`, "_blank", "noopener")
+                  window.open(
+                    `/preventivo/${q.public_token}?anteprima=1`,
+                    "_blank",
+                    "noopener",
+                  )
                 }
                 className="text-[13px] font-semibold text-link hover:underline"
               >

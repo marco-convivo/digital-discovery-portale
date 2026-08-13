@@ -8,11 +8,15 @@ import { StampaButton } from "@/components/quote/stampa-button";
 
 export default async function PreventivoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ anteprima?: string }>;
 }) {
   const { token } = await params;
-  const preview = await isStaffViewer();
+  const { anteprima } = await searchParams;
+  // Anteprima se: sessione staff loggata, oppure link ?anteprima=1 (forzata).
+  const preview = anteprima === "1" || (await isStaffViewer());
   const q = await getPublicQuote(token, { preview });
   if (!q) notFound();
 
