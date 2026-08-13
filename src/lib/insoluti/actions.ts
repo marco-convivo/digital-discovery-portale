@@ -151,7 +151,8 @@ export async function azioneNuovoMandato(
   const token = (quote as { public_token: string } | null)?.public_token;
   if (!token) return { ok: false, error: "Token pagamento non trovato." };
 
-  const url = `${SITE}/paga/${token}`;
+  // Link diretto al form del mandato SEPA (come il link carta è diretto al pagamento).
+  const url = `${SITE}/paga/${token}/sepa`;
 
   await sb
     .from("payments")
