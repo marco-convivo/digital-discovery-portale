@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { eliminaPreventivo } from "@/app/(app)/vendite/clienti/[id]/actions";
 import { euro, dataIt } from "@/lib/format";
 import { quoteMeta } from "@/lib/stati";
+import { cn } from "@/lib/utils";
 
 const EDITABILI = ["bozza", "inviato", "visto"];
 
@@ -97,9 +98,29 @@ export function PreventiviList({
               <button
                 type="button"
                 onClick={() => copiaLink(q)}
-                className="text-[13px] font-semibold text-text-2 transition-colors hover:text-text"
+                title="Copia il link del preventivo da inviare al cliente via WhatsApp o email"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-[12.5px] font-bold transition-colors",
+                  copiato === q.id
+                    ? "bg-paid-dot text-white"
+                    : "bg-mint text-on-mint hover:opacity-90",
+                )}
               >
-                {copiato === q.id ? "Copiato ✓" : "Copia link"}
+                {copiato === q.id ? (
+                  <>
+                    <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m5 12 5 5L20 7" />
+                    </svg>
+                    Copiato
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 15l6-6M11 6l.5-.5a4 4 0 0 1 5.7 5.7l-1.5 1.5M13 18l-.5.5a4 4 0 0 1-5.7-5.7L8.3 11.3" />
+                    </svg>
+                    Copia link
+                  </>
+                )}
               </button>
               {isAdmin && q.stato !== "accettato" && (
                 <button
