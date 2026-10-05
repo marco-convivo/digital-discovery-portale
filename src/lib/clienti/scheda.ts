@@ -44,6 +44,17 @@ export interface AttivitaRow {
   created_at: string;
 }
 
+export interface MandatoSepaRow {
+  id: string;
+  riferimento: string;
+  intestatario: string;
+  iban: string;
+  bic: string | null;
+  stato: string;
+  created_at: string;
+  quote: { numero: string | null } | null;
+}
+
 export interface ClienteSchedaData {
   client: Client;
   prezziBase: Awaited<ReturnType<typeof getPrezziBase>>;
@@ -55,6 +66,7 @@ export interface ClienteSchedaData {
   attivita: AttivitaRow[];
   allegati: AllegatoRow[];
   serviziAttivi: ServizioAttivo[];
+  mandati: MandatoSepaRow[];
   isAdmin: boolean;
 }
 
@@ -100,6 +112,7 @@ export async function getClienteScheda(
     { data: logData },
     { data: allegatiData },
     { data: catData },
+    { data: mandatiData },
   ] = await Promise.all([
     supabase
       .from("quotes")
@@ -136,6 +149,13 @@ export async function getClienteScheda(
     supabase
       .from("service_catalog")
       .select("chiave, attivita_incluse, descrizione"),
+    supabase
+      .from("sepa_mandates")
+      .select(
+        "id, riferimento, intestatario, iban, bic, stato, created_at, quote:quotes(numero)",
+      )
+      .eq("client_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const quotes = (quotesData ?? []) as unknown as PreventivoItem[];
@@ -143,6 +163,7 @@ export async function getClienteScheda(
   const fatture = (invData ?? []) as unknown as FatturaRow[];
   const attivita = (logData ?? []) as unknown as AttivitaRow[];
   const allegati = (allegatiData ?? []) as unknown as AllegatoRow[];
+  const mandati = (mandatiData ?? []) as unknown as MandatoSepaRow[];
 
   const pays = (payData ?? []) as unknown as (RataRow & {
     contract_id: string | null;
@@ -283,6 +304,7 @@ export async function getClienteScheda(
     attivita,
     allegati,
     serviziAttivi,
+    mandati,
     isAdmin,
   };
 }

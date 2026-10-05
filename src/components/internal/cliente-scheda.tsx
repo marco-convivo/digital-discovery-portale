@@ -21,6 +21,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
     attivita,
     allegati,
     serviziAttivi,
+    mandati,
     isAdmin,
   } = data;
   const stato = c.stato as ClientStato;
@@ -170,6 +171,7 @@ export function ClienteScheda({ data }: { data: ClienteSchedaData }) {
           quotes={quotes}
           fatture={fatture}
           allegati={allegati}
+          mandati={mandati}
           isAdmin={isAdmin}
         />
         </div>

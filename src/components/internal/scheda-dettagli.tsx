@@ -8,15 +8,16 @@ import { PianiCliente } from "@/components/internal/piani-cliente";
 import { PreventiviList } from "@/components/internal/preventivi-list";
 import { FattureCliente, type FatturaRow } from "@/components/internal/fatture-cliente";
 import { AllegatiCliente, type AllegatoRow } from "@/components/internal/allegati-cliente";
+import { MandatiSepa } from "@/components/internal/mandati-sepa";
 import { contractMeta } from "@/lib/stati";
 import { scadenzeServizi, labelScadenza } from "@/lib/servizi";
 import { dataIt } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PianoGruppo } from "@/components/internal/piani-pagamento";
 import type { PreventivoItem } from "@/components/internal/preventivi-list";
-import type { ContractRow } from "@/lib/clienti/scheda";
+import type { ContractRow, MandatoSepaRow } from "@/lib/clienti/scheda";
 
-type Tab = "piano" | "contratti" | "preventivi" | "fatture" | "allegati";
+type Tab = "piano" | "contratti" | "preventivi" | "mandati" | "fatture" | "allegati";
 
 /**
  * Dettagli della scheda cliente come sezione a TAB (una vista alla volta):
@@ -30,6 +31,7 @@ export function SchedaDettagli({
   quotes,
   fatture,
   allegati,
+  mandati,
   isAdmin,
 }: {
   clientId: string;
@@ -38,6 +40,7 @@ export function SchedaDettagli({
   quotes: PreventivoItem[];
   fatture: FatturaRow[];
   allegati: AllegatoRow[];
+  mandati: MandatoSepaRow[];
   isAdmin: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("piano");
@@ -46,6 +49,7 @@ export function SchedaDettagli({
     { key: "piano", label: "Piano pagamenti", count: piani.length },
     { key: "contratti", label: "Contratti", count: contratti.length },
     { key: "preventivi", label: "Preventivi", count: quotes.length },
+    { key: "mandati", label: "Mandati SEPA", count: mandati.length },
     { key: "fatture", label: "Fatture", count: fatture.length },
     { key: "allegati", label: "Allegati", count: allegati.length },
   ];
@@ -87,6 +91,7 @@ export function SchedaDettagli({
         {tab === "piano" && <PianiCliente piani={piani} />}
         {tab === "contratti" && <Contratti contratti={contratti} />}
         {tab === "preventivi" && <PreventiviList quotes={quotes} isAdmin={isAdmin} />}
+        {tab === "mandati" && <MandatiSepa mandati={mandati} />}
         {tab === "fatture" && <FattureCliente clientId={clientId} fatture={fatture} />}
         {tab === "allegati" && (
           <>
